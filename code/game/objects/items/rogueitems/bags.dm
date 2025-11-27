@@ -126,3 +126,21 @@
 		/obj/item/ash,
 	/obj/item/ash
 	)
+
+//Checking if a bag is empty before crafting. If not, it's unavailable for crafting.
+/obj/item/storage/roguebag/proc/is_empty_for_crafting(mob/user)
+	if(contents.len > 0)
+		user << span_alert("The sack must be empty to use for crafting!")
+		return FALSE
+	return TRUE
+
+/datum/crafting_recipe/roguetown/survival/empty_roguebag
+	abstract_type = /datum/crafting_recipe/roguetown/survival/empty_roguebag/
+	subtype_reqs = TRUE
+	proc/can_make(mob/user, list/ingredients)
+		for(var/I in ingredients)
+			var/obj/item/storage/roguebag/sack = I
+			if(istype(sack))
+				if(!sack.is_empty_for_crafting(user))
+					return FALSE
+		return TRUE

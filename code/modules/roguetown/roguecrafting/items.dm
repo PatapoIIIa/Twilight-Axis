@@ -137,38 +137,38 @@
 /datum/crafting_recipe/roguetown/survival/bait
 	name = "bait"
 	result = /obj/item/bait
+	parent_type = /datum/crafting_recipe/roguetown/survival/empty_roguebag
 	reqs = list(
 		/obj/item/storage/roguebag = 1,
 		/obj/item/reagent_containers/food/snacks/grown/wheat = 2,
 		)
-	subtype_reqs = TRUE
 
 /datum/crafting_recipe/roguetown/survival/sbaita
 	name = "sweetbait (apple)"
 	result = /obj/item/bait/sweet
+	parent_type = /datum/crafting_recipe/roguetown/survival/empty_roguebag
 	reqs = list(
 		/obj/item/storage/roguebag = 1,
 		/obj/item/reagent_containers/food/snacks/grown/apple = 2,
 		)
-	subtype_reqs = TRUE
 
 /datum/crafting_recipe/roguetown/survival/sbait
 	name = "sweetbait (berry)"
 	result = /obj/item/bait/sweet
+	parent_type = /datum/crafting_recipe/roguetown/survival/empty_roguebag
 	reqs = list(
 		/obj/item/storage/roguebag = 1,
 		/obj/item/reagent_containers/food/snacks/grown/berries/rogue = 2,
 		)
-	subtype_reqs = TRUE
 
 /datum/crafting_recipe/roguetown/survival/bloodbait
 	name = "bloodbait"
 	result = /obj/item/bait/bloody
+	parent_type = /datum/crafting_recipe/roguetown/survival/empty_roguebag
 	reqs = list(
 		/obj/item/storage/roguebag = 1,
 		/obj/item/reagent_containers/food/snacks/rogue/meat = 2,
 		)
-	subtype_reqs = TRUE
 
 /datum/crafting_recipe/roguetown/survival/pipe
 	name = "wood pipe"
@@ -391,8 +391,8 @@
 	name = "improvised surgery saw"
 	result = /obj/item/rogueweapon/surgery/saw/improv
 	reqs = list(
-		/obj/item/natural/fibers = 1, 
-		/obj/item/natural/stone = 1, 
+		/obj/item/natural/fibers = 1,
+		/obj/item/natural/stone = 1,
 		/obj/item/grown/log/tree/stick = 1,
 		)
 	craftdiff = 1
@@ -419,7 +419,7 @@
 // I don't want ration paper to be too expensive, making wrapped food underused
 // So instead, ration paper is a very cheap recipe with parchment and tallow (instead of full fat) that makes 2 wrapper
 // However, it is heavily skillgated by cooking skill. At Craftdiff 4, only Innkeep / Cook can make it easily off the bat.
-// Servant w/ high int can also make it, but it is a bit harder. Or just be middle aged / old instead lol 
+// Servant w/ high int can also make it, but it is a bit harder. Or just be middle aged / old instead lol
 // For 1 fat, 1 log (48 reagents), you get 4 tallow + 6 piece of paper yielding 12 ration wrappers with 1 tallow leftover.
 /datum/crafting_recipe/roguetown/survival/ration_wrapper
 	name = "ration wrapping paper (x2)"
