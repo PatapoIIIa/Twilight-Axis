@@ -130,7 +130,6 @@
 //Checking if a bag is empty before crafting. If not, it's unavailable for crafting.
 /obj/item/storage/roguebag/proc/is_empty_for_crafting(mob/user)
 	if(contents.len > 0)
-		user << span_alert("The sack must be empty to use for crafting!")
 		return FALSE
 	return TRUE
 
