@@ -462,6 +462,9 @@
 /obj/machinery/light/rogue/hearth/attack_right(mob/user)
 	var/datum/skill/craft/cooking/cs = user?.get_skill_level(/datum/skill/craft/cooking)
 	var/cooktime_divisor = get_cooktime_divisor(cs)
+	if(!on)
+		to_chat(user, span_notice("[src] is not lit."))
+		return
 	if(do_after(user, 2 SECONDS / cooktime_divisor, target = src))
 		to_chat(user, span_info("I fan the flame on [src].")) // Until line combine is on by default gotta do this to avoid spam
 		try_cook(cooktime_divisor)
@@ -651,7 +654,7 @@
 			else if(!on)
 				crucible.cool_down(crucible.cool_rate)
 		if(istype(attachment, /obj/item/cooking/pan))
-			if(food)
+			if(food && on)
 				var/obj/item/C = food.cooking(20 * cooktime_divisor, 20, src)
 				if(C)
 					qdel(food)
