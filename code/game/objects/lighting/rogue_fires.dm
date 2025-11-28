@@ -456,7 +456,8 @@
 				. += "There's \a [attachment.name] on it, it is boiling." // This is common shorthand for the contents don't nitpick
 			else
 				. += "There's \a [attachment.name] on it. It is not boiling"
-		. += span_notice("Right click to start fanning the flame and make it cook faster.")
+		if(on)
+			. += span_notice("Right click to start fanning the flame and make it cook faster.")
 
 /obj/machinery/light/rogue/hearth/attack_right(mob/user)
 	var/datum/skill/craft/cooking/cs = user?.get_skill_level(/datum/skill/craft/cooking)
