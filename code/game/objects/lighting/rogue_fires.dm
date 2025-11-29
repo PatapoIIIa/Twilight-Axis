@@ -788,7 +788,7 @@
 	cookonme = TRUE
 	max_integrity = 30
 	soundloop = /datum/looping_sound/fireloop
-	var/healing_range = 2
+	var/healing_range = 1
 
 /obj/machinery/light/rogue/campfire/process()
 	..()
@@ -806,9 +806,9 @@
 			if(!human.has_status_effect(/datum/status_effect/buff/healing/campfire))
 				to_chat(human, "The warmth of the fire comforts me, affording me a short rest.")
 			// Astrata followers get enhanced fire healing
-			var/buff_strength = 0.5
+			var/buff_strength = 1
 			if(human.patron?.type == /datum/patron/divine/astrata || human.patron?.type == /datum/patron/inhumen/matthios) //Fire and the fire-stealer
-				buff_strength = 1
+				buff_strength = 1.5
 			human.apply_status_effect(/datum/status_effect/buff/healing/campfire, buff_strength)
 			human.add_stress(/datum/stressevent/campfire)
 
@@ -841,7 +841,7 @@
 	pass_flags = LETPASSTHROW
 	bulb_colour = "#eea96a"
 	max_integrity = 60
-	healing_range = 4
+	healing_range = 2
 
 /obj/machinery/light/rogue/campfire/densefire/CanPass(atom/movable/mover, turf/target)
 	if(istype(mover) && (mover.pass_flags & PASSTABLE))

@@ -81,7 +81,7 @@
 		if(/datum/patron/divine/abyssor)
 			head = /obj/item/clothing/head/roguetown/roguehood/abyssor
 			wrists = /obj/item/clothing/neck/roguetown/psicross/abyssor
-			cloak = /obj/item/clothing/cloak/abyssortabard
+			cloak = /obj/item/clothing/cloak/tabard/abyssortabard
 			mask = /obj/item/clothing/mask/rogue/facemask/steel
 		if(/datum/patron/divine/xylix)
 			wrists = /obj/item/clothing/neck/roguetown/luckcharm

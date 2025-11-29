@@ -72,7 +72,7 @@
 		S.name = "[S.name] ([index])" //TA EDIT
 
 /datum/outfit/job/roguetown/knight
-	//cloak = /obj/item/clothing/cloak/stabard/surcoat/guard
+	//cloak = /obj/item/clothing/cloak/tabard/stabard/surcoat/guard
 	neck = /obj/item/clothing/neck/roguetown/bevor
 	gloves = /obj/item/clothing/gloves/roguetown/plate
 	wrists = /obj/item/clothing/wrists/roguetown/bracers
@@ -176,9 +176,9 @@
 		armor = armors[armorchoice]
 
 		var/heraldy = list(
-				"Surcoat" 	= /obj/item/clothing/cloak/stabard/guard,
+				"Surcoat" 	= /obj/item/clothing/cloak/tabard/stabard/guard,
 				"Tabard"		= /obj/item/clothing/cloak/tabard/knight,
-				"Jupon"		= /obj/item/clothing/cloak/stabard/surcoat/guard,
+				"Jupon"		= /obj/item/clothing/cloak/tabard/stabard/surcoat/guard,
 				)
 		var/heraldychoice = input("Choose your heraldy.", "RAISE UP THE BANNER") as anything in heraldy
 		cloak = heraldy[heraldychoice]
@@ -272,9 +272,9 @@
 		armor = armors[armorchoice]
     
 		var/heraldy = list(
-				"Surcoat" 	= /obj/item/clothing/cloak/stabard/guard,
+				"Surcoat" 	= /obj/item/clothing/cloak/tabard/stabard/guard,
 				"Tabard"		= /obj/item/clothing/cloak/tabard/knight,
-				"Jupon"		= /obj/item/clothing/cloak/stabard/surcoat/guard,
+				"Jupon"		= /obj/item/clothing/cloak/tabard/stabard/surcoat/guard,
 				)
 		var/heraldychoice = input("Choose your heraldy.", "RAISE UP THE BANNER") as anything in heraldy
 		cloak = heraldy[heraldychoice]
@@ -392,9 +392,9 @@
 		armor = armors[armorchoice]
     
 		var/heraldy = list(
-				"Surcoat" 	= /obj/item/clothing/cloak/stabard/guard,
+				"Surcoat" 	= /obj/item/clothing/cloak/tabard/stabard/guard,
 				"Tabard"		= /obj/item/clothing/cloak/tabard/knight,
-				"Jupon"		= /obj/item/clothing/cloak/stabard/surcoat/guard,
+				"Jupon"		= /obj/item/clothing/cloak/tabard/stabard/surcoat/guard,
 				)
 		var/heraldychoice = input("Choose your heraldy.", "RAISE UP THE BANNER") as anything in heraldy
 		cloak = heraldy[heraldychoice]
@@ -523,9 +523,9 @@
 			head = helmets[helmchoice]
     
 		var/heraldy = list( //Champions get lord's heraldy with a bit more variety, due to their unusual equipment
-				"Surcoat" 	= /obj/item/clothing/cloak/stabard/guard,
+				"Surcoat" 	= /obj/item/clothing/cloak/tabard/stabard/guard,
 				"Tabard"		= /obj/item/clothing/cloak/tabard/knight,
-				"Jupon"		= /obj/item/clothing/cloak/stabard/surcoat/guard,
+				"Jupon"		= /obj/item/clothing/cloak/tabard/stabard/surcoat/guard,
 				"Halfcloak" = /obj/item/clothing/cloak/half/knight,
 				"Fur Cloak" = /obj/item/clothing/cloak/raincloak/furcloak/knight,
 				)

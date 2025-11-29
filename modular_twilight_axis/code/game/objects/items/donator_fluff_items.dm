@@ -58,7 +58,7 @@
 	name = "Votive Thorns"
 	desc = "Promises hurt, but so does plucking rosa. Hoping hurts, but so does looking at the beauty of Astrata's light. Pick yourself back up. Remember your promise, despite the thorns."
 	icon_state = "inverse"
-	icon = 'modular_azurepeak/icons/obj/items/donor_weapons_64.dmi'
+	icon = 'icons/obj/items/donor_weapons_64.dmi'
 	max_blade_int = 240
 	wdefense = 4
 	force = 14
@@ -68,7 +68,7 @@
 	name = "Regret"
 	desc = "People bring the small flames of their wishes together... to keep them from burning out, we cast our own flames into the biggest fire we can find. But you know... I didn't bring a flame with me. As for me, maybe I just wandered up to the campfire to warm myself a little..."
 	icon_state = "eiren"
-	icon = 'modular_azurepeak/icons/obj/items/donor_weapons_64.dmi'
+	icon = 'icons/obj/items/donor_weapons_64.dmi'
 	max_blade_int = 240
 	wdefense = 4
 	force = 14
