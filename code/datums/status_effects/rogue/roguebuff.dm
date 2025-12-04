@@ -1204,10 +1204,11 @@
 /datum/status_effect/buff/clash/on_remove()
 	. = ..()
 	owner.apply_status_effect(/datum/status_effect/debuff/clashcd)
-	var/newdur = world.time - dur
+	// Optional balance lever -- stamina drain if we let Riposte expire without anything happening.
+	/*var/newdur = world.time - dur
 	var/mob/living/carbon/human/H = owner
 	if(newdur > (initial(duration) - 0.2 SECONDS))	//Not checking exact duration to account for lag and any other tick / timing inconsistencies.
-		H.bad_guard(span_warning("I held my focus for too long. It's left me drained."))
+		H.bad_guard(span_warning("I held my focus for too long. It's left me drained."))*/
 	UnregisterSignal(owner, COMSIG_ATOM_BULLET_ACT)
 	UnregisterSignal(owner, COMSIG_MOB_ATTACKED_BY_HAND)
 	UnregisterSignal(owner, COMSIG_MOB_ITEM_ATTACK)

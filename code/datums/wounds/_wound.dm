@@ -289,6 +289,10 @@ GLOBAL_LIST_INIT(primordial_wounds, init_primordial_wounds())
 		owner.simple_bleeding -= bleed_rate
 		bleed_rate = amount
 		owner.simple_bleeding += bleed_rate
+		if(abs(owner.simple_bleeding) < 0.01) //Float underflow catch
+			owner.simple_wounds = list()
+			owner.simple_bleeding = 0
+			owner.bleed_rate = 0
 	else if(bodypart_owner)
 		bodypart_owner.bleeding -= bleed_rate
 		bleed_rate = amount

@@ -9,7 +9,7 @@
 	name = "Elven Rider Cuirass, Steel (+1 Fur, +1 Tallow, +3 Cured Leather)"
 	req_bar = /obj/item/ingot/steel
 	additional_items = list(/obj/item/natural/fur, /obj/item/reagent_containers/food/snacks/tallow, /obj/item/natural/hide/cured, /obj/item/natural/hide/cured, /obj/item/natural/hide/cured)
-	created_item = /obj/item/clothing/suit/roguetown/armor/plate/half/fencer/twilight_elven
+	created_item = /obj/item/clothing/suit/roguetown/armor/plate/cuirass/fencer/twilight_elven
 	craftdiff = 5
 
 /datum/anvil_recipe/armor/steel/platebracer/twilight_elven

@@ -6,3 +6,5 @@
 	"...motionless, you lay in the tall grass, your arquebus aimed at the passing caravan's guard. Covering your right ear with your shoulder, you steadily breathe out, gently pushing the trigger...",
 	"...the line of grenadiers fires their guns, the sound of gunshots just barely bearable thanks to you covering your ears moments earlier. The enemies fall by the dozens, yet more of them continue their advance. «Fix bayonets!», you command to your men, drawing your own kriegsmesser from its sheath. «For the Empire, charge!..»"
 	)
+	max_untraited_level = SKILL_LEVEL_EXPERT
+	trait_uncap = list(TRAIT_FIREARMS_MARKSMAN = SKILL_LEVEL_LEGENDARY)

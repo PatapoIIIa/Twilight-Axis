@@ -345,6 +345,7 @@ GLOBAL_LIST_EMPTY(chosen_names)
 			dat += "</td>"
 
 			dat += "<td style='width:33%;text-align:right'>"
+			dat += "<a href='?_src_=prefs;preference=changelog;task=menu'>Changelog</a>"
 			dat += "</td>"
 			dat += "</tr>"
 
@@ -1402,6 +1403,10 @@ Slots: [job.spawn_positions] [job.round_contrib_points ? "RCP: +[job.round_contr
 		return
 	else if(href_list["preference"] == "triumph_buy_menu")
 		SStriumphs.startup_triumphs_menu(user.client)
+
+	else if(href_list["preference"] == "changelog")
+		user.client.changelog()
+		return TRUE
 
 	else if(href_list["preference"] == "keybinds")
 		switch(href_list["task"])

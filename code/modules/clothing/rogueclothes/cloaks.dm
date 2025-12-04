@@ -340,7 +340,6 @@
 	color = CLOTHING_AZURE
 	detail_tag = "_quad"
 	detail_color = CLOTHING_WHITE
-	custom_design = TRUE
 
 /obj/item/clothing/cloak/tabard/retinue/Initialize()
 	. = ..()

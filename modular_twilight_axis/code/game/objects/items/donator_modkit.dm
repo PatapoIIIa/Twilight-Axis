@@ -105,3 +105,31 @@
 	desc = "A small container of special morphing dust, perfect to make a specifc item. Required: Heavy Helmet"
 	target_items = list(/obj/item/clothing/head/roguetown/helmet/heavy)
 	result_item = /obj/item/clothing/head/roguetown/helmet/heavy/astratan/oldrw
+
+//Jägerbüchse - Arquebus
+/obj/item/enchantingkit/jagerrifle
+	name = "'Jägerbüchse' morphing elixir"
+	desc = "A small container of special morphing dust, perfect to make a specifc item. Required: Arquebus"
+	target_items = list(/obj/item/gun/ballistic/twilight_firearm/arquebus, /obj/item/gun/ballistic/twilight_firearm/arquebus/bayonet)
+	result_item = /obj/item/gun/ballistic/twilight_firearm/arquebus/jagerrifle
+
+/obj/item/enchantingkit/jagerrifle/pre_attack(obj/item/I, mob/user)
+	if(is_type_in_list(I, target_items))
+		var/result_type
+		if(istype(I, /obj/item/gun/ballistic/twilight_firearm/arquebus/bayonet))
+			result_type = /obj/item/gun/ballistic/twilight_firearm/arquebus/bayonet/jagerrifle
+		else if(istype(I, /obj/item/gun/ballistic/twilight_firearm/arquebus))
+			result_type = /obj/item/gun/ballistic/twilight_firearm/arquebus/jagerrifle
+		else
+			return ..()
+		
+		var/obj/item/R = new result_type(get_turf(user))
+		to_chat(user, span_notice("You apply the [src] to [I], using the enchanting dust and tools to turn it into [R]."))
+		R.name += " <font size = 1>([I.name])</font>"
+		remove_item_from_storage(I)
+		qdel(I)
+		user.put_in_hands(R)
+		qdel(src)
+		return TRUE
+	else
+		return ..()

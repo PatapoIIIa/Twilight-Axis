@@ -103,6 +103,7 @@
 	name = "Gun Barrel"
 	icon_state = "gunbarrel"
 	desc = "The 'aiming' part of a gun."
+	smeltresult = /obj/item/ingot/steel
 	w_class = WEIGHT_CLASS_NORMAL
 	icon = 'modular_twilight_axis/firearms/icons/misc.dmi'
 
@@ -110,6 +111,7 @@
 	name = "Iron Barrel"
 	icon_state = "ironbarrel"
 	desc = "The 'aiming' part of a gun."
+	smeltresult = /obj/item/ingot/iron
 	w_class = WEIGHT_CLASS_NORMAL
 	icon = 'modular_twilight_axis/firearms/icons/misc.dmi'
 

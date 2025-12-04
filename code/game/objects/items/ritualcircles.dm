@@ -480,7 +480,6 @@
 	spawn(20)
 		playsound(loc, 'sound/combat/hits/onmetal/grille (2).ogg', 50)
 		target.equipOutfit(/datum/outfit/job/roguetown/dreamwalker_armorrite)
-		target.apply_status_effect(/datum/status_effect/debuff/devitalised)
 		spawn(40)
 			to_chat(target, span_purple("Reality is but a fragile dream. You are the dreamer, and your will is law."))
 
@@ -1196,7 +1195,6 @@
 	spawn(20)
 		playsound(loc, 'sound/combat/hits/onmetal/grille (2).ogg', 50)
 		target.equipOutfit(/datum/outfit/job/roguetown/darksteelrite)
-		target.apply_status_effect(/datum/status_effect/debuff/devitalised)
 		spawn(40)
 			to_chat(target, span_purple("They are ignorant, backwards, without hope. You. You will be powerful."))
 
@@ -1298,7 +1296,6 @@
 	spawn(20)
 		playsound(loc, 'sound/combat/hits/onmetal/grille (2).ogg', 50)
 		target.equipOutfit(/datum/outfit/job/roguetown/gildedrite)
-		target.apply_status_effect(/datum/status_effect/debuff/devitalised)
 		spawn(40)
 			to_chat(target, span_cult("More to the maw, this shall help feed our greed."))
 
@@ -1457,7 +1454,6 @@
 	spawn(20)
 		playsound(loc, 'sound/combat/hits/onmetal/grille (2).ogg', 50)
 		target.equipOutfit(/datum/outfit/job/roguetown/viciousrite)
-		target.apply_status_effect(/datum/status_effect/debuff/devitalised)
 		spawn(40)
 			to_chat(target, span_cult("Break them."))
 

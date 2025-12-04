@@ -338,13 +338,22 @@
 	new /obj/item/quiver/twilight_bullet/blessed(src)
 
 /datum/inqports/equipment/twilight_otavian_grapeshot
-	name = "(10 charges) Otavian Grapeshot"
+	name = "(20 charges) Grapeshot"
 	item_type = /obj/structure/closet/crate/chest/inqcrate/supplies/twilight_otavian_grapeshot
 	marquescost = 15
 
 /obj/structure/closet/crate/chest/inqcrate/supplies/twilight_otavian_grapeshot/Initialize()
 	. = ..()
-	new /obj/item/quiver/twilight_bullet/cannonball/otavian_grapeshot(src)
+	new /obj/item/quiver/twilight_bullet/cannonball/grapeshot(src)
+
+/datum/inqports/equipment/twilight_otavian_cannonballs
+	name = "(20 charges) Cannonballs"
+	item_type = /obj/structure/closet/crate/chest/inqcrate/supplies/twilight_otavian_cannonball
+	marquescost = 15
+
+/obj/structure/closet/crate/chest/inqcrate/supplies/twilight_otavian_cannonball/Initialize()
+	. = ..()
+	new /obj/item/quiver/twilight_bullet/cannonball/lead(src)
 
 /datum/inqports/equipment/twilight_silver_bullets
 	name = "(10 bullets) Silver Ammunition"

@@ -1,0 +1,58 @@
+2025-12-01:
+  Geevies:
+  - balance: The priestly robes that Bishops and the like get are now fireproof.
+  PatapoIIIa:
+  - bugfix: Items that are explicitly blocked from being used as ingredients (e.g.,
+      full storage bags, written paper, etc.) will no longer be consumed when performing
+      multi-quantity crafting.
+  - code_imp: Synchronized the item consumption logic with the `can_craft_with()`
+      check, making the crafting system more robust against complex item states.
+2025-12-02:
+  NewyearnewmeUwu:
+  - bugfix: chaining people after walking away is no longer possible
+  PatapoIIIa:
+  - balance: Fixed an exploit that allowed infinite experience gain by repeatedly
+      reinserting and retrieving a single ingot from a lit furnace.
+  - bugfix: Ingot items now correctly reset their 'smelted' status when placed back
+      into a furnace, requiring a full smelting cycle for new experience gain.
+  - code_imp: Updated `add_item` logic for smelters.
+  - bugfix: Fixed the "type masquerade" issue for crafted long pipes, which previously
+      caused them to have flickering sprites and break after cleaning.
+  - bugfix: Fixed a bug where crafted pipes would start with residual "ashes".
+  mazzinsanity:
+  - rscadd: Added new stat roll emotes
+2025-12-03:
+  CometBlaze:
+  - rscadd: Revenant wretches can now choose the Disgraced Knight subclass
+  Geevies:
+  - rscadd: Sounds coming from z-levels above or below you will now be a bit quieter
+      and sound muffled.
+  - bugfix: Fixes examines on rings not including the 'I have' or 'He has' or 'She
+      has' before it.
+  - bugfix: Fixes fancy coats rendering over your hands when worn in the cloak layer.
+  - bugfix: Fixes cloaks in general that have sleeves, ripping their sleeves off even
+      when you don't have lost arms.
+  Ketrai:
+  - rscadd: Priest faith is unlocked
+  WeNeedMorePhoron:
+  - bugfix: Fixed bronze bullet sprite and removed an unneeded the from swinging warning
+  - rscdel: Removed forcing client music to load on aghost / ghost, which was definitely
+      causing aghost lag and may have contributed to ghost lag
+  - bugfix: Fixed runtime error related to AI mob pathing when pawn is null
+  - bugfix: Cheeles no longer cause trivial brute damage when feeding or infusing
+      blood
+  - bugfix: Embedded objects that cause no pain/damage when removed no longer trigger
+      pain sfx
+  - bugfix: Vampire Lord traits now correctly include strength unbound
+  - bugfix: Bloodpool no longer spawns broken visual tracker effects
+  - bugfix: Chains are no longer deleted when converting someone to a vampire
+  - bugfix: Migration triumph bonus now only applies if the player prioritizes that
+      role
+  - bugfix: Migration now shuffles results when all players have equal priority
+  - bugfix: Smoke effects now respect TRAIT_NOBREATH and TRAIT_NOMETABOLISM
+  - bugfix: Summoning runes can no longer be cheesed by building walls around them
+  - bugfix: Summoning runes now properly destroy walls within their range when releasing
+  - rscadd: Changelog button on top right of preferences screen
+  - rscadd: Item will remember the last intent you have selected when it is dropped,
+      and your hands will remember the last intent you had selected with that hand
+      when it was empty.

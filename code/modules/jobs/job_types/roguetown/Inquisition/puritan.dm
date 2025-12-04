@@ -23,7 +23,7 @@
 	job_subclasses = list(
 		/datum/advclass/puritan/inspector,
 		/datum/advclass/puritan/ordinator,
-    /datum/advclass/puritan/blackpowder
+    	/datum/advclass/puritan/blackpowder
 	)
 	same_job_respawn_delay = 30 MINUTES
 

@@ -84,3 +84,6 @@
 /obj/item/clothing/mask/rogue/eyepatch/left/fake
 	desc = "An eyepatch, fitted for the left eye. It has an almost imperceptible gap so that you can see something."
 	block2add = null
+
+/obj/item/clothing/mask/rogue/facemask/steel/kazengun
+	armor = ARMOR_PLATE

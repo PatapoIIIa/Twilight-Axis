@@ -918,6 +918,12 @@ GLOBAL_LIST_EMPTY(loadout_items_by_category)
 	path = /obj/item/enchantingkit/kumie_coat
 	donatitem = TRUE
 
+/datum/loadout_item/donator_jagerrifle
+	name = "Donator Kit - Jägerbüchse - Required: Arquebus"
+	category = list("Разное", "Донат")
+	path = /obj/item/enchantingkit/jagerrifle
+	donatitem = TRUE
+
 // Разное
 /datum/loadout_item/donat
 	name = "Музыкальная коробка"
@@ -1079,9 +1085,15 @@ GLOBAL_LIST_EMPTY(loadout_items_by_category)
 	donatitem = TRUE
 
 /datum/loadout_item/donat/tabard/crusader/ravox
-	name = "Табард-плащ Равокса"
+	name = "Табард-плащ Равокса(старый)"
 	category = list("Плащи", "Донат")
 	path = /obj/item/clothing/cloak/cleric/ravox
+	donatitem = TRUE
+
+/datum/loadout_item/donat/tabard/templar/ravox
+	name = "Табард-плащ Равокса(новый)"
+	category = list("Плащи", "Донат")
+	path = /obj/item/clothing/cloak/templar/ravox
 	donatitem = TRUE
 
 /datum/loadout_item/donat/tabard/crusader/eora

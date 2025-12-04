@@ -12,7 +12,7 @@
 	w_class = WEIGHT_CLASS_BULKY
 	spread = 10
 	recoil = 3
-	associated_skill = /datum/skill/combat/twilight_firearms
+	associated_skill = /datum/skill/combat/maces
 	force = 10
 	var/cocked = FALSE
 	cartridge_wording = "runed sphere"
@@ -28,7 +28,7 @@
 	var/reload_time = 8
 	damfactor = 0.7
 	var/critfactor = 0.7
-	var/rangefactor = 1
+	var/npcdamfactor = 2
 
 /obj/item/gun/ballistic/revolver/grenadelauncher/twilight_runelock/getonmobprop(tag)
 	. = ..()
@@ -171,7 +171,7 @@
 		return
 	for(var/obj/item/ammo_casing/CB in get_ammo_list(FALSE, TRUE))
 		var/obj/projectile/bullet/BB = CB.BB
-		BB.range *= rangefactor
+		BB.gunpowder_npc_critfactor *= npcdamfactor
 		BB.critfactor *= critfactor
 		BB.damage *= damfactor * (user.STAPER > 10 ? user.STAPER / 10 : 1)
 	cocked = FALSE
@@ -189,12 +189,41 @@
 	start_empty = TRUE
 
 /datum/intent/shoot/twilight_runelock
-	chargetime = 0
-	charging_slowdown = 0
+	chargedrain = 0
+
+/datum/intent/shoot/twilight_runelock/get_chargetime()
+	if(mastermob && chargetime)
+		var/newtime = chargetime
+		//skill block
+		newtime = newtime + 75
+		newtime = newtime - (mastermob.get_skill_level(/datum/skill/combat/twilight_firearms) * 15)
+		//per block
+		newtime = newtime + 20
+		newtime = newtime - ((mastermob.STAPER)*1.5)
+		if(newtime > 0)
+			return newtime
+		else
+			return 0.1
+	return chargetime
 
 /datum/intent/arc/twilight_runelock
 	chargetime = 1
 	chargedrain = 0
+
+/datum/intent/arc/twilight_runelock/get_chargetime()
+	if(mastermob && chargetime)
+		var/newtime = chargetime
+		//skill block
+		newtime = newtime + 70
+		newtime = newtime - (mastermob.get_skill_level(/datum/skill/combat/twilight_firearms) * 15)
+		//per block
+		newtime = newtime + 20
+		newtime = newtime - ((mastermob.STAPER)*1.5)
+		if(newtime > 0)
+			return newtime
+		else
+			return 1
+	return chargetime
 
 /obj/item/gun/ballistic/revolver/grenadelauncher/twilight_runelock/rifle
 	name = "Doomsdae"
@@ -206,6 +235,7 @@
 	item_state = "runelock"
 	force = 10
 	force_wielded = 15
+	associated_skill = /datum/skill/combat/staves
 	possible_item_intents = list(/datum/intent/mace/strike/wood)
 	gripped_intents = list(/datum/intent/shoot/twilight_runelock, /datum/intent/arc/twilight_runelock, INTENT_GENERIC)
 	pixel_y = -16
@@ -220,7 +250,6 @@
 	wdefense = 3
 	damfactor = 1
 	critfactor = 1
-	rangefactor = 2
 	reload_time = 12
 
 /obj/item/gun/ballistic/revolver/grenadelauncher/twilight_runelock/rifle/getonmobprop(tag)

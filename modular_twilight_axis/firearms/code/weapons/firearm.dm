@@ -36,8 +36,10 @@
 	switch(gunpowder)
 		if("fyrepowder")
 			. += span_bold("Поджигает цель при попадании.")
+		if("holy fyrepowder")
+			. += span_bold("Поджигает цель святым огнем при попадании. Эффект усилен против нежити.")
 		if("thunderpowder")
-			. += span_bold("Оглушает цель на короткое время при попадании.")
+			. += span_bold("При попадании замедляет цель, а также оглушает её на короткий период.")
 		if("corrosive gunpowder")
 			. += span_bold("Покрывает цель кислотой, наносящей периодический урон броне и здоровью.")
 		if("arcyne gunpowder")
@@ -80,6 +82,13 @@
 	icon_state = "powderflask_arcyne"
 	gunpowder = "arcyne gunpowder"
 	charges = 10
+
+/obj/item/twilight_powderflask/holyfyre
+	name = "powderflask"
+	desc = "Пороховница, предназначенная для удобной перезарядки огнестрельного оружия. Содержит порох священного огня, благословленный осколком кометы Сион, чтобы беспощадно разить врагов Всеотца."
+	icon_state = "powderflask_holyfyre"
+	gunpowder = "holy fyrepowder"
+	charges = 16
 
 /obj/effect/particle_effect/smoke/arquebus
 	name = "smoke"
@@ -147,7 +156,7 @@
 	smeltresult = /obj/item/ingot/steel
 	bolt_type = BOLT_TYPE_NO_BOLT
 	casing_ejector = FALSE
-	associated_skill = null
+	associated_skill = /datum/skill/combat/staves
 	//pickup_sound = 'sound/sheath_sounds/draw_from_holster.ogg'
 	//sheathe_sound = 'sound/sheath_sounds/put_back_to_holster.ogg'
 	var/spread_num = 10
@@ -193,7 +202,7 @@
 		fire_sound = "modular_twilight_axis/firearms/sound/umbra_fire.ogg"
 	else
 		switch(gunpowder)
-			if("fyrepowder")
+			if("fyrepowder", "holy fyrepowder")
 				fire_sound = pick("modular_twilight_axis/firearms/sound/fyrepowder/arquefire.ogg", "modular_twilight_axis/firearms/sound/fyrepowder/arquefire2.ogg", "modular_twilight_axis/firearms/sound/fyrepowder/arquefire3.ogg",
 							"modular_twilight_axis/firearms/sound/fyrepowder/arquefire4.ogg", "modular_twilight_axis/firearms/sound/fyrepowder/arquefire5.ogg")
 			if("thunderpowder")
@@ -332,7 +341,7 @@
 			return
 		else
 			switch(W.gunpowder)
-				if("fyrepowder")
+				if("fyrepowder", "holy fyrepowder")
 					playsound(src, "modular_twilight_axis/firearms/sound/fyrepowder/pour_powder.ogg",  100, FALSE)
 				if("thunderpowder")
 					playsound(src, "modular_twilight_axis/firearms/sound/thunderpowder/pour_powder.ogg",  100, FALSE)
@@ -511,9 +520,6 @@
 		spread = 0
 	for(var/obj/item/ammo_casing/CB in get_ammo_list(FALSE, TRUE))
 		var/obj/projectile/bullet/BB = CB.BB
-		BB.damage *= damfactor * (user.STAPER > 10 ? user.STAPER / 10 : 1)
-		BB.critfactor *= critfactor
-		BB.gunpowder_npc_critfactor *= npcdamfactor
 		BB.gunpowder = gunpowder
 	reloaded = FALSE
 	if(advanced_icon)
@@ -526,7 +532,7 @@
 		..()
 		if(!silenced)
 			switch(gunpowder)
-				if("fyrepowder")
+				if("fyrepowder", "holy fyrepowder")
 					spawn (5)
 						new/obj/effect/particle_effect/smoke/arquebus/fyre(get_ranged_target_turf(user, user.dir, 1))
 					spawn (10)
@@ -603,7 +609,7 @@
 				icon = advanced_icon_s
 			if(!silenced)
 				switch(gunpowder)
-					if("fyrepowder")
+					if("fyrepowder", "holy fyrepowder")
 						spawn (1)
 							new/obj/effect/particle_effect/smoke/arquebus/fyre(get_ranged_target_turf(user, user.dir, 1))
 						spawn (5)
@@ -701,25 +707,21 @@
 	icon = 'modular_twilight_axis/firearms/icons/arquebusbaoynet.dmi'
 	gripped_intents = list(/datum/intent/shoot/twilight_firearm, /datum/intent/arc/twilight_firearm, INTENT_GENERIC, /datum/intent/spear/thrust/militia)
 	wdefense = 5
-	associated_skill = /datum/skill/combat/polearms
-
-/obj/item/gun/ballistic/twilight_firearm/arquebus/bayonet/pre_attack(atom/A, mob/living/user, params)
-	if(!user.used_intent.tranged)
-		if(!istype(A, /obj/structure/fluff/statue/tdummy))
-			var/firearm_skill = (user?.mind ? user.get_skill_level(/datum/skill/combat/twilight_firearms) : 0)
-			var/polearms_skill = (user?.mind ? user.get_skill_level(/datum/skill/combat/polearms) : 1)
-			if(firearm_skill > polearms_skill)
-				src.associated_skill = /datum/skill/combat/twilight_firearms
-			else
-				src.associated_skill = /datum/skill/combat/polearms
-		else
-			src.associated_skill = /datum/skill/combat/polearms
-	. = ..()
 
 /obj/item/gun/ballistic/twilight_firearm/arquebus/decorated
 	name = "decorated arquebus rifle"
 	desc = "Настоящее произведение искусства в обличии огнестрельного оружия. Приклад и цевье аркебузы украшены золотыми пластинами и инкрустированным рубином, а на стволе выбита надпись: «Взгляните на мои деянья и дрожите»."
 	icon = 'modular_twilight_axis/firearms/icons/decorated_arquebus.dmi'
+
+/obj/item/gun/ballistic/twilight_firearm/arquebus/jagerrifle
+	name = "Jägerbüchse"
+	desc = "Редкая разновидность колесцовой аркебузы, изготавливаемая мастерами Грензельхофта для егерей Фрейкорпс, отличившихся в ходе боевых действий. Легче и менее подвержена износу в сравнении с серийными образцами."
+	icon = 'modular_twilight_axis/firearms/icons/jagerrifle.dmi'
+
+/obj/item/gun/ballistic/twilight_firearm/arquebus/bayonet/jagerrifle
+	name = "Jägerbüchse"
+	desc = "Редкая разновидность колесцовой аркебузы, изготавливаемая мастерами Грензельхофта для егерей Фрейкорпс, отличившихся в ходе боевых действий. Легче и менее подвержена износу в сравнении с серийными образцами. Оснащена штыком для использования в ближнем бою."
+	icon = 'modular_twilight_axis/firearms/icons/jagerriflebayonet.dmi'
 
 /obj/item/gun/ballistic/twilight_firearm/arquebus_pistol
 	name = "arquebus pistol"
@@ -729,6 +731,7 @@
 	item_state = "pistol"
 	force = 10
 	possible_item_intents = list(/datum/intent/shoot/twilight_firearm, /datum/intent/arc/twilight_firearm, /datum/intent/mace/strike/wood)
+	associated_skill = /datum/skill/combat/maces
 	gripped_intents = null
 	wlength = WLENGTH_SHORT
 	w_class = WEIGHT_CLASS_SMALL
@@ -794,6 +797,7 @@
 	icon_state = "flintgonne"
 	item_state = "flintgonne"
 	gripped_intents = list(/datum/intent/shoot/twilight_firearm/flintgonne, /datum/intent/arc/twilight_firearm/flintgonne, INTENT_GENERIC)
+	smeltresult = /obj/item/ingot/iron
 	damfactor = 0.7
 	critfactor = 0.7
 
@@ -831,6 +835,7 @@
 	item_state = "barker"
 	gripped_intents = list(/datum/intent/shoot/twilight_firearm/flintgonne, /datum/intent/arc/twilight_firearm/flintgonne, INTENT_GENERIC)
 	locktype = "Matchlock"
+	smeltresult = /obj/item/ingot/iron
 	damfactor = 0.7
 	critfactor = 0.3
 	npcdamfactor = 2.5
@@ -838,35 +843,18 @@
 
 /obj/item/gun/ballistic/twilight_firearm/handgonne/purgatory
 	name = "Purgatory"
-	desc = "Передовое огнестрельное оружие отавианского ордена Чёрного Пороха, завоевашее зловещую славу на поле боя из-за своей разрушительной мощи, обеспечиваемой двойным зарядом пороха и большим количеством картечи в залпе. Эта ручная пушка вступает в игру, когда одиночного довода против ереси просто недостаточно."
+	desc = "Передовое огнестрельное оружие отавианского ордена Чёрного Пороха, завоевашее зловещую славу на поле боя из-за своей разрушительной мощи. Эта ручная пушка вступает в игру, когда одиночного довода против ереси просто недостаточно."
 	icon = 'modular_twilight_axis/firearms/icons/purgatory/purgatory.dmi'
 	icon_state = "purgatory"
 	item_state = "purgatory"
-	mag_type = /obj/item/ammo_box/magazine/internal/twilight_firearm/handgonne/purgatory
 	advanced_icon = 'modular_twilight_axis/firearms/icons/purgatory/purgatory.dmi'
 	advanced_icon_r = 'modular_twilight_axis/firearms/icons/purgatory/purgatory_r.dmi'
 	advanced_icon_f	= 'modular_twilight_axis/firearms/icons/purgatory/purgatory_f.dmi'
 	advanced_icon_s = 'modular_twilight_axis/firearms/icons/purgatory/purgatory_s.dmi'
-	powder_per_reload = 2
 	gripped_intents = list(/datum/intent/shoot/twilight_firearm, /datum/intent/arc/twilight_firearm, INTENT_GENERIC, /datum/intent/spear/thrust/militia)
-	associated_skill = /datum/skill/combat/twilight_firearms
+	smeltresult = /obj/item/ingot/silver
 	is_silver = TRUE
 	force = 15
 	force_wielded = 20
 	wdefense = 5
 	match_delay = 8
-
-/obj/item/ammo_box/magazine/internal/twilight_firearm/handgonne/purgatory
-	name = "purgatory internal magazine"
-	caliber = "otavian grapeshot"
-
-/obj/item/gun/ballistic/twilight_firearm/handgonne/purgatory/ComponentInitialize()
-	AddComponent(\
-		/datum/component/silverbless,\
-		pre_blessed = BLESSING_PSYDONIAN,\
-		silver_type = SILVER_PSYDONIAN,\
-		added_force = 0,\
-		added_blade_int = 0,\
-		added_int = 0,\
-		added_def = 2,\
-	)

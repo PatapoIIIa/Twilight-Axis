@@ -16,7 +16,7 @@
 	user.update_inv_armor()
 	user.update_inv_shirt()
 
-/obj/item/clothing/suit/roguetown/armor/plate/half/fencer/twilight_elven
+/obj/item/clothing/suit/roguetown/armor/plate/cuirass/fencer/twilight_elven
 	name = "elven rider cuirass"
 	desc = "An expertly smithed form-fitting steel cuirass that is much lighter and agile, but breaks with much more ease. Its sleek design marks it as a product of elven craftsmanship."
 	icon_state = "elven_chestplate"

@@ -55,7 +55,7 @@
 /datum/supply_pack/rogue/armor_steel/cuirass_steel/twilight_elven
 	name = "Elven Rider Cuirass"
 	cost = 90
-	contains = list(/obj/item/clothing/suit/roguetown/armor/plate/half/fencer/twilight_elven)
+	contains = list(/obj/item/clothing/suit/roguetown/armor/plate/cuirass/fencer/twilight_elven)
 
 /datum/supply_pack/rogue/armor_steel/bracers_plate/twilight_elven
 	name = "Elver Rider Bracers"

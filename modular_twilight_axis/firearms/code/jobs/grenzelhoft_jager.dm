@@ -5,22 +5,23 @@
 	allowed_races = RACES_ALL_KINDS
 	outfit = /datum/outfit/job/roguetown/mercenary/twilight_grenzelhoft_jager
 	subclass_languages = list(/datum/language/grenzelhoftian)
-	maximum_possible_slots = 4
-	min_pq = 15
+	maximum_possible_slots = 3
+	min_pq = 25 // Все мерки в данный момент с 25 открываются
 	cmode_music = 'sound/music/combat_grenzelhoft.ogg'
 	class_select_category = CLASS_CAT_GRENZELHOFT
 	category_tags = list(CTAG_MERCENARY)
-	traits_applied = list(TRAIT_DODGEEXPERT, TRAIT_STEELHEARTED)
+	traits_applied = list(TRAIT_DODGEEXPERT, TRAIT_FIREARMS_MARKSMAN, TRAIT_SURVIVAL_EXPERT)
 	subclass_stats = list(
 		STATKEY_WIL = 2,
 		STATKEY_SPD = 2,
 		STATKEY_PER = 2,
-		STATKEY_STR = 1,
+		STATKEY_LCK = 1,
 		STATKEY_CON = -1
 	)
 	subclass_skills = list(
 		/datum/skill/combat/twilight_firearms = SKILL_LEVEL_MASTER,
 		/datum/skill/combat/axes = SKILL_LEVEL_JOURNEYMAN,
+		/datum/skill/combat/staves = SKILL_LEVEL_APPRENTICE,
 		/datum/skill/labor/butchering = SKILL_LEVEL_APPRENTICE,
 		/datum/skill/craft/traps = SKILL_LEVEL_APPRENTICE,
 		/datum/skill/craft/sewing = SKILL_LEVEL_APPRENTICE,
@@ -43,7 +44,7 @@
 	wrists = /obj/item/clothing/wrists/roguetown/bracers
 	belt = /obj/item/storage/belt/rogue/leather
 	beltl = /obj/item/quiver/twilight_bullet/lead
-	beltr = /obj/item/rogueweapon/stoneaxe/woodcut/steel
+	beltr = /obj/item/rogueweapon/stoneaxe/woodcut
 	backl = /obj/item/storage/backpack/rogue/backpack
 	neck = /obj/item/clothing/neck/roguetown/gorget
 	shirt = /obj/item/clothing/suit/roguetown/armor/gambeson/heavy/grenzelhoft
@@ -53,6 +54,14 @@
 	shoes = /obj/item/clothing/shoes/roguetown/grenzelhoft
 	gloves = /obj/item/clothing/gloves/roguetown/angle/grenzelgloves
 	backr = /obj/item/gun/ballistic/twilight_firearm/arquebus
-	backpack_contents = list(/obj/item/roguekey/mercenary = 1, /obj/item/twilight_powderflask = 1, /obj/item/rogueweapon/huntingknife = 1, /obj/item/flint = 1, /obj/item/bedroll = 1, /obj/item/storage/belt/rogue/pouch/coins/poor = 1)
+	backpack_contents = list(
+		/obj/item/roguekey/mercenary = 1, 
+		/obj/item/twilight_powderflask = 1, 
+		/obj/item/rogueweapon/huntingknife = 1,
+		/obj/item/rogueweapon/scabbard/sheath = 1,
+		/obj/item/flint = 1,
+		/obj/item/bedroll = 1,
+		/obj/item/flashlight/flare/torch = 1,
+		/obj/item/storage/belt/rogue/pouch/coins/poor = 1)
 
 	H.merctype = 7

@@ -278,6 +278,13 @@ GLOBAL_LIST_EMPTY(cmode_tracks_by_name)
 	shortname = "Ordinator"
 	musicpath = list('sound/music/combat_inqordinator.ogg')
 
+/datum/combat_music/inquis_blackpowder //TA mandated cmode music
+	name = "Inquisition - Blackpowder Order"
+	desc = ""
+	shortname = "Blackpowder"
+	credits = "Warhammer 40,000: Darktide - Disposal Unit"
+	musicpath = list('modular_twilight_axis/firearms/sound/music/combat_blackpowder.ogg')
+
 /datum/combat_music/jester
 	name = "Jester"
 	desc = ""

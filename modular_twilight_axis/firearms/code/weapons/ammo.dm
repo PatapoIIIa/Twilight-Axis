@@ -67,14 +67,6 @@
 	speed = 0.1
 	critfactor = 0.67
 
-/obj/projectile/bullet/twilight_grapeshot/otavian
-	name = "otavian grapeshot"
-	desc = "Плотно упакованный в бумагу набор небольших серебряных шариков. Хорошо сочетается с большими группами нечисти."
-	ammo_type = /obj/item/ammo_casing/caseless/twilight_cannonball/grapeshot/otavian
-	armor_penetration = 60
-	critfactor = 0.5
-	silver = TRUE
-
 /**
  * Special runelock ammo
  * Meant to be LIMITED, but reusable
@@ -106,27 +98,113 @@
 	silver = TRUE
 	blessed = TRUE
 
+/atom/movable/screen/alert/status_effect/debuff/thunderpowder
+	name = "Struck by Thunder"
+	desc = "I was struck by a Thunderpowder shot. My muscles are tense, and it's difficult to move."
+	icon_state = "muscles"
+
+/datum/status_effect/debuff/thunderpowder
+	id = "thunderpowder"
+	alert_type = /atom/movable/screen/alert/status_effect/debuff/thunderpowder
+	effectedstats = list(STATKEY_SPD = -2)
+	duration = 1 MINUTES
+
+/datum/status_effect/debuff/corrosivesplash
+	id = "corrosive splash"
+	alert_type = /atom/movable/screen/alert/status_effect/debuff/corrosivesplash
+	duration = 20 SECONDS
+
+/datum/status_effect/debuff/corrosivesplash/on_apply()
+	. = ..()
+	owner.playsound_local(get_turf(owner), 'sound/misc/lava_death.ogg', 35, FALSE, pressure_affected = FALSE)
+	owner.visible_message(span_warning("[owner] is covered in acid!"), span_danger("I am covered in acid!"))
+	owner.emote("scream")
+
+/atom/movable/screen/alert/status_effect/debuff/corrosivesplash
+	name = "Corrosion"
+	desc = "My armor is boiling on me!"
+	icon_state = "debuff"
+
+/datum/status_effect/debuff/corrosivesplash/tick()
+	var/mob/living/target = owner
+	target.adjustFireLoss(5)
+	if(ishuman(target))
+		var/mob/living/carbon/human/H = target
+		var/list/armor = list()
+		var/list/body_parts = list(H.head, H.wear_mask, H.wear_wrists, H.wear_shirt, H.wear_neck, H.wear_armor, H.wear_pants, H.gloves, H.shoes, H.belt, H.glasses)
+		for(var/bp in body_parts)
+			if(!bp)
+				continue
+			if(bp && istype(bp, /obj/item/clothing))
+				armor += bp
+		if(armor)
+			var/obj/item/clothing/C = pick(armor)
+			C.take_damage(damage_amount = (C.max_integrity * 0.03), damage_type = BURN, damage_flag = "fire")
+
+/obj/projectile/bullet/fire(angle, atom/direct_target)
+	if(istype(fired_from, /obj/item/gun/ballistic/twilight_firearm))
+		var/obj/item/gun/ballistic/twilight_firearm/gun = fired_from
+		if(isliving(firer))
+			var/mob/living/L = firer
+			damage *= gun.damfactor * (L.STAPER > 10 ? L.STAPER / 10 : 1)
+		else
+			damage *= gun.damfactor
+		critfactor *= gun.critfactor
+		gunpowder_npc_critfactor *= gun.npcdamfactor
+		gunpowder = gun.gunpowder
+	..()
+
 /obj/projectile/bullet/on_hit(atom/target, blocked = FALSE)
 	if(isliving(target))
 		var/mob/living/T = target
-		switch(gunpowder) //Hande gunpowder types
-			if("fyrepowder")
-				T.adjust_fire_stacks(round(10 * (damage / 100)))
-				T.ignite_mob()
-			if("thunderpowder")
-				T.Immobilize(30)
-			if("corrosive gunpowder")
-				playsound(src, 'sound/misc/drink_blood.ogg', 100)
-				T.apply_status_effect(/datum/status_effect/buff/acidsplash)
-				new /obj/effect/temp_visual/acidsplash(get_turf(T))
-			if("arcyne gunpowder")
-				if(ishuman(T))
-					var/mob/living/carbon/human/H = T
-					if(istype(H.wear_ring, /obj/item/clothing/ring/fate_weaver))
-						H.wear_ring.obj_break()
-					H.set_silence(5 SECONDS)
-			if("terrorpowder")
-				gunpowder_npc_critfactor += 1
+		if(!istype(T.get_inactive_held_item(), /obj/item/rogueweapon/shield) && !istype(T.get_active_held_item(), /obj/item/rogueweapon/shield) && (blocked == 0))
+			switch(gunpowder) //Hande gunpowder types that are BLOCKED by shields and armor
+				if("fyrepowder")
+					if(istype(src, /obj/projectile/bullet/twilight_grapeshot))
+						T.adjust_fire_stacks(2)
+					else
+						T.adjust_fire_stacks(5)
+					T.ignite_mob()
+				if("holy fyrepowder")
+					if(HAS_TRAIT(T, TRAIT_SILVER_WEAK))
+						if(!T.has_status_effect(/datum/status_effect/fire_handler/fire_stacks/sunder))
+							if(T.patron)
+								to_chat(T, span_danger("The trice-cursed Otavan silver! By [T.patron.name], it hurts!!"))
+							else
+								to_chat(T, span_danger("The trice-cursed Otavan silver! By all that's holy, it hurts!!"))
+						if(istype(src, /obj/projectile/bullet/twilight_grapeshot))
+							T.adjust_fire_stacks(2, /datum/status_effect/fire_handler/fire_stacks/sunder/blessed)
+						else
+							T.adjust_fire_stacks(5, /datum/status_effect/fire_handler/fire_stacks/sunder/blessed)
+					else
+						if(istype(src, /obj/projectile/bullet/twilight_grapeshot))
+							T.adjust_fire_stacks(2, /datum/status_effect/fire_handler/fire_stacks/divine)
+						else
+							T.adjust_fire_stacks(5, /datum/status_effect/fire_handler/fire_stacks/divine)
+					T.ignite_mob()
+				if("thunderpowder")
+					T.Immobilize(30)
+					T.apply_status_effect(/datum/status_effect/debuff/thunderpowder)
+				if("corrosive gunpowder")
+					playsound(src, 'sound/misc/drink_blood.ogg', 100)
+					T.apply_status_effect(/datum/status_effect/debuff/corrosivesplash)
+					new /obj/effect/temp_visual/acidsplash(get_turf(T))
+				if("arcyne gunpowder")
+					if(ishuman(T))
+						var/mob/living/carbon/human/H = T
+						if(istype(H.wear_ring, /obj/item/clothing/ring/fate_weaver))
+							H.wear_ring.obj_break()
+						H.set_silence(5 SECONDS)
+				if("terrorpowder")
+					gunpowder_npc_critfactor += 1
+		else
+			switch(gunpowder) //Hande gunpowder types that are NOT BLOCKED by shields and armor
+				if("corrosive gunpowder")
+					playsound(src, 'sound/misc/drink_blood.ogg', 100)
+					T.apply_status_effect(/datum/status_effect/debuff/corrosivesplash)
+					new /obj/effect/temp_visual/acidsplash(get_turf(T))
+				if("terrorpowder")
+					gunpowder_npc_critfactor += 1
 		if(!T.mind)
 			damage *= gunpowder_npc_critfactor
 	. = ..()
@@ -184,12 +262,26 @@
 	switch(gunpowder)
 		if("fyrepowder")
 			explosion(T, devastation_range = 0, heavy_impact_range = 0, light_impact_range = 1, flame_range = 2, smoke = TRUE, soundin = pick('sound/misc/explode/bottlebomb (1).ogg','sound/misc/explode/bottlebomb (2).ogg'))
+		if("holy fyrepowder")
+			explosion(T, devastation_range = 0, heavy_impact_range = 0, light_impact_range = 1, smoke = TRUE, soundin = pick('sound/misc/explode/bottlebomb (1).ogg','sound/misc/explode/bottlebomb (2).ogg'))
+			for(var/mob/living/L in range(2, T))
+				if(!(L == target))
+					if(HAS_TRAIT(L, TRAIT_SILVER_WEAK))
+						if(!L.has_status_effect(/datum/status_effect/fire_handler/fire_stacks/sunder))
+							if(L.patron)
+								to_chat(L, span_danger("The trice-cursed Otavan silver! By [L.patron.name], it hurts!!"))
+							else
+								to_chat(L, span_danger("The trice-cursed Otavan silver! By all that's holy, it hurts!!"))
+						L.adjust_fire_stacks(3, /datum/status_effect/fire_handler/fire_stacks/sunder/blessed)
+					else
+						L.adjust_fire_stacks(3, /datum/status_effect/fire_handler/fire_stacks/divine)
+					L.ignite_mob()
 		if("corrosive gunpowder")
 			explosion(T, devastation_range = 0, heavy_impact_range = 0, light_impact_range = 1, smoke = TRUE, soundin = pick('sound/misc/explode/bottlebomb (1).ogg','sound/misc/explode/bottlebomb (2).ogg'))
 			for(var/mob/living/L in range(1, T)) //apply damage over time to mobs
 				if(!(L == target))
 					var/mob/living/carbon/M = L
-					M.apply_status_effect(/datum/status_effect/buff/acidsplash)
+					M.apply_status_effect(/datum/status_effect/debuff/corrosivesplash)
 					new /obj/effect/temp_visual/acidsplash(get_turf(M))
 			for(var/turf/turfs_in_range in range(2, T)) //make a splash
 				new /obj/effect/temp_visual/acidsplash(turfs_in_range)
@@ -198,6 +290,7 @@
 			for(var/mob/living/L in range(2, T))
 				if(!(L == target))
 					L.Immobilize(30)
+					L.apply_status_effect(/datum/status_effect/debuff/thunderpowder)
 		if("arcyne gunpowder")
 			explosion(T, devastation_range = 0, heavy_impact_range = 0, light_impact_range = 1, smoke = TRUE, soundin = pick('sound/misc/explode/bottlebomb (1).ogg','sound/misc/explode/bottlebomb (2).ogg'))
 			for(var/mob/living/carbon/human/L in range(2, T))
@@ -228,7 +321,6 @@
 	possible_item_intents = list(/datum/intent/use)
 	max_integrity = 0
 	w_class = WEIGHT_CLASS_TINY
-	smeltresult = /obj/item/rogueore/iron
 
 /obj/item/ammo_casing/caseless/twilight_lead/runelock/Initialize()
 	. = ..()
@@ -255,18 +347,6 @@
 	desc = "Небольшая серебряная сфера. Мягче, чем свинцовая пуля, но крайне эффективна против нежити."
 	projectile_type = /obj/projectile/bullet/twilight_lead/silver
 	icon_state = "musketball_silver"
-
-/obj/item/ammo_casing/caseless/twilight_lead/silver/ComponentInitialize()
-	. = ..()
-	AddComponent(\
-		/datum/component/silverbless,\
-		pre_blessed = BLESSING_NONE,\
-		silver_type = SILVER_TENNITE,\
-		added_force = 0,\
-		added_blade_int = 0,\
-		added_int = 0,\
-		added_def = 0,\
-	)
 
 /obj/item/ammo_casing/caseless/twilight_lead/runelock/blessed
 	name = "blessed sphere"
@@ -298,13 +378,4 @@
 	dropshrink = 0.5
 	max_integrity = 0.1
 	pellets = 6
-	variance = 30
-
-/obj/item/ammo_casing/caseless/twilight_cannonball/grapeshot/otavian
-	name = "otavian grapeshot"
-	desc = "Плотно упакованный в бумагу набор небольших серебряных шариков. Хорошо сочетается с большими группами нечисти."
-	projectile_type = /obj/projectile/bullet/twilight_grapeshot/otavian
-	caliber = "otavian grapeshot"
-	icon_state = "grapeshot_silver"
-	pellets = 12
 	variance = 30
