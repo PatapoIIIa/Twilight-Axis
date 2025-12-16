@@ -182,7 +182,7 @@
 #define INTENT_HOTKEY_RIGHT "right"
 
 //the define for visible message range in combat
-#define COMBAT_MESSAGE_RANGE 3
+#define COMBAT_MESSAGE_RANGE 5
 #define DEFAULT_MESSAGE_RANGE 7
 
 //Shove knockdown lengths (deciseconds)
@@ -295,8 +295,8 @@ GLOBAL_LIST_INIT(shove_disarming_types, typecacheof(list(
 
 //Weapon values
 #define BLUNT_DEFAULT_PENFACTOR		-100
-#define NONBLUNT_BLUNT_DAMFACTOR 0.8 // Damage factor when a non blunt weapon is used with blunt intent. Meant to make it worse than a real one.
-#define BLUNT_DEFAULT_INT_DAMAGEFACTOR 1.4 // Universal blunt intent integrity damage factor. Replaces Roguepen
+#define NONBLUNT_BLUNT_DAMFACTOR 0.6 // Damage factor when a non blunt weapon is used with blunt intent. Meant to make it worse than a real one.
+#define BLUNT_DEFAULT_INT_DAMAGEFACTOR 1.6 // Universal blunt intent integrity damage factor. Replaces Roguepen
 
 // Integrity & Sharpness Value
 #define INTEG_PARRY_DECAY			1	//Default integrity decay on parry.
@@ -332,6 +332,7 @@ Medical defines
 */
 #define CRIT_DISMEMBER_DAMAGE_THRESHOLD 0.75 // 75% damage threshold for dismemberment / crit
 #define STANDING_DECAP_GRACE_PERIOD 2 SECONDS // Time after falling prone where you still count as standing for decap purpose
+#define INT_NOISE_DELAY 1 SECONDS
 
 /*
 	Critical Resistance Defines 
@@ -343,6 +344,10 @@ Medical defines
 #define CRIT_RESISTANCE_EFFECTIVE_BLEEDRATE 0.5 // How much CR reduce bleedrate by
 #define CRIT_RESISTANCE_TIMER_CD 30 SECONDS // Cooldown between guaranteed CR procs. DOES NOT APPLY TO DISMEMBERMENT.
 
+#define PREVENT_CRITS_NONE	0
+#define PREVENT_CRITS_MOST	1
+#define PREVENT_CRITS_ALL	2
+
 /*
 	Dullfactor Defines. These should be removed at some point.
 */
@@ -353,3 +358,9 @@ Medical defines
 #define DULLFACTOR_ANTAG 0.5 // For Grand Shaft. Also for dull blade
 // Previously value were closer to 0.4 - 0.5 and 1.5 - 1.7x, but it felt like it make weapons
 // counter certain shaft type too hard, so now the value is between 0.8 to 1.2x for regular type
+
+//Visible message presets.
+#define VISMSG_ARMOR_BLOCKED " <span class='armoralert'>Armor stops the damage.</span>"
+#define VISMSG_ARMOR_INT_STAGEONE "<span class='armoralert'><i> Dented.</i></span>"
+#define VISMSG_ARMOR_INT_STAGETWO "<span class='armoralert'> Damaged.</span>"
+#define VISMSG_ARMOR_INT_STAGETHREE "<span class='armoralert'><b> Crumbling!</b></span>"

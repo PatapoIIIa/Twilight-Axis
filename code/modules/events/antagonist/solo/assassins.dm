@@ -31,7 +31,7 @@
 		"Town Crier",
 		"Captain",
 		"Archivist",
-		"Knight",
+		"Knight Captain",
 		"Court Magician",
 		"Inquisitor",
 		"Orthodoxist",
@@ -42,13 +42,13 @@
 		"Apothecary"
 	)
 
-	base_antags = 0 // TA EDIT
-	maximum_antags = 0 // TA EDIT
+	base_antags = 1
+	maximum_antags = 2
 
 	earliest_start = 0 SECONDS
 	max_occurrences = 2
 
-	weight = 0 // TA EDIT
+	weight = 10
 
 	typepath = /datum/round_event/antagonist/solo/assassins
 	antag_datum = /datum/antagonist/assassin

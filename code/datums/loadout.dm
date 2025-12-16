@@ -888,6 +888,11 @@ GLOBAL_LIST_EMPTY(loadout_items_by_category)
 	path = /obj/item/enchantingkit/zoe
 	donatitem = TRUE
 
+/datum/loadout_item/donator_zoe_shovel
+	name = "Donator Kit - Silence"
+	path = /obj/item/enchantingkit/zoe_shovel
+	ckeywhitelist = list("zoetheorc")
+
 /datum/loadout_item/donator_willmbrink
 	name = "Royal Gown"
 	path = /obj/item/clothing/suit/roguetown/shirt/dress/royal

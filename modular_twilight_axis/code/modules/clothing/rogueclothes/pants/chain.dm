@@ -4,3 +4,4 @@
 	item_state = "grenzelpants_chain"
 	icon = 'modular_twilight_axis/icons/roguetown/clothing/pants.dmi'
 	mob_overlay_icon = 'modular_twilight_axis/icons/roguetown/clothing/onmob/pants.dmi'
+	salvage_result = null

@@ -12,7 +12,6 @@
 	w_class = WEIGHT_CLASS_BULKY
 	spread = 10
 	recoil = 3
-	associated_skill = /datum/skill/combat/maces
 	force = 10
 	var/cocked = FALSE
 	cartridge_wording = "runed sphere"

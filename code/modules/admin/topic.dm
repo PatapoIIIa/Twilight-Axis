@@ -651,6 +651,8 @@
 		for(var/datum/job/job in SSjob.occupations)
 			if(job.title == Add)
 				job.total_positions += 1
+				log_admin("[key_name(usr)] added slot to [job.title].")
+				message_admins("[key_name(usr)] added slot to [job.title].")
 				break
 
 		src.manage_free_slots()
@@ -671,7 +673,8 @@
 					job.total_positions = job.current_positions
 					break
 				job.total_positions = newtime
-
+				log_admin("[key_name(usr)] made custom [newtime] slots to [job.title].")
+				message_admins("[key_name(usr)] made custom [newtime] slots to [job.title].")
 		src.manage_free_slots()
 
 	else if(href_list["removejobslot"])
@@ -683,6 +686,8 @@
 		for(var/datum/job/job in SSjob.occupations)
 			if(job.title == Remove && job.total_positions - job.current_positions > 0)
 				job.total_positions -= 1
+				log_admin("[key_name(usr)] removed job slot from [job.title].")
+				message_admins("[key_name(usr)] removed job slot from [job.title].")
 				break
 
 		src.manage_free_slots()
@@ -696,6 +701,8 @@
 		for(var/datum/job/job in SSjob.occupations)
 			if(job.title == Unlimit)
 				job.total_positions = -1
+				log_admin("[key_name(usr)] removed the limit from [job.title] slots.")
+				message_admins("[key_name(usr)] removed the limit from [job.title] slots.")
 				break
 
 		src.manage_free_slots()
@@ -709,6 +716,8 @@
 		for(var/datum/job/job in SSjob.occupations)
 			if(job.title == Limit)
 				job.total_positions = job.current_positions
+				log_admin("[key_name(usr)] added the limit to [job.title] slots.")
+				message_admins("[key_name(usr)] added the limit to [job.title] slots.")
 				break
 
 		src.manage_free_slots()

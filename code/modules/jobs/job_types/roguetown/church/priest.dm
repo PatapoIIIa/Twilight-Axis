@@ -60,6 +60,7 @@ GLOBAL_LIST_EMPTY(heretical_players)
 	subclass_skills = list(
 		/datum/skill/combat/wrestling = SKILL_LEVEL_MASTER,
 		/datum/skill/combat/unarmed = SKILL_LEVEL_MASTER,
+		/datum/skill/combat/staves = SKILL_LEVEL_MASTER,
 		/datum/skill/combat/polearms = SKILL_LEVEL_MASTER,
 		/datum/skill/misc/reading = SKILL_LEVEL_LEGENDARY,
 		/datum/skill/misc/medicine = SKILL_LEVEL_EXPERT,
@@ -276,6 +277,7 @@ GLOBAL_LIST_EMPTY(heretical_players)
 		ADD_TRAIT(H, TRAIT_SMITHING_EXPERT, TRAIT_GENERIC)
 	if(H.patron?.type == /datum/patron/divine/ravox)
 		ADD_TRAIT(H, TRAIT_STEELHEARTED, TRAIT_GENERIC)
+		ADD_TRAIT(H, TRAIT_BATTLEMASTER, TRAIT_GENERIC)
 
 /datum/job/priest/vice //just used to change the priest title
 	title = "Vice Priest"
@@ -480,6 +482,9 @@ GLOBAL_LIST_EMPTY(heretical_players)
 
 		return TRUE
 
+	if (inputty in GLOB.excommunicated_players)
+		return //No stacking	
+
 	if (H.real_name == inputty)
 		if (!COOLDOWN_FINISHED(src, priest_apostasy))
 			to_chat(src, span_warning("You must wait until you can mark another."))
@@ -553,6 +558,9 @@ GLOBAL_LIST_EMPTY(heretical_players)
 				else
 					return
 		return
+
+	if (inputty in GLOB.apostasy_players)//This is an abysmal way of doing this but uhhhhhhhhhhhhhhhhhh yeah
+		return //No stacking
 
 	if (H.real_name == inputty)
 		if (!COOLDOWN_FINISHED(src, priest_excommunicate))
@@ -636,6 +644,10 @@ code\modules\admin\verbs\divinewrath.dm has a variant with all the gods so keep 
 
 			if (!COOLDOWN_FINISHED(src, priest_curse))
 				to_chat(src, span_warning("You must wait before invoking a curse again."))
+				return
+
+			if (H.mind.has_antag_datum(/datum/antagonist))
+				to_chat(src, span_warning("They are outside your grasp."))
 				return
 
 			//Check if we can curse this person.

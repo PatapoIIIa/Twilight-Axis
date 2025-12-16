@@ -88,6 +88,8 @@
 			cloak = /obj/item/clothing/cloak/templar/xylixian
 			mask = /obj/item/clothing/mask/rogue/facemask/xylixmask/armored //TA edit
 			H.cmode_music = 'sound/music/combat_jester.ogg'
+			var/datum/inspiration/I = new /datum/inspiration(H)
+			I.grant_inspiration(H, bard_tier = BARD_T1)
 		if(/datum/patron/divine/dendor)
 			wrists = /obj/item/clothing/neck/roguetown/psicross/dendor
 			cloak = /obj/item/clothing/cloak/tabard/crusader/dendor
