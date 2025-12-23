@@ -52,6 +52,7 @@
 		/datum/advclass/mercenary/underdweller,
 		/datum/advclass/mercenary/grudgebearer,
 		/datum/advclass/mercenary/grudgebearer/soldier,
+		/datum/advclass/mercenary/trollslayer,
     /datum/advclass/mercenary/twilight_gunslinger,
     /datum/advclass/mercenary/twilight_grenzelhoft_jager
 	)

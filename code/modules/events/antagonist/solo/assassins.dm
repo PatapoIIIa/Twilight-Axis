@@ -13,7 +13,6 @@
 		"Grand Duke",
 		"Grand Duchess",
 		"Consort",
-		"Dungeoneer",
 		"Sergeant",
 		"Man at Arms",
 		"Marshal",

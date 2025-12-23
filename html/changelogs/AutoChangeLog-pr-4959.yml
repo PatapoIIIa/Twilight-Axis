@@ -1,0 +1,5 @@
+author: "Lamasmaster"
+delete-after: True
+changes:
+  - rscadd: "Bailiff subclass"
+  - rscdel: "Dungeoneer role"
