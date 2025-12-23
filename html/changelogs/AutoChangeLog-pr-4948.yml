@@ -1,0 +1,6 @@
+author: "FreeStylaLT"
+delete-after: True
+changes:
+  - rscadd: "A new preference for showing floating text for where the user was last struck."
+  - balance: "Combat Aware no longer shows targeting zones on parries / dodges. It only shows on successful hits."
+  - balance: "Combat Aware no longer shows where the user of the virtue were targeting themselves."

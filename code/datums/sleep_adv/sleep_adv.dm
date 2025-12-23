@@ -81,7 +81,7 @@
 		var/capped_post_check = enough_sleep_xp_to_advance(skill, 2)
 		if(COOLDOWN_FINISHED(src, xp_show))
 			if(org_lvl == new_lvl && !capped_post_check && show_xp)
-				L.balloon_alert(L, "[amt] XP")
+				L.balloon_alert(L, "[round(amt, 0.1)] XP")
 				COOLDOWN_START(src, xp_show, XP_SHOW_COOLDOWN)
 		return
 	var/datum/skill/skillref = GetSkillRef(skill)
@@ -133,7 +133,7 @@
 		show_xp = FALSE
 	if(COOLDOWN_FINISHED(src, xp_show))
 		if(amt && show_xp && (L.client?.prefs.floating_text_toggles & XP_TEXT))
-			L.balloon_alert(L, "[amt] XP")
+			L.balloon_alert(L, "[round(amt, 0.1)] XP")
 			COOLDOWN_START(src, xp_show, XP_SHOW_COOLDOWN)
 
 /datum/sleep_adv/proc/advance_cycle()
