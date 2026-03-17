@@ -1,3 +1,5 @@
+#include "./necromantic_monolith.dm"
+
 /obj/effect/proc_holder/spell/self/library
 	name = "Compendium of Arcane Arts"
 	desc = "Summon the knowledge of the arcane library to learn new spells."
