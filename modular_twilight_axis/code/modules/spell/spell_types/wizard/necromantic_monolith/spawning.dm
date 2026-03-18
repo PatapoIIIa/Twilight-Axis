@@ -108,7 +108,13 @@
 			valid_states[minion_ref] = minion_states[minion_ref]
 	active_minions = valid_minions
 	minion_states = valid_states
-	return length(active_minions)
+	// Include virtualized profiles in the total count
+	var/virtual_count = 0
+	if(dort_ctrl)
+		for(var/datum/dort_profile/P as anything in SSdort.all_profiles)
+			if(P.controller == dort_ctrl)
+				virtual_count++
+	return length(active_minions) + virtual_count
 
 /obj/structure/necromantic_monolith/proc/collapse_necromonolith_minions()
 	for(var/datum/weakref/minion_ref as anything in active_minions)

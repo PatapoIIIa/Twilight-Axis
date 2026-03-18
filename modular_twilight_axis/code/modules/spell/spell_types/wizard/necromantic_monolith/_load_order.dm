@@ -9,4 +9,5 @@
 #include "routing.dm"
 #include "ai.dm"
 #include "pathfinding.dm"
+#include "dort_adapter.dm"
 #include "_undefs.dm"

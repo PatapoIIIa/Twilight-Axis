@@ -21,6 +21,8 @@
 	var/waves_since_rest = 0
 	/// Per-minion routing state: weakref -> list("route_index", "route_slot", "chase_ref", "chase_started_at", "reengage_after")
 	var/list/minion_states = list()
+	/// SSdort virtualization controller
+	var/datum/dort_controller/necromonolith/dort_ctrl
 
 /obj/structure/necromantic_monolith/Initialize(mapload, mob/living/caster, atom/movable/preferred_throne, list/precomputed_routes)
 	. = ..()
@@ -38,10 +40,17 @@
 	log_necromonolith_debug("initialized monolith=[necromonolith_debug_coords(src)] throne=[necromonolith_debug_coords(resolved_throne)] routes=[describe_necromonolith_routes(cached_routes)]")
 	set_light(3, 2, 1, l_color = "#6f2036")
 	queue_next_spawn_cycle()
+	// Register with SSdort for mob virtualization
+	dort_ctrl = new /datum/dort_controller/necromonolith(src)
+	SSdort.register_controller(dort_ctrl)
 
 /obj/structure/necromantic_monolith/Destroy()
 	if(spawn_timer_id)
 		deltimer(spawn_timer_id)
+	// Unregister from SSdort before collapsing minions
+	if(dort_ctrl)
+		SSdort.unregister_controller(dort_ctrl)
+		QDEL_NULL(dort_ctrl)
 	collapse_necromonolith_minions()
 	throne_ref = null
 	cached_routes = null
