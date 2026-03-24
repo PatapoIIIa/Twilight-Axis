@@ -110,9 +110,9 @@
 	minion_states = valid_states
 	// Include virtualized profiles in the total count
 	var/virtual_count = 0
-	if(dort_ctrl)
-		for(var/datum/dort_profile/P as anything in SSdort.all_profiles)
-			if(P.controller == dort_ctrl)
+	if(dotr_ctrl)
+		for(var/datum/dotr_profile/P as anything in SSdotr.all_profiles)
+			if(P.controller == dotr_ctrl)
 				virtual_count++
 	return length(active_minions) + virtual_count
 

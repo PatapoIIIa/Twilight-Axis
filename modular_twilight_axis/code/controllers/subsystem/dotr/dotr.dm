@@ -1,9 +1,9 @@
-// ---- SSdort: Defence of Roguetown ----
-// Manages mob virtualization. Spawners register as controllers, SSdort handles the rest.
+// ---- SSdotr: Defence of the Roguetown ----
+// Manages mob virtualization. Spawners register as controllers, SSdotr handles the rest.
 
-SUBSYSTEM_DEF(dort)
-	name = "Defence of Roguetown"
-	wait = DORT_CHECK_INTERVAL
+SUBSYSTEM_DEF(dotr)
+	name = "Defence of the Roguetown"
+	wait = DOTR_CHECK_INTERVAL
 	priority = FIRE_PRIORITY_DEFAULT
 	runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
 	var/list/controllers = list()
@@ -16,19 +16,19 @@ SUBSYSTEM_DEF(dort)
 
 // ---- Registration ----
 
-/datum/controller/subsystem/dort/proc/register_controller(datum/dort_controller/ctrl)
+/datum/controller/subsystem/dotr/proc/register_controller(datum/dotr_controller/ctrl)
 	if(!ctrl || (ctrl in controllers))
 		return
 	ctrl.controller_id = next_controller_id++
 	controllers += ctrl
-	log_dort_debug("registered controller=[ctrl.controller_id] type=[ctrl.type]")
+	log_dotr_debug("registered controller=[ctrl.controller_id] type=[ctrl.type]")
 
-/datum/controller/subsystem/dort/proc/unregister_controller(datum/dort_controller/ctrl)
+/datum/controller/subsystem/dotr/proc/unregister_controller(datum/dotr_controller/ctrl)
 	if(!ctrl)
 		return
 	var/removed = 0
 	var/list/keep = list()
-	for(var/datum/dort_profile/P as anything in all_profiles)
+	for(var/datum/dotr_profile/P as anything in all_profiles)
 		if(P.controller == ctrl)
 			removed++
 			qdel(P)
@@ -36,19 +36,19 @@ SUBSYSTEM_DEF(dort)
 			keep += P
 	all_profiles = keep
 	controllers -= ctrl
-	log_dort_debug("unregistered controller=[ctrl.controller_id], removed [removed] profiles")
+	log_dotr_debug("unregistered controller=[ctrl.controller_id], removed [removed] profiles")
 
 /// Count virtual profiles belonging to a controller
-/datum/controller/subsystem/dort/proc/count_profiles(datum/dort_controller/ctrl)
+/datum/controller/subsystem/dotr/proc/count_profiles(datum/dotr_controller/ctrl)
 	var/n = 0
-	for(var/datum/dort_profile/P as anything in all_profiles)
+	for(var/datum/dotr_profile/P as anything in all_profiles)
 		if(P.controller == ctrl)
 			n++
 	return n
 
 // ---- Main loop ----
 
-/datum/controller/subsystem/dort/fire(resumed = 0)
+/datum/controller/subsystem/dotr/fire(resumed = 0)
 	if(!length(controllers))
 		return
 	// Build player cache
@@ -73,7 +73,7 @@ SUBSYSTEM_DEF(dort)
 	process_virt()
 	// Virtual movement
 	step_counter++
-	if(step_counter >= DORT_VIRTUAL_STEP_TICKS)
+	if(step_counter >= DOTR_VIRTUAL_STEP_TICKS)
 		step_counter = 0
 		advance_profiles()
 	// Wither + cleanup
@@ -83,13 +83,13 @@ SUBSYSTEM_DEF(dort)
 
 // ---- Devirtualization ----
 
-/datum/controller/subsystem/dort/proc/process_devirt()
+/datum/controller/subsystem/dotr/proc/process_devirt()
 	var/list/devirtualized = list()
-	for(var/datum/dort_profile/profile as anything in all_profiles)
+	for(var/datum/dotr_profile/profile as anything in all_profiles)
 		if(!profile.controller)
 			devirtualized += profile
 			continue
-		if(world.time < profile.last_devirt_attempt + DORT_DEVIRT_COOLDOWN)
+		if(world.time < profile.last_devirt_attempt + DOTR_DEVIRT_COOLDOWN)
 			continue
 		var/turf/vt = profile.get_virtual_turf()
 		if(!vt)
@@ -105,12 +105,12 @@ SUBSYSTEM_DEF(dort)
 			if(d < best)
 				best = d
 				nearest = pt
-		if(best > DORT_PLAYER_ZONE_RANGE)
+		if(best > DOTR_PLAYER_ZONE_RANGE)
 			continue
 		// Spawn gate
-		if(count_physical_near(profile.controller, nearest) >= DORT_MAX_PHYSICAL_PER_ZONE)
+		if(count_physical_near(profile.controller, nearest) >= DOTR_MAX_PHYSICAL_PER_ZONE)
 			profile.last_devirt_attempt = world.time
-			log_dort_debug("gate full near [nearest.x],[nearest.y],[nearest.z], deferring id=[profile.profile_id]")
+			log_dotr_debug("gate full near [nearest.x],[nearest.y],[nearest.z], deferring id=[profile.profile_id]")
 			continue
 		// Safe spawn turf
 		var/turf/st = find_spawn_turf(vt, nearest)
@@ -120,18 +120,18 @@ SUBSYSTEM_DEF(dort)
 		// Materialize
 		var/mob/living/M = profile.controller.materialize(profile, st)
 		if(M && !QDELETED(M))
-			log_dort_debug("devirt id=[profile.profile_id] [profile.mob_type] at [st.x],[st.y],[st.z] hp=[profile.current_health]")
+			log_dotr_debug("devirt id=[profile.profile_id] [profile.mob_type] at [st.x],[st.y],[st.z] hp=[profile.current_health]")
 			devirtualized += profile
 		else
 			profile.last_devirt_attempt = world.time
-	for(var/datum/dort_profile/P as anything in devirtualized)
+	for(var/datum/dotr_profile/P as anything in devirtualized)
 		all_profiles -= P
 		qdel(P)
 
 // ---- Virtualization ----
 
-/datum/controller/subsystem/dort/proc/process_virt()
-	for(var/datum/dort_controller/ctrl as anything in controllers)
+/datum/controller/subsystem/dotr/proc/process_virt()
+	for(var/datum/dotr_controller/ctrl as anything in controllers)
 		var/z = ctrl.get_z_level()
 		if(!z)
 			continue
@@ -144,28 +144,28 @@ SUBSYSTEM_DEF(dort)
 			var/turf/mt = get_turf(M)
 			if(mt && length(pts))
 				for(var/turf/pt as anything in pts)
-					if(get_dist(mt, pt) <= DORT_PLAYER_ZONE_RANGE)
+					if(get_dist(mt, pt) <= DOTR_PLAYER_ZONE_RANGE)
 						dominated = TRUE
 						break
 			if(dominated)
 				continue
 			if(!ctrl.can_virtualize(M))
 				continue
-			var/datum/dort_profile/profile = ctrl.capture(M)
+			var/datum/dotr_profile/profile = ctrl.capture(M)
 			if(!profile)
 				continue
 			profile.profile_id = next_profile_id++
 			profile.virtualized_at = world.time
 			profile.sync_position()
 			all_profiles += profile
-			log_dort_debug("virt [profile.mob_type] id=[profile.profile_id] at [profile.turf_x],[profile.turf_y],[profile.turf_z]")
+			log_dotr_debug("virt [profile.mob_type] id=[profile.profile_id] at [profile.turf_x],[profile.turf_y],[profile.turf_z]")
 
 // ---- Virtual movement ----
 
-/datum/controller/subsystem/dort/proc/advance_profiles()
+/datum/controller/subsystem/dotr/proc/advance_profiles()
 	// Group by controller + route_slot
 	var/list/groups = list()
-	for(var/datum/dort_profile/P as anything in all_profiles)
+	for(var/datum/dotr_profile/P as anything in all_profiles)
 		if(P.current_health <= 0)
 			continue
 		// Chasing — move independently
@@ -183,20 +183,20 @@ SUBSYSTEM_DEF(dort)
 	// Advance groups
 	for(var/key in groups)
 		var/list/grp = groups[key]
-		var/datum/dort_profile/rep = grp[1]
+		var/datum/dotr_profile/rep = grp[1]
 		var/list/routes = rep.controller?.get_routes()
 		if(!length(routes) || rep.route_slot < 1 || rep.route_slot > length(routes))
 			continue
 		var/rlen = length(routes[rep.route_slot])
 		if(!rlen)
 			continue
-		for(var/datum/dort_profile/P as anything in grp)
+		for(var/datum/dotr_profile/P as anything in grp)
 			if(P.route_index < rlen)
 				P.route_index++
 				P.sync_position()
 
-/datum/controller/subsystem/dort/proc/advance_chase(datum/dort_profile/P, atom/target)
-	if(P.chase_started_at && world.time > P.chase_started_at + DORT_VIRTUAL_CHASE_TIMEOUT)
+/datum/controller/subsystem/dotr/proc/advance_chase(datum/dotr_profile/P, atom/target)
+	if(P.chase_started_at && world.time > P.chase_started_at + DOTR_VIRTUAL_CHASE_TIMEOUT)
 		P.chase_target_ref = null
 		P.chase_started_at = 0
 		return
@@ -219,19 +219,19 @@ SUBSYSTEM_DEF(dort)
 
 // ---- Wither ----
 
-/datum/controller/subsystem/dort/proc/process_wither()
-	for(var/datum/dort_profile/P as anything in all_profiles)
+/datum/controller/subsystem/dotr/proc/process_wither()
+	for(var/datum/dotr_profile/P as anything in all_profiles)
 		if(P.is_withering)
-			P.apply_wither_tick(DORT_CHECK_INTERVAL * 0.1)
+			P.apply_wither_tick(DOTR_CHECK_INTERVAL * 0.1)
 
 // ---- Cleanup ----
 
-/datum/controller/subsystem/dort/proc/cleanup_dead()
+/datum/controller/subsystem/dotr/proc/cleanup_dead()
 	var/list/keep = list()
-	for(var/datum/dort_profile/P as anything in all_profiles)
+	for(var/datum/dotr_profile/P as anything in all_profiles)
 		if(P.current_health <= 0)
 			P.controller?.on_profile_died(P)
-			log_dort_debug("profile id=[P.profile_id] died virtual")
+			log_dotr_debug("profile id=[P.profile_id] died virtual")
 			qdel(P)
 		else
 			keep += P
@@ -239,27 +239,27 @@ SUBSYSTEM_DEF(dort)
 
 // ---- Virtual combat (stub — ready for multi-faction) ----
 
-/datum/controller/subsystem/dort/proc/process_combat()
+/datum/controller/subsystem/dotr/proc/process_combat()
 	return // No hostile factions yet
 
 // ---- Helpers ----
 
-/datum/controller/subsystem/dort/proc/count_physical_near(datum/dort_controller/ctrl, turf/center)
+/datum/controller/subsystem/dotr/proc/count_physical_near(datum/dotr_controller/ctrl, turf/center)
 	var/n = 0
 	for(var/mob/living/M as anything in ctrl.get_managed_mobs())
 		if(!M || QDELETED(M) || M.stat == DEAD)
 			continue
-		if(get_dist(get_turf(M), center) <= DORT_PLAYER_ZONE_RANGE)
+		if(get_dist(get_turf(M), center) <= DOTR_PLAYER_ZONE_RANGE)
 			n++
 	return n
 
-/datum/controller/subsystem/dort/proc/find_spawn_turf(turf/virtual_turf, turf/player_turf)
+/datum/controller/subsystem/dotr/proc/find_spawn_turf(turf/virtual_turf, turf/player_turf)
 	if(!virtual_turf || !player_turf)
 		return null
 	var/best_turf
 	var/best_dist = INFINITY
-	for(var/turf/T in range(DORT_SPAWN_EDGE_RANGE, player_turf))
-		if(get_dist(player_turf, T) < DORT_SPAWN_EDGE_RANGE - 1)
+	for(var/turf/T in range(DOTR_SPAWN_EDGE_RANGE, player_turf))
+		if(get_dist(player_turf, T) < DOTR_SPAWN_EDGE_RANGE - 1)
 			continue
 		if(!isopenturf(T))
 			continue

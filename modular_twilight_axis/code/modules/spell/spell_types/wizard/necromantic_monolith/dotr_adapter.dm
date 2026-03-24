@@ -1,10 +1,10 @@
-// ---- Necromantic Monolith: SSdort adapter ----
-// Makes the monolith a user of SSdort, like skeletons are users of the monolith.
+// ---- Necromantic Monolith: SSdotr adapter ----
+// Makes the monolith a user of SSdotr, like skeletons are users of the monolith.
 
-/datum/dort_controller/necromonolith
+/datum/dotr_controller/necromonolith
 	var/obj/structure/necromantic_monolith/monolith
 
-/datum/dort_controller/necromonolith/New(obj/structure/necromantic_monolith/M)
+/datum/dotr_controller/necromonolith/New(obj/structure/necromantic_monolith/M)
 	..()
 	if(!M || QDELETED(M))
 		qdel(src)
@@ -13,11 +13,11 @@
 	owner_ref = WEAKREF(M)
 	faction_tag = M.owner_faction_tag
 
-/datum/dort_controller/necromonolith/Destroy()
+/datum/dotr_controller/necromonolith/Destroy()
 	monolith = null
 	return ..()
 
-/datum/dort_controller/necromonolith/get_managed_mobs()
+/datum/dotr_controller/necromonolith/get_managed_mobs()
 	var/list/out = list()
 	if(!monolith || QDELETED(monolith))
 		return out
@@ -27,7 +27,7 @@
 			out += M
 	return out
 
-/datum/dort_controller/necromonolith/can_virtualize(mob/living/the_mob)
+/datum/dotr_controller/necromonolith/can_virtualize(mob/living/the_mob)
 	if(!the_mob || !monolith || QDELETED(monolith))
 		return FALSE
 	// In combat — no
@@ -39,7 +39,7 @@
 		return FALSE
 	return TRUE
 
-/datum/dort_controller/necromonolith/capture(mob/living/the_mob)
+/datum/dotr_controller/necromonolith/capture(mob/living/the_mob)
 	if(!monolith || QDELETED(monolith))
 		return null
 	var/mob/living/simple_animal/hostile/rogue/skeleton/S = the_mob
@@ -56,7 +56,7 @@
 	if(!found_ref || !found_state)
 		return null
 	// Build profile
-	var/datum/dort_profile/P = new()
+	var/datum/dotr_profile/P = new()
 	P.controller = src
 	P.mob_type = S.type
 	P.max_health = S.maxHealth
@@ -93,7 +93,7 @@
 	qdel(S)
 	return P
 
-/datum/dort_controller/necromonolith/materialize(datum/dort_profile/profile, turf/spawn_turf)
+/datum/dotr_controller/necromonolith/materialize(datum/dotr_profile/profile, turf/spawn_turf)
 	if(!monolith || QDELETED(monolith) || !profile || !spawn_turf)
 		return null
 	var/mob/living/caster = monolith.owner_ref?.resolve()
@@ -116,11 +116,11 @@
 	new /obj/effect/temp_visual/bluespace_fissure(spawn_turf)
 	return S
 
-/datum/dort_controller/necromonolith/on_profile_died(datum/dort_profile/profile)
-	log_dort_debug("necromonolith profile id=[profile.profile_id] [profile.mob_type] died virtual")
+/datum/dotr_controller/necromonolith/on_profile_died(datum/dotr_profile/profile)
+	log_dotr_debug("necromonolith profile id=[profile.profile_id] [profile.mob_type] died virtual")
 
-/datum/dort_controller/necromonolith/get_z_level()
+/datum/dotr_controller/necromonolith/get_z_level()
 	return (monolith && !QDELETED(monolith)) ? monolith.z : 0
 
-/datum/dort_controller/necromonolith/get_routes()
+/datum/dotr_controller/necromonolith/get_routes()
 	return (monolith && !QDELETED(monolith)) ? monolith.cached_routes : list()

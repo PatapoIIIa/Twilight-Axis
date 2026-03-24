@@ -1,9 +1,9 @@
-// ---- SSdort: virtual mob profile ----
+// ---- SSdotr: virtual mob profile ----
 // Lightweight snapshot replacing a physical mob while virtualized.
 
-/datum/dort_profile
+/datum/dotr_profile
 	/// Owning controller
-	var/datum/dort_controller/controller
+	var/datum/dotr_controller/controller
 	var/profile_id = 0
 
 	/// Type path to recreate the mob
@@ -43,13 +43,13 @@
 	var/last_devirt_attempt = 0
 	var/virtualized_at = 0
 
-/datum/dort_profile/Destroy()
+/datum/dotr_profile/Destroy()
 	controller = null
 	chase_target_ref = null
 	return ..()
 
 /// Get the turf this profile is virtually at
-/datum/dort_profile/proc/get_virtual_turf()
+/datum/dotr_profile/proc/get_virtual_turf()
 	if(controller)
 		var/list/routes = controller.get_routes()
 		if(length(routes) && route_slot >= 1 && route_slot <= length(routes))
@@ -61,7 +61,7 @@
 	return locate(turf_x, turf_y, turf_z)
 
 /// Update stored x/y/z from current route position
-/datum/dort_profile/proc/sync_position()
+/datum/dotr_profile/proc/sync_position()
 	var/turf/T = get_virtual_turf()
 	if(T)
 		turf_x = T.x
@@ -69,10 +69,10 @@
 		turf_z = T.z
 
 /// Tick wither damage. Returns TRUE if dead.
-/datum/dort_profile/proc/apply_wither_tick(delta_seconds)
+/datum/dotr_profile/proc/apply_wither_tick(delta_seconds)
 	if(!is_withering)
 		return FALSE
-	wither_accumulator += DORT_WITHER_DPS * delta_seconds
+	wither_accumulator += DOTR_WITHER_DPS * delta_seconds
 	if(wither_accumulator >= 1)
 		var/dmg = round(wither_accumulator)
 		current_health -= dmg
