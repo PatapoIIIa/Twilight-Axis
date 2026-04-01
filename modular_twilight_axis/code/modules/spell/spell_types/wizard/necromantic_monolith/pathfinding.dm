@@ -183,7 +183,7 @@
 	for(var/turf/goal_turf as anything in goal_turfs)
 		if(!goal_turf)
 			continue
-		var/list/path = get_path_to(origin, goal_turf, TYPE_PROC_REF(/turf, Heuristic_cardinal_3d), 0, NECROMONOLITH_ROUTE_DEPTH, 0, adjacent = TYPE_PROC_REF(/turf, reachableTurftest3d))
+		var/list/path = get_path_to(origin, goal_turf, TYPE_PROC_REF(/turf, Heuristic_cardinal_3d), 0, NECROMONOLITH_ROUTE_DEPTH, 0, adjacent = TYPE_PROC_REF(/turf, reachableTurftest3d_necromonolith))
 		if(!length(path) || necromonolith_route_exists(path, routes))
 			continue
 		routes += list(path)
@@ -194,7 +194,7 @@
 	for(var/turf/goal_turf as anything in goal_turfs)
 		if(!goal_turf)
 			continue
-		var/list/path = get_path_to(origin, goal_turf, TYPE_PROC_REF(/turf, Heuristic_cardinal_3d), 0, NECROMONOLITH_ROUTE_DEPTH, 0, adjacent = TYPE_PROC_REF(/turf, reachableTurftest3d), exclude = exclusion)
+		var/list/path = get_path_to(origin, goal_turf, TYPE_PROC_REF(/turf, Heuristic_cardinal_3d), 0, NECROMONOLITH_ROUTE_DEPTH, 0, adjacent = TYPE_PROC_REF(/turf, reachableTurftest3d_necromonolith), exclude = exclusion)
 		if(!length(path))
 			continue
 		if(!length(best_route) || length(path) < length(best_route))
@@ -263,11 +263,69 @@
 		if(check_turf.density)
 			blocked_count++
 			continue
+		var/hard_blocked = FALSE
 		for(var/atom/movable/blocker in check_turf)
-			if(blocker.density)
-				blocked_count++
-				break
+			if(!blocker.density)
+				continue
+			if(istype(blocker, /obj/structure/mineral_door))
+				continue
+			if(istype(blocker, /obj/structure/roguewindow))
+				continue
+			if(istype(blocker, /obj/structure/barricade))
+				continue
+			hard_blocked = TRUE
+			break
+		if(hard_blocked)
+			blocked_count++
 	return blocked_count <= 2
+
+// ---- Necromonolith adjacency (ignores doors/grates for pathing) ----
+
+/turf/proc/reachableTurftest3d_necromonolith(caller, turf/T, ID, recursive_call = 0)
+	if(!T || T.density)
+		return FALSE
+	if(!T.can_traverse_safely(caller))
+		return FALSE
+	var/z_distance = abs(T.z - z)
+	if(!z_distance)
+		return !necromonolith_link_blocked(T, caller, ID)
+	if(z_distance != 1)
+		return FALSE
+	var/obj/structure/stairs/source_stairs = locate(/obj/structure/stairs) in src
+	if(T.z < z)
+		if(source_stairs?.get_target_loc(GLOB.reverse_dir[source_stairs.dir]) == T)
+			return TRUE
+	else
+		if(source_stairs?.get_target_loc(source_stairs.dir) == T)
+			return TRUE
+	return FALSE
+
+/proc/necromonolith_link_blocked(turf/T, turf/source, ID)
+	var/adir = get_dir(source, T)
+	var/rdir = GLOB.reverse_dir[adir]
+	for(var/obj/O in T)
+		if(istype(O, /obj/structure/mineral_door))
+			continue
+		if(istype(O, /obj/structure/roguewindow))
+			continue
+		if(istype(O, /obj/structure/barricade))
+			continue
+		if(!O.CanAStarPass(ID, rdir, source))
+			return TRUE
+	return FALSE
+
+/// Check if a dense object on a turf is a breakable obstacle (door/window/barricade)
+/proc/is_necromonolith_breakable_obstacle(turf/T)
+	for(var/obj/O in T)
+		if(!O.density)
+			continue
+		if(istype(O, /obj/structure/mineral_door))
+			return TRUE
+		if(istype(O, /obj/structure/roguewindow))
+			return TRUE
+		if(istype(O, /obj/structure/barricade))
+			return TRUE
+	return FALSE
 
 // ---- Spawn turfs ----
 
