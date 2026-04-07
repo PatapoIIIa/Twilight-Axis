@@ -38,6 +38,26 @@
 //SOUNDBREAKER - END //
 
 
+//DEAD KNIGHT - START //
+#define ROLE_DEAD_KNIGHT		"Dead Knight"
+
+#define DK_INPUT_BLOOD		1
+#define DK_INPUT_ICE		2
+#define DK_INPUT_UNHOLY		3
+
+#define DK_COMBO_WINDOW		(10 SECONDS)
+#define DK_MAX_HISTORY		5
+#define DK_MAX_STACKS		10
+#define DK_STACK_DECAY_TIME	(12 SECONDS)
+
+#define DK_BLADE_FILTER_GLOW	"dk_blade_glow"
+#define DK_BLADE_GLOW_COLOR	"#8B0000"
+#define DK_BLADE_GLOW_SIZE	2
+
+#define DK_STANCE_ACTIVE	1
+#define DK_STANCE_INACTIVE	0
+//DEAD KNIGHT - END //
+
 //RONIN - START //
 #define RONIN_SHEATHED_IDLE   	1
 #define RONIN_SHEATHED_COUNTER 	2

@@ -40,6 +40,14 @@
 #define COMSIG_SOUNDBREAKER_KICK_SUCCESS "soundbreaker_kick_success"
 //SOUNDBREAKER - END//
 
+//DEAD KNIGHT - BEGIN//
+#define COMSIG_DK_STACK_CHANGED "dk_stack_changed"
+#define COMSIG_DK_STANCE_TOGGLED "dk_stance_toggled"
+#define COMSIG_DK_COMBO_FIRED "dk_combo_fired"
+#define COMSIG_DK_BLADE_SUMMONED "dk_blade_summoned"
+#define COMSIG_NEW_RUNIC_BLADE_SPAWNED "dk_runic_blade_spawned"
+//DEAD KNIGHT - END//
+
 //RONIN - BEGIN//
 #define COMSIG_LIVING_TAKE_DAMAGE "living_take_damage"
 #define COMSIG_MOB_PARRY_SUCCESS "mob_dodge_success"

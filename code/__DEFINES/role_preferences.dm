@@ -67,6 +67,9 @@ GLOBAL_LIST_INIT(special_roles_rogue, list(
 	ROLE_NBEAST = /datum/antagonist/vampire/lord,
 	ROLE_VAMPIRE = /datum/antagonist/vampire,
 	ROLE_LICH = /datum/antagonist/lich,
+	// TA EDIT START - Dead Knight antagonist mapping
+	ROLE_DEAD_KNIGHT = /datum/antagonist/lich/dead_knight,
+	// TA EDIT END
 	ROLE_DREAMWALKER = /datum/antagonist/dreamwalker,
 	ROLE_GNOLL = /datum/antagonist/gnoll,
 	ROLE_ASSASSIN = /datum/antagonist/assassin,
