@@ -145,7 +145,7 @@
 /datum/status_effect/debuff/dk_plague_mark
 	id = "dk_plague_mark"
 	status_type = STATUS_EFFECT_UNIQUE
-	duration = 10 SECONDS
+	duration = 5 SECONDS
 	tick_interval = 0
 	alert_type = /atom/movable/screen/alert/status_effect/debuff/dk_plague_mark
 	mob_effect_icon = 'icons/mob/mob_effects.dmi'
@@ -153,6 +153,7 @@
 	mob_effect_layer = ABOVE_MOB_LAYER + 0.15
 
 	var/mob/living/caster
+	var/detonated = FALSE
 
 /datum/status_effect/debuff/dk_plague_mark/on_creation(mob/living/new_owner, mob/living/_caster)
 	caster = _caster
@@ -160,22 +161,41 @@
 
 /datum/status_effect/debuff/dk_plague_mark/on_apply()
 	. = ..()
-	to_chat(owner, span_userdanger("A dark rune sears into your flesh! Find a priest to cleanse it!"))
+	if(owner)
+		RegisterSignal(owner, COMSIG_LIVING_MIRACLE_HEAL_APPLY, PROC_REF(on_miracle_heal_apply))
+		to_chat(owner, span_userdanger("A dark rune sears into your flesh! Find a priest to cleanse it!"))
 	return TRUE
 
 /datum/status_effect/debuff/dk_plague_mark/on_remove()
-	if(owner && owner.stat != DEAD)
+	if(owner)
+		UnregisterSignal(owner, COMSIG_LIVING_MIRACLE_HEAL_APPLY)
+	if(!detonated && owner && owner.stat != DEAD && duration <= world.time)
 		detonate()
 	caster = null
 	. = ..()
 
+/datum/status_effect/debuff/dk_plague_mark/proc/on_miracle_heal_apply(datum/source, healing_amount, datum/healing_datum)
+	SIGNAL_HANDLER
+	if(!owner || duration <= world.time || healing_amount <= 0)
+		return 0
+
+	owner.visible_message(
+		span_notice("The plague mark on [owner] burns away under holy healing."),
+		span_notice("Holy healing burns the plague mark from your flesh.")
+	)
+	qdel(src)
+	return 0
+
 /datum/status_effect/debuff/dk_plague_mark/proc/detonate()
-	if(!owner)
+	if(!owner || detonated)
 		return
+	detonated = TRUE
 	owner.visible_message(
 		span_userdanger("The plague mark on [owner] erupts in a burst of pestilence!"),
 		span_userdanger("The plague mark detonates!")
 	)
+	dk_show_overhead(owner, "cut_diagonal", "#4fbf4f", 1 SECONDS, 24)
+	dk_spawn_fx(owner, "curseblob", "#4fbf4f", null, 0.9 SECONDS, 10)
 
 	var/turf/epicenter = get_turf(owner)
 	if(!epicenter)
@@ -190,6 +210,7 @@
 			continue
 		L.apply_status_effect(/datum/status_effect/debuff/dk_plague_disease, caster)
 		L.adjustToxLoss(30)
+		dk_spawn_fx(L, "curse", "#4fbf4f", null, 0.6 SECONDS)
 		to_chat(L, span_danger("The plague washes over you!"))
 
 // --- Plague Disease (DoT + spread + debuff) ---
@@ -255,23 +276,36 @@
 
 /datum/status_effect/buff/dk_ice_immovability
 	id = "dk_ice_immovability"
-	status_type = STATUS_EFFECT_REPLACE
+	status_type = STATUS_EFFECT_REFRESH
 	duration = 8 SECONDS
 	tick_interval = 0
 	alert_type = /atom/movable/screen/alert/status_effect/buff/dk_ice_immovability
+	var/damage_resistance_bonus = 40
 
 /datum/status_effect/buff/dk_ice_immovability/on_apply()
 	. = ..()
 	if(owner)
 		ADD_TRAIT(owner, TRAIT_CRITICAL_RESISTANCE, "dk_ice")
 		owner.change_stat(STATKEY_CON, 5)
+		if(ishuman(owner))
+			var/mob/living/carbon/human/H = owner
+			H.physiology.damage_resistance += damage_resistance_bonus
+		owner.Immobilize(duration, ignore_canstun = TRUE)
 		to_chat(owner, span_notice("Runic ice encases your body. You are immovable."))
 	return TRUE
+
+/datum/status_effect/buff/dk_ice_immovability/refresh()
+	. = ..()
+	if(owner)
+		owner.Immobilize(initial(duration), ignore_canstun = TRUE)
 
 /datum/status_effect/buff/dk_ice_immovability/on_remove()
 	if(owner)
 		REMOVE_TRAIT(owner, TRAIT_CRITICAL_RESISTANCE, "dk_ice")
 		owner.change_stat(STATKEY_CON, -5)
+		if(ishuman(owner))
+			var/mob/living/carbon/human/H = owner
+			H.physiology.damage_resistance -= damage_resistance_bonus
 		to_chat(owner, span_notice("The ice around you shatters."))
 	. = ..()
 
@@ -290,9 +324,79 @@
 	alert_type = /atom/movable/screen/alert/status_effect/debuff/dk_heal_reduction
 
 	var/heal_mult = 0.4
+	var/list/reduced_healing
 
 /datum/status_effect/debuff/dk_heal_reduction/on_apply()
 	. = ..()
 	if(owner)
+		reduced_healing = list()
+		RegisterSignal(owner, COMSIG_LIVING_MIRACLE_HEAL_APPLY, PROC_REF(on_miracle_heal_apply))
+		reduce_active_healing_effects()
 		to_chat(owner, span_danger("A deathly chill grips you, stifling your body's ability to heal."))
 	return TRUE
+
+/datum/status_effect/debuff/dk_heal_reduction/on_remove()
+	if(owner)
+		UnregisterSignal(owner, COMSIG_LIVING_MIRACLE_HEAL_APPLY)
+		restore_reduced_healing_effects()
+	reduced_healing = null
+	. = ..()
+
+/datum/status_effect/debuff/dk_heal_reduction/proc/on_miracle_heal_apply(datum/source, healing_amount, datum/healing_datum)
+	SIGNAL_HANDLER
+	reduce_healing_effect(healing_datum)
+	return 0
+
+/datum/status_effect/debuff/dk_heal_reduction/proc/reduce_active_healing_effects()
+	if(!owner || !length(owner.status_effects))
+		return
+
+	for(var/datum/status_effect/status as anything in owner.status_effects)
+		reduce_healing_effect(status)
+
+/datum/status_effect/debuff/dk_heal_reduction/proc/reduce_healing_effect(datum/healing_datum)
+	if(!healing_datum || QDELETED(healing_datum))
+		return
+
+	if(!islist(reduced_healing))
+		reduced_healing = list()
+
+	var/list/originals = reduced_healing[healing_datum]
+	if(!originals)
+		originals = list()
+		reduced_healing[healing_datum] = originals
+
+	var/static/list/healing_vars = list("healing_on_tick", "healing_strength")
+	var/changed = FALSE
+	for(var/healing_var in healing_vars)
+		if(!(healing_var in healing_datum.vars))
+			continue
+
+		var/current_value = healing_datum.vars[healing_var]
+		if(!isnum(current_value))
+			continue
+
+		if(isnull(originals[healing_var]))
+			originals[healing_var] = current_value
+
+		healing_datum.vars[healing_var] = max(0, originals[healing_var] * heal_mult)
+		changed = TRUE
+
+	if(!changed)
+		reduced_healing -= healing_datum
+
+/datum/status_effect/debuff/dk_heal_reduction/proc/restore_reduced_healing_effects()
+	if(!islist(reduced_healing))
+		return
+
+	for(var/datum/healing_datum as anything in reduced_healing)
+		if(!healing_datum || QDELETED(healing_datum))
+			continue
+
+		var/list/originals = reduced_healing[healing_datum]
+		if(!islist(originals))
+			continue
+
+		for(var/healing_var in originals)
+			if(healing_var in healing_datum.vars)
+				healing_datum.vars[healing_var] = originals[healing_var]

@@ -97,18 +97,33 @@
 	var/skill_mult = owner.mind ? (owner.get_skill_level(/datum/skill/combat/swords) * 0.1 + 0.5) : 1
 	var/total_damage = round(base_damage * skill_mult)
 
-	owner.visible_message(
-		span_userdanger("[owner] swings the runic blade in a devastating arc!"),
-		span_danger("Runic Strike!")
+	dk_show_message(
+		owner,
+		list(
+			span_userdanger("[owner] carves a violet runic arc through the battlefield!"),
+			span_userdanger("[owner]'s runic blade sweeps wide in a corpse-lit crescent!"),
+			span_userdanger("A purple blade-arc tears outward from [owner]'s strike!")
+		),
+		list(
+			span_danger("Runic Strike!"),
+			span_danger("The runes break open in a killing arc."),
+			span_danger("You loose the blade's stored wrath.")
+		)
 	)
+	owner.do_attack_animation(target, ATTACK_EFFECT_SLASH)
+	dk_show_overhead(owner, "blade_bind", "#8f3cff", 0.8 SECONDS, 22)
+	dk_spawn_fx(target_turf, "sweep_fx", "#8f3cff", GetAimDir(target), 0.6 SECONDS)
 
 	for(var/mob/living/L in range(1, target_turf))
 		if(L == owner)
+			continue
+		if(L.stat == DEAD)
 			continue
 		if(L.faction_check_mob(owner))
 			continue
 		var/eff_zone = GetEffectiveHitZone(L, zone)
 		L.apply_damage(total_damage, BRUTE, eff_zone)
+		dk_spawn_fx(L, "curseblob", "#8f3cff", null, 0.5 SECONDS)
 		to_chat(L, span_userdanger("The runic blade tears through you!"))
 
 	SEND_SIGNAL(owner, COMSIG_DK_COMBO_FIRED, "runic_strike")
@@ -127,10 +142,22 @@
 	var/base_damage = blade.force * 1.3
 	var/total_damage = round(base_damage)
 
-	owner.visible_message(
-		span_danger("[owner] delivers a chilling death blow to [target]!"),
-		span_danger("Death Strike!")
+	dk_show_message(
+		owner,
+		list(
+			span_danger("[owner] drives a purple death-rune through [target]!"),
+			span_danger("[owner]'s blade leaves a violet wound across [target]!"),
+			span_danger("A deathly purple slash follows [owner]'s strike into [target]!")
+		),
+		list(
+			span_danger("Death Strike!"),
+			span_danger("The death rune closes around [target]'s wounds."),
+			span_danger("Your blade stifles [target]'s lifeforce.")
+		)
 	)
+	owner.do_attack_animation(target, ATTACK_EFFECT_SLASH)
+	dk_show_overhead(target, "blade_bind", "#8f3cff", 0.9 SECONDS, 22)
+	dk_spawn_fx(target, "sweep_fx", "#8f3cff", GetAimDir(target), 0.6 SECONDS)
 
 	var/eff_zone = GetEffectiveHitZone(target, zone)
 	target.apply_damage(total_damage, BRUTE, eff_zone)
@@ -153,22 +180,31 @@
 	var/base_damage = blade.force * 1.1
 	var/total_damage = round(base_damage)
 
-	owner.visible_message(
-		span_danger("[owner] strikes [target] with a pestilent blade!"),
-		span_danger("Plague Strike!")
+	dk_show_message(
+		owner,
+		list(
+			span_danger("[owner] cuts [target] with a pestilent green rune!"),
+			span_danger("[owner]'s blade leaks grave-plague as it bites into [target]!"),
+			span_danger("A sickly mark flashes over [target] beneath [owner]'s strike!")
+		),
+		list(
+			span_boldwarning("Plague Strike!"),
+			span_boldwarning("The plague rune seeks a wound."),
+			span_boldwarning("You drive pestilence into [target].")
+		)
 	)
+	owner.do_attack_animation(target, ATTACK_EFFECT_SLASH)
+	dk_show_overhead(target, "cut_diagonal", "#4fbf4f", 1 SECONDS, 22)
+	dk_spawn_fx(target, "curseblob", "#4fbf4f", GetAimDir(target), 0.7 SECONDS, 8)
 
 	var/eff_zone = GetEffectiveHitZone(target, zone)
-	target.apply_damage(total_damage, BRUTE, eff_zone, armour_penetration = 30)
+	var/armor_block = target.run_armor_check(eff_zone, "slash", armor_penetration = PEN_HEAVY, damage = total_damage)
+	target.apply_damage(total_damage, BRUTE, eff_zone, armor_block)
 
 	if(ishuman(target))
-		var/mob/living/carbon/human/H = target
-		var/obj/item/bodypart/BP = H.get_bodypart(eff_zone)
-		if(BP)
-			var/armor_val = H.run_armor_check(BP, "melee")
-			if(total_damage > armor_val || prob(40))
-				target.apply_status_effect(/datum/status_effect/debuff/dk_plague_disease, owner)
-				to_chat(target, span_userdanger("The blade penetrates your armor and infects you with plague!"))
+		if(armor_block < total_damage || prob(40))
+			target.apply_status_effect(/datum/status_effect/debuff/dk_plague_disease, owner)
+			to_chat(target, span_userdanger("The blade penetrates your armor and infects you with plague!"))
 	else
 		if(prob(50))
 			target.apply_status_effect(/datum/status_effect/debuff/dk_plague_disease, owner)
@@ -241,7 +277,21 @@
 
 	stance_active = TRUE
 	owner.apply_status_effect(/datum/status_effect/buff/dk_stance)
-	to_chat(owner, span_danger("You adopt the Runic Stance. The runes flare to life."))
+	dk_show_message(
+		owner,
+		list(
+			span_danger("[owner] lowers into a runic killing stance."),
+			span_danger("[owner]'s blade-runes flare as their stance tightens."),
+			span_danger("Dark runes kindle around [owner]'s guard.")
+		),
+		list(
+			span_danger("You adopt the Runic Stance. The runes flare to life."),
+			span_danger("The blade accepts your stance."),
+			span_danger("Your oath settles into the edge.")
+		)
+	)
+	dk_show_overhead(owner, "blade_path", "#8f3cff", 0.9 SECONDS, 22)
+	dk_spawn_fx(owner, "shieldsparkles", "#8f3cff", owner.dir, 0.6 SECONDS)
 
 /datum/component/combo_core/dead_knight/proc/DeactivateStance()
 	if(!owner || !stance_active)
@@ -250,7 +300,20 @@
 	stance_active = FALSE
 	owner.remove_status_effect(/datum/status_effect/buff/dk_stance)
 	ClearHistory("stance_off")
-	to_chat(owner, span_notice("You relax your stance. The runes dim."))
+	dk_show_message(
+		owner,
+		list(
+			span_notice("[owner]'s runes gutter and fall quiet."),
+			span_notice("[owner] lets the runic stance fade."),
+			span_notice("The grave-light around [owner]'s blade dims.")
+		),
+		list(
+			span_notice("You relax your stance. The runes dim."),
+			span_notice("The edge grows quiet."),
+			span_notice("You let the runes sleep.")
+		)
+	)
+	dk_spawn_fx(owner, "curse", "#4a0080", owner.dir, 0.5 SECONDS)
 
 // ------------------------------------------------------------
 // blade summoning
@@ -263,10 +326,37 @@
 	var/obj/item/rogueweapon/sword/long/runic_blade/new_blade = new(get_turf(owner), owner)
 	if(owner.put_in_hands(new_blade))
 		blade = new_blade
-		to_chat(owner, span_danger("The runic blade coalesces from dark mist into your grasp."))
+		dk_show_message(
+			owner,
+			list(
+				span_danger("Dark mist coils into a runic blade in [owner]'s grasp."),
+				span_danger("[owner] pulls a rune-etched blade from the grave-mist."),
+				span_danger("A frost-rimed sword forms in [owner]'s hand.")
+			),
+			list(
+				span_danger("The runic blade coalesces from dark mist into your grasp."),
+				span_danger("Your blade returns from the dark."),
+				span_danger("The oath-edge answers your call.")
+			)
+		)
+		dk_show_overhead(owner, "blade_bind", "#8f3cff", 1 SECONDS, 22)
+		dk_spawn_fx(owner, "curseblob", "#4a0080", owner.dir, 0.8 SECONDS)
 		SEND_SIGNAL(owner, COMSIG_DK_BLADE_SUMMONED)
 	else
-		to_chat(owner, span_warning("Your hands are full — the blade falls to the ground."))
+		dk_show_message(
+			owner,
+			list(
+				span_warning("Dark mist coils into a runic blade, but [owner]'s hands are full."),
+				span_warning("[owner]'s summoned blade drops from the mist to the ground."),
+				span_warning("A frost-rimed sword forms at [owner]'s feet.")
+			),
+			list(
+				span_warning("Your hands are full — the blade falls to the ground."),
+				span_warning("The blade answers, but you cannot grasp it."),
+				span_warning("Your oath-edge falls from your crowded hands.")
+			)
+		)
+		dk_spawn_fx(new_blade, "curseblob", "#4a0080", owner.dir, 0.8 SECONDS)
 		blade = new_blade
 
 // ------------------------------------------------------------
