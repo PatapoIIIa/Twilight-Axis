@@ -47,7 +47,18 @@
 	L.equipOutfit(/datum/outfit/job/roguetown/dead_knight)
 	L.set_patron(/datum/patron/inhumen/zizo)
 	L.regenerate_icons()
-	owner.current.forceMove(pick(GLOB.vlord_starts))
+	var/turf/spawn_turf = get_dead_knight_spawn_turf(L)
+	if(spawn_turf)
+		owner.current.forceMove(spawn_turf)
+
+/datum/antagonist/lich/dead_knight/proc/get_dead_knight_spawn_turf(mob/living/carbon/human/body)
+	if(length(GLOB.vlord_starts))
+		return pick(GLOB.vlord_starts)
+	if(length(SSjob?.latejoin_trackers))
+		return pick(SSjob.latejoin_trackers)
+	if(length(GLOB.newplayer_start))
+		return pick(GLOB.newplayer_start)
+	return get_turf(body)
 
 /datum/antagonist/lich/dead_knight/equip_and_traits()
 	var/mob/living/carbon/human/body = owner.current

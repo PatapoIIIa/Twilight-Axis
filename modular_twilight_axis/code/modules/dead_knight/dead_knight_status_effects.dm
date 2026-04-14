@@ -135,6 +135,17 @@
 	SEND_SIGNAL(owner, COMSIG_DK_STANCE_TOGGLED, FALSE)
 	. = ..()
 
+/proc/dk_can_plague(mob/living/target, mob/living/source)
+	if(!target || target.stat == DEAD)
+		return FALSE
+	if(target == source)
+		return FALSE
+	if(target.mob_biotypes & MOB_UNDEAD)
+		return FALSE
+	if(!(target.mob_biotypes & MOB_ORGANIC))
+		return FALSE
+	return TRUE
+
 // --- Plague Mark (ticking bomb on target) ---
 
 /atom/movable/screen/alert/status_effect/debuff/dk_plague_mark
@@ -154,23 +165,28 @@
 
 	var/mob/living/caster
 	var/detonated = FALSE
+	var/mark_active = FALSE
 
 /datum/status_effect/debuff/dk_plague_mark/on_creation(mob/living/new_owner, mob/living/_caster)
 	caster = _caster
 	return ..()
 
 /datum/status_effect/debuff/dk_plague_mark/on_apply()
+	if(!dk_can_plague(owner, caster))
+		return FALSE
 	. = ..()
 	if(owner)
 		RegisterSignal(owner, COMSIG_LIVING_MIRACLE_HEAL_APPLY, PROC_REF(on_miracle_heal_apply))
+		mark_active = TRUE
 		to_chat(owner, span_userdanger("A dark rune sears into your flesh! Find a priest to cleanse it!"))
 	return TRUE
 
 /datum/status_effect/debuff/dk_plague_mark/on_remove()
-	if(owner)
+	if(mark_active && owner)
 		UnregisterSignal(owner, COMSIG_LIVING_MIRACLE_HEAL_APPLY)
-	if(!detonated && owner && owner.stat != DEAD && duration <= world.time)
+	if(mark_active && !detonated && owner && owner.stat != DEAD && duration <= world.time)
 		detonate()
+	mark_active = FALSE
 	caster = null
 	. = ..()
 
@@ -189,6 +205,8 @@
 /datum/status_effect/debuff/dk_plague_mark/proc/detonate()
 	if(!owner || detonated)
 		return
+	if(!dk_can_plague(owner, caster))
+		return
 	detonated = TRUE
 	owner.visible_message(
 		span_userdanger("The plague mark on [owner] erupts in a burst of pestilence!"),
@@ -204,9 +222,7 @@
 	owner.adjustBruteLoss(50)
 
 	for(var/mob/living/L in range(2, epicenter))
-		if(L == caster)
-			continue
-		if(L.stat == DEAD)
+		if(!dk_can_plague(L, caster))
 			continue
 		L.apply_status_effect(/datum/status_effect/debuff/dk_plague_disease, caster)
 		L.adjustToxLoss(30)
@@ -229,37 +245,45 @@
 
 	var/mob/living/plague_source
 	var/spread_range = 2
+	var/stat_debuff_applied = FALSE
 
 /datum/status_effect/debuff/dk_plague_disease/on_creation(mob/living/new_owner, mob/living/_source)
 	plague_source = _source
 	return ..()
 
 /datum/status_effect/debuff/dk_plague_disease/on_apply()
+	if(!dk_can_plague(owner, plague_source))
+		return FALSE
 	. = ..()
 	if(owner)
 		owner.change_stat(STATKEY_CON, -2)
 		owner.change_stat(STATKEY_STR, -2)
 		owner.change_stat(STATKEY_SPD, -1)
+		stat_debuff_applied = TRUE
 	return TRUE
 
 /datum/status_effect/debuff/dk_plague_disease/on_remove()
-	if(owner)
+	if(owner && stat_debuff_applied)
 		owner.change_stat(STATKEY_CON, 2)
 		owner.change_stat(STATKEY_STR, 2)
 		owner.change_stat(STATKEY_SPD, 1)
+	stat_debuff_applied = FALSE
 	plague_source = null
 	. = ..()
 
 /datum/status_effect/debuff/dk_plague_disease/tick()
 	if(!owner || owner.stat == DEAD)
 		return
+	if(!dk_can_plague(owner, plague_source))
+		qdel(src)
+		return
 
 	owner.adjustToxLoss(30)
 
 	for(var/mob/living/L in range(spread_range, owner))
-		if(L == owner || L == plague_source)
+		if(L == owner)
 			continue
-		if(L.stat == DEAD)
+		if(!dk_can_plague(L, plague_source))
 			continue
 		if(L.has_status_effect(/datum/status_effect/debuff/dk_plague_disease))
 			continue

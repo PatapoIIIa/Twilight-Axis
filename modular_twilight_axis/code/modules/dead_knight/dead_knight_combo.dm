@@ -201,13 +201,14 @@
 	var/armor_block = target.run_armor_check(eff_zone, "slash", armor_penetration = PEN_HEAVY, damage = total_damage)
 	target.apply_damage(total_damage, BRUTE, eff_zone, armor_block)
 
-	if(ishuman(target))
-		if(armor_block < total_damage || prob(40))
-			target.apply_status_effect(/datum/status_effect/debuff/dk_plague_disease, owner)
-			to_chat(target, span_userdanger("The blade penetrates your armor and infects you with plague!"))
-	else
-		if(prob(50))
-			target.apply_status_effect(/datum/status_effect/debuff/dk_plague_disease, owner)
+	if(dk_can_plague(target, owner))
+		if(ishuman(target))
+			if(armor_block < total_damage || prob(40))
+				target.apply_status_effect(/datum/status_effect/debuff/dk_plague_disease, owner)
+				to_chat(target, span_userdanger("The blade penetrates your armor and infects you with plague!"))
+		else
+			if(prob(50))
+				target.apply_status_effect(/datum/status_effect/debuff/dk_plague_disease, owner)
 
 	SEND_SIGNAL(owner, COMSIG_DK_COMBO_FIRED, "plague_strike")
 	return TRUE

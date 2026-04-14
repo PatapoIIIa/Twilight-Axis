@@ -235,7 +235,7 @@
 
 	var/mob/living/target = null
 	for(var/mob/living/L in oview(2, user))
-		if(L.stat == DEAD)
+		if(!dk_can_plague(L, user))
 			continue
 		if(L.faction_check_mob(user))
 			continue
