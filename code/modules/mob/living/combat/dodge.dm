@@ -229,8 +229,9 @@
 			var/mainh = get_active_held_item()
 			var/offh = get_inactive_held_item()
 			if(istype(mainh, /obj/item/rogueweapon/shield) || istype(offh, /obj/item/rogueweapon/shield))	//why do I have to pre-empt the worst of you
-				max_dodge = MAX_DODGE_FLOOR
-				L.changeNext_def(CLICK_CD_DODGE)
+				if(!istype(mainh, /obj/item/rogueweapon/shield/buckler) && !istype(offh, /obj/item/rogueweapon/shield/buckler))
+					max_dodge = MAX_DODGE_FLOOR
+					L.changeNext_def(CLICK_CD_DODGE)
 		prob2defend = clamp((prob2defend + max_dodge), 5, (90 + max_dodge))
 
 		//------------Dual Wielding Checks------------
@@ -267,6 +268,9 @@
 
 		if(user.client?.prefs.showrolls && !HAS_TRAIT(src, TRAIT_DECEIVING_MEEKNESS) && has_trait && client)
 			to_chat(user, span_info("Their roll to dodge was... [prob2defend]%"))
+
+		if(L.has_status_effect(/datum/status_effect/swingdelay/penalty))
+			prob2defend = clamp(prob2defend - 50, 5, 90)
 
 		var/dodge_status = FALSE
 		if((!defender_dualw && !attacker_dualw) || (defender_dualw && attacker_dualw)) //They cancel each other out

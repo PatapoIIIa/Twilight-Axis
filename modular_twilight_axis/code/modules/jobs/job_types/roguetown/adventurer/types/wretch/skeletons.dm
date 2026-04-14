@@ -14,7 +14,7 @@
 	category_tags = list(CTAG_WRETCH)
 	class_select_category = CLASS_CAT_ACCURSED
 	cmode_music = "modular_twilight_axis/sound/music/combat_skeleton.ogg"
-	min_pq = 30				//better RP?
+	min_pq = 30
 	maximum_possible_slots = 2
 	extra_context = "You're a SKELETON, be ready to shackle your bones. Minimum PQ Required: 30"
 	traits_applied = list(
@@ -106,7 +106,7 @@
 				if("Bow")
 					H.adjust_skillrank(/datum/skill/combat/bows, 4, TRUE)
 					backr = /obj/item/gun/ballistic/revolver/grenadelauncher/bow/recurve
-					beltl = /obj/item/quiver/arrows/bronze
+					beltl = /obj/item/quiver/arrows
 			backl = /obj/item/storage/backpack/rogue/satchel
 			neck = /obj/item/clothing/neck/roguetown/leather
 			shirt = /obj/item/clothing/suit/roguetown/armor/chainmail/hauberk/aalloy
