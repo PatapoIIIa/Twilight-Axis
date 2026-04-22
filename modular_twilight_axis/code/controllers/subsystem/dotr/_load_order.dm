@@ -9,3 +9,4 @@
 #include "controller.dm"
 #include "dotr.dm"
 #include "virtual_combat.dm"
+#include "_undefs.dm"
