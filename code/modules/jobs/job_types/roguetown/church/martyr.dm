@@ -476,7 +476,7 @@
 	give_bank_account = TRUE
 
 	cmode_music = 'sound/music/combat_martyrsafe.ogg'
-	job_traits = list(TRAIT_HEAVYARMOR, TRAIT_STEELHEARTED, TRAIT_SILVER_BLESSED, TRAIT_EMPATH, TRAIT_MEDICINE_EXPERT, TRAIT_DUALWIELDER, TRAIT_CLERGY, TRAIT_TEMPO, TRAIT_MARRIAGE_CAPABLE)
+	job_traits = list(TRAIT_HEAVYARMOR, TRAIT_STEELHEARTED, TRAIT_SILVER_BLESSED, TRAIT_EMPATH, TRAIT_MEDICINE_EXPERT, TRAIT_DUALWIELDER, TRAIT_CLERGY, TRAIT_TEMPO)
 
 	//No undeath-adjacent virtues for a role that can sacrifice itself. The Ten like their sacrifices 'pure'. (I actually didn't want to code returning those virtue traits post-sword use)
 	//They get those traits during sword activation, anyway.
@@ -1319,3 +1319,89 @@
 #undef STATE_SAFE
 #undef STATE_MARTYR
 #undef STATE_MARTYRULT
+
+
+///////////////////////////////////
+// Versions for UNDIVIDED ritual //
+///////////////////////////////////
+
+///////////
+// PLATE //
+///////////
+
+/obj/item/clothing/suit/roguetown/armor/plate/full/holysee/ritual
+	name = "crusader silver plate"
+
+/obj/item/clothing/suit/roguetown/armor/plate/full/holysee/ritual/mob_can_equip(mob/living/M, mob/living/equipper, slot, disable_warning = FALSE, bypass_equip_delay_self = FALSE)
+	return TRUE
+
+/obj/item/clothing/suit/roguetown/armor/plate/full/holysee/ritual/Initialize()
+	. = ..()
+	ADD_TRAIT(src, TRAIT_NODROP, CURSED_ITEM_TRAIT)
+
+/obj/item/clothing/suit/roguetown/armor/plate/full/holysee/ritual/dropped(mob/living/carbon/human/user)
+	. = ..()
+	if(QDELETED(src))
+		return
+	qdel(src)
+
+////////////
+// GLOVES //
+////////////
+
+/obj/item/clothing/gloves/roguetown/plate/holysee/ritual
+	name = "crusader silver plate gauntlets"
+
+/obj/item/clothing/gloves/roguetown/plate/holysee/ritual/mob_can_equip(mob/living/M, mob/living/equipper, slot, disable_warning = FALSE, bypass_equip_delay_self = FALSE)
+	return TRUE
+
+/obj/item/clothing/gloves/roguetown/plate/holysee/ritual/Initialize()
+	. = ..()
+	ADD_TRAIT(src, TRAIT_NODROP, CURSED_ITEM_TRAIT)
+
+/obj/item/clothing/gloves/roguetown/plate/holysee/ritual/dropped(mob/living/carbon/human/user)
+	. = ..()
+	if(QDELETED(src))
+		return
+	qdel(src)
+
+///////////
+// PANTS //
+///////////
+
+/obj/item/clothing/under/roguetown/platelegs/holysee/ritual
+	name = "crusader silver chausses"
+
+/obj/item/clothing/under/roguetown/platelegs/holysee/ritual/mob_can_equip(mob/living/M, mob/living/equipper, slot, disable_warning = FALSE, bypass_equip_delay_self = FALSE)
+	return TRUE
+
+/obj/item/clothing/under/roguetown/platelegs/holysee/ritual/Initialize()
+	. = ..()
+	ADD_TRAIT(src, TRAIT_NODROP, CURSED_ITEM_TRAIT)
+
+/obj/item/clothing/under/roguetown/platelegs/holysee/ritual/dropped(mob/living/carbon/human/user)
+	. = ..()
+	if(QDELETED(src))
+		return
+	qdel(src)
+
+///////////
+// BOOTS //
+///////////
+
+/obj/item/clothing/shoes/roguetown/boots/armor/holysee/ritual
+	name = "crusader silver plated boots"
+
+/obj/item/clothing/shoes/roguetown/boots/armor/holysee/ritual/mob_can_equip(mob/living/M, mob/living/equipper, slot, disable_warning = FALSE, bypass_equip_delay_self = FALSE)
+	return TRUE
+
+/obj/item/clothing/shoes/roguetown/boots/armor/holysee/ritual/Initialize()
+	. = ..()
+	ADD_TRAIT(src, TRAIT_NODROP, CURSED_ITEM_TRAIT)
+
+/obj/item/clothing/shoes/roguetown/boots/armor/holysee/ritual/dropped(mob/living/carbon/human/user)
+	. = ..()
+	if(QDELETED(src))
+		return
+	qdel(src)
+

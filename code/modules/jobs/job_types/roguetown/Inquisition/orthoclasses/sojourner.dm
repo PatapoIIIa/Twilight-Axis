@@ -13,7 +13,8 @@
 	traits_applied = list(
 		TRAIT_CIVILIZEDBARBARIAN,
 		TRAIT_ARCYNE,
-		TRAIT_NALEDI
+		TRAIT_NALEDI,
+		TRAIT_BLOOD_RESISTANCE,
 	)
 	subclass_stats = list(
 		STATKEY_STR = 1,
@@ -33,7 +34,7 @@
 		/datum/skill/magic/arcane = SKILL_LEVEL_APPRENTICE,
 		/datum/skill/magic/holy = SKILL_LEVEL_APPRENTICE,
 	)
-	subclass_mage_aspects = list("mastery" = FALSE, "major" = 0, "minor" = 0, "utilities" = 4, "ward" = TRUE)
+	subclass_mage_aspects = list("mastery" = FALSE, "major" = 0, "minor" = 0, "utilities" = 4)
 	subclass_stashed_items = list(
 		"Tome of Psydon" = /obj/item/book/rogue/bibble/psy
 	)

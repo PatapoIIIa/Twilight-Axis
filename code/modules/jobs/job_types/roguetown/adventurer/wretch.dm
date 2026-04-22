@@ -42,14 +42,15 @@
 		/datum/advclass/wretch/outlaw,
 		/datum/advclass/wretch/poacher,
 		/datum/advclass/wretch/plaguebearer,
+		/datum/advclass/wretch/mistwalker,
 		/datum/advclass/wretch/pyromaniac,
 		/datum/advclass/wretch/vigilante,
 		/datum/advclass/wretch/munitioneer,
 		/datum/advclass/wretch/pariah,
 		/datum/advclass/wretch/heretic_spellblade,
 		/datum/advclass/wretch/ancient_spellblade,
+		/datum/advclass/wretch/slasher
 //		/datum/advclass/wretch/ancient_deathknight,
-		/datum/advclass/wretch/munitioneer
 	)
 
 /datum/job/roguetown/wretch/special_job_check(mob/dead/new_player/player)
@@ -182,12 +183,12 @@
 	slots = min(slots, 10)
 	result["tier1_slots"] = slots
 
-	// Check for major round antagonists (lich, vampire lord) — hard cap at tier 1
+	// Check for major round antagonists (lich, vampire lord, any bandits) — hard cap at tier 1
 	var/major_antag_active = FALSE
 	for(var/datum/antagonist/antag as anything in GLOB.antagonists)
 		if(QDELETED(antag) || QDELETED(antag.owner))
 			continue
-		if(istype(antag, /datum/antagonist/lich) || istype(antag, /datum/antagonist/vampire/lord))
+		if(istype(antag, /datum/antagonist/lich) || istype(antag, /datum/antagonist/vampire/lord) || istype(antag, /datum/antagonist/bandit))
 			major_antag_active = TRUE
 			break
 	result["major_antag_active"] = major_antag_active
@@ -217,6 +218,8 @@
 	var/datum/job/wretch_job = SSjob.GetJob("Wretch")
 	if(!wretch_job)
 		return
+	if(wretch_job.admin_slot_override)
+		return
 
 	var/override_player_count = null
 	if(SSticker.current_state == GAME_STATE_PREGAME)
@@ -226,4 +229,4 @@
 	var/slots = scaling["final_slots"]
 
 	wretch_job.total_positions = max(wretch_job.current_positions, slots)
-	wretch_job.spawn_positions = max(wretch_job.current_positions, slots)
+	wretch_job.spawn_positions = max(wretch_job.current_positions, slots)	

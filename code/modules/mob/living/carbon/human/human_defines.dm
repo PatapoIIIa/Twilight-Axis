@@ -216,3 +216,6 @@
 	var/can_do_sex = TRUE
 
 	fovangle = FOV_DEFAULT
+
+	/// Guarded Virtue (TRAIT_DECEIVING_MEEKNESS) exclusive variable for filtering out our descriptors from examine.
+	var/show_descriptors = TRUE

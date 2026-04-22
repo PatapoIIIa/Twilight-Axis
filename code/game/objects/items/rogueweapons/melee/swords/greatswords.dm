@@ -5,8 +5,7 @@
 	possible_item_intents = list(/datum/intent/sword/chop, /datum/intent/sword/strike) //bash is for nonlethal takedowns, only targets limbs
 	// Design Intent: I have a big fucking sword and I want to cut everything in sight.
 	gripped_intents = list(/datum/intent/sword/cut/zwei, /datum/intent/sword/thrust/zwei, /datum/intent/sword/cut/zwei/cleave, /datum/intent/sword/cut/zwei/sweep)
-	alt_intents = list(/datum/intent/sword/strike, /datum/intent/sword/bash, /datum/intent/effect/daze)
-	mordhau = TRUE
+	alt_grips = list(/datum/alt_grip/mordhau/greatsword, /datum/alt_grip/halfsword/greatsword)
 	name = "greatsword"
 	desc = "Might be able to chop anything in half!"
 	icon_state = "gsw"
@@ -35,6 +34,8 @@
 
 /obj/item/rogueweapon/greatsword/getonmobprop(tag)
 	. = ..()
+	if(tag == "altgrip" && .)
+		return .
 	if(tag)
 		switch(tag)
 			if("gen")
@@ -59,6 +60,8 @@
 
 /obj/item/rogueweapon/greatsword/elfgsword/getonmobprop(tag)
 	. = ..()
+	if(tag == "altgrip" && .)
+		return .
 	if(tag)
 		switch(tag)
 			if("gen")
@@ -134,7 +137,7 @@
 	if(tag)
 		switch(tag)
 			if("gen")
-				return list("shrink" = 0.6,"sx" = -14,"sy" = -8,"nx" = 15,"ny" = -7,"wx" = -10,"wy" = -5,"ex" = 7,"ey" = -6,"northabove" = 0,"southabove" = 1,"eastabove" = 1,"westabove" = 0,"nturn" = -13,"sturn" = 110,"wturn" = -60,"eturn" = -30,"nflip" = 1,"sflip" = 1,"wflip" = 8,"eflip" = 1)
+				return list("shrink" = 0.6,"sx" = -6,"sy" = 6,"nx" = 6,"ny" = 7,"wx" = 0,"wy" = 5,"ex" = -1,"ey" = 7,"northabove" = 0,"southabove" = 1,"eastabove" = 1,"westabove" = 0,"nturn" = -50,"sturn" = 40,"wturn" = 50,"eturn" = -50,"nflip" = 0,"sflip" = 8,"wflip" = 8,"eflip" = 0)
 			if("wielded")
 				return list("shrink" = 0.6,"sx" = 9,"sy" = -4,"nx" = -7,"ny" = 1,"wx" = -9,"wy" = 2,"ex" = 10,"ey" = 2,"northabove" = 0,"southabove" = 1,"eastabove" = 1,"westabove" = 0,"nturn" = 5,"sturn" = -190,"wturn" = -170,"eturn" = -10,"nflip" = 8,"sflip" = 8,"wflip" = 1,"eflip" = 0)
 			if("onback")
@@ -219,8 +222,8 @@
 	force = 25
 	force_wielded = 30
 	icon_state = "psygsword"
-	possible_item_intents = list(/datum/intent/sword/chop/broadsword/heavy, /datum/intent/sword/cut/zwei, /datum/intent/sword/thrust/exe, /datum/intent/sword/strike)
-	gripped_intents = list(/datum/intent/sword/chop/cleave, /datum/intent/rend, /datum/intent/sword/cut/zwei, /datum/intent/sword/thrust/long/broadsword)
+	possible_item_intents = list(/datum/intent/sword/chop/heavy, /datum/intent/sword/cut/zwei, /datum/intent/sword/thrust/exe, /datum/intent/sword/strike)
+	gripped_intents = list(/datum/intent/sword/chop/cleave, /datum/intent/rend, /datum/intent/sword/cut/zwei, /datum/intent/sword/thrust/heavy)
 	minstr = 13
 	minstr_req = TRUE
 
@@ -237,6 +240,8 @@
 
 /obj/item/rogueweapon/greatsword/psygsword/relic/getonmobprop(tag)
 	. = ..()
+	if(tag == "altgrip" && .)
+		return .
 	if(tag)
 		switch(tag)
 			if("gen")
@@ -256,9 +261,9 @@
 	force_wielded = 25
 	minstr = 11
 	wdefense = 6
-	possible_item_intents = list(/datum/intent/sword/cut, /datum/intent/sword/chop, /datum/intent/sword/thrust/long, /datum/intent/rend/krieg)
-	gripped_intents = list(/datum/intent/sword/cut/zwei, /datum/intent/sword/chop, /datum/intent/sword/thrust/estoc/lunge, /datum/intent/sword/thrust/estoc)
-	alt_intents = list(/datum/intent/effect/daze, /datum/intent/sword/strike, /datum/intent/sword/bash)
+	possible_item_intents = list(/datum/intent/sword/cut, /datum/intent/sword/chop/heavy, /datum/intent/sword/thrust/long, /datum/intent/rend/krieg)
+	gripped_intents = list(/datum/intent/sword/cut/zwei, /datum/intent/sword/chop/heavy, /datum/intent/sword/thrust/estoc/lunge, /datum/intent/sword/thrust/estoc)
+	alt_grips = list(/datum/alt_grip/mordhau/broadsword/forgotten_blade)
 	is_silver = TRUE
 	smeltresult = /obj/item/ingot/silver
 
@@ -369,7 +374,7 @@
 	possible_item_intents = list(/datum/intent/sword/chop,/datum/intent/sword/strike) //bash is for nonlethal takedowns, only targets limbs
 	// Design Intent: It is pretty purely a two-handed weapon. In one hand it's a bit clumsy.
 	gripped_intents = list(/datum/intent/sword/cut/zwei, /datum/intent/rend, /datum/intent/sword/thrust/zwei, /datum/intent/sword/strike/bad)
-	alt_intents = list(null)//can't be alt-gripped. Ought to compensate for that.
+	alt_grips = null // can't be alt-gripped
 	name = "elvish curveblade"
 	desc = "The Elven Curveblade is a traditional weapon, its practice as much a dance as a method of death. Flowing like the water's current, let its path lead to your enemy's throat."
 	icon_state = "elfcurveblade"
