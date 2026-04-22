@@ -42,6 +42,24 @@
 		return
 	monolith.direct_minion(parent, self_ref)
 
+// ---- Route obstacle handling ----
+
+/proc/get_necromonolith_obstacle_whitelist()
+	var/static/list/obstacle_whitelist = typecacheof(list(
+		/obj/structure/bars,
+		/obj/structure/fence,
+		/obj/structure/mineral_door/bars,
+		/obj/structure/roguewindow,
+	))
+	return obstacle_whitelist
+
+/datum/ai_planning_subtree/attack_obstacle_in_path/necromonolith_route
+	target_key = BB_TRAVEL_DESTINATION
+	attack_behaviour = /datum/ai_behavior/attack_obstructions/necromonolith
+
+/datum/ai_behavior/attack_obstructions/necromonolith
+	can_attack_dense_objects = TRUE
+
 // ---- AI controllers ----
 
 /datum/ai_controller/necromonolith_skeleton
@@ -53,6 +71,7 @@
 	planning_subtrees = list(
 		/datum/ai_planning_subtree/simple_find_target/closest,
 		/datum/ai_planning_subtree/attack_obstacle_in_path,
+		/datum/ai_planning_subtree/attack_obstacle_in_path/necromonolith_route,
 		/datum/ai_planning_subtree/basic_melee_attack_subtree/opportunistic/event_loc,
 		/datum/ai_planning_subtree/travel_to_point/and_clear_target,
 	)
@@ -68,6 +87,7 @@
 	planning_subtrees = list(
 		/datum/ai_planning_subtree/simple_find_target/closest,
 		/datum/ai_planning_subtree/attack_obstacle_in_path,
+		/datum/ai_planning_subtree/attack_obstacle_in_path/necromonolith_route,
 		/datum/ai_planning_subtree/basic_melee_attack_subtree/opportunistic/event_loc,
 		/datum/ai_planning_subtree/travel_to_point/and_clear_target,
 		/datum/ai_planning_subtree/spacing/melee,
@@ -85,6 +105,7 @@
 		/datum/ai_planning_subtree/basic_ranged_attack_subtree,
 		/datum/ai_planning_subtree/simple_find_target/closest,
 		/datum/ai_planning_subtree/attack_obstacle_in_path,
+		/datum/ai_planning_subtree/attack_obstacle_in_path/necromonolith_route,
 		/datum/ai_planning_subtree/travel_to_point/and_clear_target,
 		/datum/ai_planning_subtree/spacing/ranged,
 	)

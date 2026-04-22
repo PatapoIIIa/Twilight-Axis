@@ -57,9 +57,17 @@
 	var/list/state = list()
 	state["route_slot"] = route_slot
 	state["route_index"] = 1
+	state["hold_offset"] = length(active_minions)
+	state["hold_turf"] = null
+	state["personal_route"] = null
 	state["chase_ref"] = null
 	state["chase_started_at"] = 0
+	state["chase_anchor_index"] = 1
 	state["reengage_after"] = 0
+	state["last_turf_ref"] = WEAKREF(get_turf(minion))
+	state["stuck_ticks"] = 0
+	state["climbing_wall"] = FALSE
+	state["wall_climb_cooldown"] = 0
 	minion_states[minion_ref] = state
 
 	// Configure the skeleton for monolith service
@@ -76,6 +84,7 @@
 	minion.ai_controller.clear_blackboard_key(BB_BASIC_MOB_RETALIATE_LIST)
 	minion.ai_controller.clear_blackboard_key(BB_BASIC_MOB_CURRENT_TARGET_HIDING_LOCATION)
 	minion.ai_controller.clear_blackboard_key(BB_TRAVEL_DESTINATION)
+	minion.ai_controller.set_blackboard_key(BB_OBSTACLE_TARGETING_WHITELIST, get_necromonolith_obstacle_whitelist())
 
 	// Attach thin component (signal relay only)
 	minion.AddComponent(/datum/component/necromonolith_minion, src)
@@ -83,6 +92,7 @@
 	var/list/route = get_minion_route(route_slot)
 	var/turf/goal = length(route) ? route[length(route)] : null
 	log_necromonolith_debug("registered [minion.type] at [necromonolith_debug_coords(minion)] route_slot=[route_slot] goal=[necromonolith_debug_coords(goal)]")
+	return minion_ref
 
 /obj/structure/necromantic_monolith/proc/unregister_minion(mob/living/minion)
 	if(!minion)

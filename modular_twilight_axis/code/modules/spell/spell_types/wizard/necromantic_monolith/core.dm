@@ -19,7 +19,7 @@
 	var/next_route_pick = 1
 	var/spawn_cycle_count = 0
 	var/waves_since_rest = 0
-	/// Per-minion routing state: weakref -> list("route_index", "route_slot", "chase_ref", "chase_started_at", "reengage_after")
+	/// Per-minion routing state: weakref -> route/chase/hold state list
 	var/list/minion_states = list()
 	/// SSdotr virtualization controller
 	var/datum/dotr_controller/necromonolith/dotr_ctrl

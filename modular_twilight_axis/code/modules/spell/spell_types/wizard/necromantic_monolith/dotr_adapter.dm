@@ -34,6 +34,13 @@
 	if(the_mob.ai_controller)
 		if(the_mob.ai_controller.blackboard[BB_BASIC_MOB_CURRENT_TARGET])
 			return FALSE
+	for(var/datum/weakref/ref as anything in monolith.active_minions)
+		if(ref.resolve() != the_mob)
+			continue
+		var/list/state = monolith.minion_states[ref]
+		if(state && (length(state["personal_route"]) || state["climbing_wall"]))
+			return FALSE
+		break
 	// Near monolith — no
 	if(get_dist(the_mob, monolith) <= safe_range)
 		return FALSE
@@ -68,6 +75,7 @@
 	P.route_slot = found_state["route_slot"]
 	P.route_index = found_state["route_index"]
 	P.group_key = P.route_slot
+	P.reengage_after = found_state["reengage_after"]
 	// Chase
 	var/datum/weakref/chase_ref = found_state["chase_ref"]
 	if(chase_ref)
@@ -101,12 +109,12 @@
 	if(QDELETED(S))
 		return null
 	monolith.apply_necromonolith_owner_data(S)
-	monolith.register_minion(S, profile.route_slot)
+	var/datum/weakref/new_ref = monolith.register_minion(S, profile.route_slot)
 	// Restore route position
-	var/datum/weakref/new_ref = WEAKREF(S)
 	var/list/state = monolith.minion_states[new_ref]
 	if(state)
 		state["route_index"] = profile.route_index
+		state["reengage_after"] = profile.reengage_after
 		if(profile.chase_target_ref)
 			state["chase_ref"] = profile.chase_target_ref
 			state["chase_started_at"] = profile.chase_started_at

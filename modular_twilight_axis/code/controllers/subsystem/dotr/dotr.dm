@@ -165,6 +165,7 @@ SUBSYSTEM_DEF(dotr)
 /datum/controller/subsystem/dotr/proc/advance_profiles()
 	// Group by controller + route_slot
 	var/list/groups = list()
+	var/list/devirtualized = list()
 	for(var/datum/dotr_profile/P as anything in all_profiles)
 		if(P.current_health <= 0)
 			continue
@@ -192,8 +193,16 @@ SUBSYSTEM_DEF(dotr)
 			continue
 		for(var/datum/dotr_profile/P as anything in grp)
 			if(P.route_index < rlen)
+				var/turf/next_turf = routes[P.route_slot][P.route_index + 1]
+				if(is_virtual_route_turf_blocked(P, next_turf))
+					if(try_materialize_route_block(P, next_turf))
+						devirtualized += P
+					continue
 				P.route_index++
 				P.sync_position()
+	for(var/datum/dotr_profile/P as anything in devirtualized)
+		all_profiles -= P
+		qdel(P)
 
 /datum/controller/subsystem/dotr/proc/advance_chase(datum/dotr_profile/P, atom/target)
 	if(P.chase_started_at && world.time > P.chase_started_at + DOTR_VIRTUAL_CHASE_TIMEOUT)
@@ -243,6 +252,58 @@ SUBSYSTEM_DEF(dotr)
 	return // No hostile factions yet
 
 // ---- Helpers ----
+
+/datum/controller/subsystem/dotr/proc/is_virtual_route_turf_blocked(datum/dotr_profile/profile, turf/next_turf)
+	if(!profile || !next_turf || QDELETED(next_turf))
+		return TRUE
+	return next_turf.is_blocked_turf(exclude_mobs = TRUE)
+
+/datum/controller/subsystem/dotr/proc/try_materialize_route_block(datum/dotr_profile/profile, turf/blocked_turf)
+	if(!profile?.controller || !blocked_turf)
+		return FALSE
+	if(world.time < profile.last_devirt_attempt + DOTR_DEVIRT_COOLDOWN)
+		return FALSE
+	if(count_physical_near(profile.controller, blocked_turf) >= DOTR_MAX_PHYSICAL_PER_ZONE)
+		profile.last_devirt_attempt = world.time
+		return FALSE
+	var/turf/spawn_turf = find_route_spawn_turf(profile, blocked_turf)
+	if(!spawn_turf)
+		profile.last_devirt_attempt = world.time
+		return FALSE
+	var/mob/living/M = profile.controller.materialize(profile, spawn_turf)
+	if(M && !QDELETED(M))
+		log_dotr_debug("route-block devirt id=[profile.profile_id] [profile.mob_type] at [spawn_turf.x],[spawn_turf.y],[spawn_turf.z] blocking=[blocked_turf.x],[blocked_turf.y],[blocked_turf.z]")
+		return TRUE
+	profile.last_devirt_attempt = world.time
+	return FALSE
+
+/datum/controller/subsystem/dotr/proc/find_route_spawn_turf(datum/dotr_profile/profile, turf/blocked_turf)
+	var/turf/virtual_turf = profile.get_virtual_turf()
+	if(is_dotr_spawn_turf_clear(virtual_turf))
+		return virtual_turf
+	if(!virtual_turf)
+		return null
+	var/turf/best_turf
+	var/best_dist = INFINITY
+	for(var/turf/T in range(1, virtual_turf))
+		if(T.z != virtual_turf.z)
+			continue
+		if(!is_dotr_spawn_turf_clear(T))
+			continue
+		var/distance = get_dist(T, blocked_turf)
+		if(distance >= best_dist)
+			continue
+		best_dist = distance
+		best_turf = T
+	return best_turf
+
+/datum/controller/subsystem/dotr/proc/is_dotr_spawn_turf_clear(turf/target_turf)
+	if(!target_turf || !isopenturf(target_turf))
+		return FALSE
+	for(var/atom/movable/AM in target_turf)
+		if(AM.density)
+			return FALSE
+	return TRUE
 
 /datum/controller/subsystem/dotr/proc/count_physical_near(datum/dotr_controller/ctrl, turf/center)
 	var/n = 0

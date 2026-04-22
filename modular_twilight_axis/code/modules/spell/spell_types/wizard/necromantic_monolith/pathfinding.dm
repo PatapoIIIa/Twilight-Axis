@@ -25,7 +25,7 @@
 		return null
 
 	for(var/atom/movable/target_throne as anything in candidate_thrones)
-		var/list/goal_turfs = get_necromonolith_goal_turfs(target_throne)
+		var/list/goal_turfs = get_necromonolith_goal_turfs(target_throne, include_blocked = TRUE)
 		if(!length(goal_turfs))
 			continue
 
@@ -119,21 +119,25 @@
 
 // ---- Goal turfs ----
 
-/proc/get_necromonolith_goal_turfs(atom/movable/throne)
+/proc/get_necromonolith_goal_turfs(atom/movable/throne, include_blocked = FALSE)
 	var/list/goal_turfs = list()
 	var/turf/throne_turf = get_turf(throne)
 	if(!throne_turf)
 		return goal_turfs
 
-	if(is_necromonolith_turf_clear(throne_turf))
-		goal_turfs += throne_turf
-
 	for(var/turf/candidate in orange(1, throne_turf))
 		if(candidate.z != throne_turf.z)
 			continue
-		if(!is_necromonolith_turf_clear(candidate))
+		if(!is_necromonolith_turf_clear(candidate) && !include_blocked)
+			continue
+		if(candidate in goal_turfs)
 			continue
 		goal_turfs += candidate
+
+	if(!length(goal_turfs) && is_necromonolith_turf_clear(throne_turf))
+		goal_turfs += throne_turf
+	if(include_blocked && !length(goal_turfs))
+		goal_turfs += throne_turf
 
 	return goal_turfs
 
@@ -142,6 +146,8 @@
 /proc/calculate_necromonolith_routes(turf/origin, list/goal_turfs)
 	var/list/routes = list()
 	var/list/primary_route = select_best_necromonolith_route(origin, goal_turfs)
+	if(!length(primary_route))
+		primary_route = select_best_necromonolith_pressure_route(origin, goal_turfs)
 	if(!length(primary_route))
 		return routes
 
@@ -201,6 +207,33 @@
 			best_route = path
 	return best_route
 
+/proc/select_best_necromonolith_pressure_route(turf/origin, list/goal_turfs)
+	var/list/best_route = list()
+	for(var/turf/goal_turf as anything in goal_turfs)
+		if(!goal_turf)
+			continue
+		var/list/path = build_necromonolith_pressure_route(origin, goal_turf)
+		if(!length(path))
+			continue
+		if(!length(best_route) || length(path) < length(best_route))
+			best_route = path
+	return best_route
+
+/proc/build_necromonolith_pressure_route(turf/origin, turf/goal_turf)
+	var/list/path = list()
+	if(!origin || !goal_turf || origin.z != goal_turf.z)
+		return path
+	var/turf/current_turf = origin
+	for(var/i in 1 to NECROMONOLITH_ROUTE_DEPTH)
+		if(current_turf == goal_turf)
+			break
+		var/turf/next_turf = get_step_towards(current_turf, goal_turf)
+		if(!next_turf || next_turf == current_turf)
+			break
+		path += next_turf
+		current_turf = next_turf
+	return path
+
 /proc/pick_necromonolith_exclusion(list/route, fraction)
 	if(length(route) < 6)
 		return null
@@ -253,21 +286,14 @@
 		return FALSE
 	var/route_len = length(route)
 	var/samples = min(route_len, 10)
-	var/blocked_count = 0
+	var/missing_count = 0
 	for(var/i in 1 to samples)
 		var/index = max(1, round((i / samples) * route_len))
 		var/turf/check_turf = route[index]
 		if(!check_turf || QDELETED(check_turf))
-			blocked_count++
+			missing_count++
 			continue
-		if(check_turf.density)
-			blocked_count++
-			continue
-		for(var/atom/movable/blocker in check_turf)
-			if(blocker.density)
-				blocked_count++
-				break
-	return blocked_count <= 2
+	return missing_count <= 2
 
 // ---- Spawn turfs ----
 

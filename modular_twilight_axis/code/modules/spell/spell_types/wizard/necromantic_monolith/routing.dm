@@ -63,18 +63,23 @@
 	if(!state)
 		return
 
-	var/route_slot = state["route_slot"]
-	var/list/route = get_minion_route(route_slot)
+	var/list/route = get_active_minion_route(state)
+	update_minion_route_progress(skeleton, state)
 
 	// If skeleton is chasing a target, handle chase timeout
 	var/atom/current_target = skeleton.ai_controller.blackboard[BB_BASIC_MOB_CURRENT_TARGET]
 	if(current_target)
-		handle_minion_chase(skeleton, state, current_target)
+		handle_minion_chase(skeleton, state, route, current_target)
+		return
+	if(state["climbing_wall"])
 		return
 
 	// No target — clear chase state and advance along route
 	state["chase_ref"] = null
 	state["chase_started_at"] = 0
+
+	if(try_start_minion_wall_climb(skeleton, minion_ref, state, route))
+		return
 
 	var/route_index = state["route_index"]
 	while(route_index <= length(route))
@@ -94,21 +99,87 @@
 	state["route_index"] = route_index
 
 	// Route exhausted — head to final goal
-	var/turf/goal = length(route) ? route[length(route)] : null
-	if(goal && get_turf(skeleton) != goal)
-		if(skeleton.ai_controller.blackboard[BB_TRAVEL_DESTINATION] != goal)
-			skeleton.ai_controller.set_blackboard_key(BB_TRAVEL_DESTINATION, goal)
+	var/turf/hold_turf = get_minion_hold_turf(skeleton, state, route)
+	if(hold_turf && get_turf(skeleton) != hold_turf)
+		if(skeleton.ai_controller.blackboard[BB_TRAVEL_DESTINATION] != hold_turf)
+			skeleton.ai_controller.set_blackboard_key(BB_TRAVEL_DESTINATION, hold_turf)
+		return
+	if(skeleton.ai_controller.blackboard[BB_TRAVEL_DESTINATION])
+		skeleton.ai_controller.clear_blackboard_key(BB_TRAVEL_DESTINATION)
+
+// ---- Route state helpers ----
+
+/obj/structure/necromantic_monolith/proc/get_active_minion_route(list/state)
+	var/list/personal_route = state["personal_route"]
+	if(length(personal_route))
+		return personal_route
+	return get_minion_route(state["route_slot"])
+
+/obj/structure/necromantic_monolith/proc/update_minion_route_progress(mob/living/simple_animal/hostile/rogue/skeleton/skeleton, list/state)
+	var/turf/current_turf = get_turf(skeleton)
+	if(!current_turf)
+		return
+	var/datum/weakref/last_turf_ref = state["last_turf_ref"]
+	if(last_turf_ref?.resolve() == current_turf)
+		state["stuck_ticks"] = (state["stuck_ticks"] || 0) + 1
+		return
+	state["last_turf_ref"] = WEAKREF(current_turf)
+	state["stuck_ticks"] = 0
+
+/obj/structure/necromantic_monolith/proc/get_minion_hold_turf(mob/living/simple_animal/hostile/rogue/skeleton/skeleton, list/state, list/route)
+	var/turf/assigned_turf = state["hold_turf"]
+	if(assigned_turf && !QDELETED(assigned_turf))
+		if(assigned_turf == get_turf(skeleton) || is_necromonolith_turf_clear(assigned_turf, skeleton))
+			return assigned_turf
+
+	var/list/candidates = get_necromonolith_extended_goal_turfs()
+	if(!length(candidates))
+		return length(route) ? route[length(route)] : null
+
+	var/start_index = ((state["hold_offset"] || 1) - 1) % length(candidates) + 1
+	for(var/offset in 0 to length(candidates) - 1)
+		var/index = ((start_index + offset - 1) % length(candidates)) + 1
+		var/turf/candidate = candidates[index]
+		if(!is_necromonolith_turf_clear(candidate, skeleton))
+			continue
+		state["hold_turf"] = candidate
+		return candidate
+
+	return length(route) ? route[length(route)] : null
+
+/obj/structure/necromantic_monolith/proc/get_necromonolith_extended_goal_turfs()
+	var/atom/movable/resolved_throne = throne_ref?.resolve()
+	if(!resolved_throne || QDELETED(resolved_throne))
+		return list()
+
+	var/list/goal_turfs = get_necromonolith_goal_turfs(resolved_throne)
+	if(length(goal_turfs) >= NECROMONOLITH_DESIRED_ROUTES)
+		return goal_turfs
+
+	var/turf/throne_turf = get_turf(resolved_throne)
+	if(!throne_turf)
+		return goal_turfs
+
+	for(var/turf/candidate in orange(2, throne_turf))
+		if(candidate.z != throne_turf.z)
+			continue
+		if(!is_necromonolith_turf_clear(candidate))
+			continue
+		if(candidate in goal_turfs)
+			continue
+		goal_turfs += candidate
+	return goal_turfs
 
 // ---- Chase management ----
 
-/obj/structure/necromantic_monolith/proc/handle_minion_chase(mob/living/simple_animal/hostile/rogue/skeleton/skeleton, list/state, atom/current_target)
+/obj/structure/necromantic_monolith/proc/handle_minion_chase(mob/living/simple_animal/hostile/rogue/skeleton/skeleton, list/state, list/route, atom/current_target)
 	var/reengage_after = state["reengage_after"]
 	if(reengage_after && world.time < reengage_after)
-		force_minion_return(skeleton, state, "reengage cooldown")
+		force_minion_return(skeleton, state, "reengage cooldown", route)
 		return
 
 	if(!current_target || QDELETED(current_target))
-		force_minion_return(skeleton, state, "invalid target")
+		force_minion_return(skeleton, state, "invalid target", route)
 		return
 
 	var/datum/weakref/tracked_ref = state["chase_ref"]
@@ -116,6 +187,7 @@
 	if(current_target != tracked_target)
 		state["chase_ref"] = WEAKREF(current_target)
 		state["chase_started_at"] = world.time
+		state["chase_anchor_index"] = clamp(state["route_index"] || 1, 1, max(length(route), 1))
 		log_necromonolith_debug("[skeleton.type] at [necromonolith_debug_coords(skeleton)] acquired chase target=[necromonolith_debug_coords(current_target)] route_slot=[state["route_slot"]]")
 		return
 
@@ -125,12 +197,21 @@
 		return
 
 	if(world.time < chase_started_at + NECROMONOLITH_CHASE_TIMEOUT)
+		var/chase_anchor_index = state["chase_anchor_index"] || state["route_index"] || 1
+		if(get_dist_3d(skeleton, current_target) > NECROMONOLITH_CHASE_LEASH_DISTANCE)
+			state["reengage_after"] = world.time + NECROMONOLITH_REENGAGE_COOLDOWN
+			force_minion_return(skeleton, state, "target escaped leash", route)
+			return
+		if(necromonolith_route_window_distance(current_target, route, chase_anchor_index, NECROMONOLITH_ROUTE_WINDOW) > NECROMONOLITH_TARGET_ROUTE_LEASH_DISTANCE)
+			state["reengage_after"] = world.time + NECROMONOLITH_REENGAGE_COOLDOWN
+			force_minion_return(skeleton, state, "target left route", route)
+			return
 		return
 
 	state["reengage_after"] = world.time + NECROMONOLITH_REENGAGE_COOLDOWN
-	force_minion_return(skeleton, state, "chase timeout vs [necromonolith_debug_coords(current_target)]")
+	force_minion_return(skeleton, state, "chase timeout vs [necromonolith_debug_coords(current_target)]", route)
 
-/obj/structure/necromantic_monolith/proc/force_minion_return(mob/living/simple_animal/hostile/rogue/skeleton/skeleton, list/state, reason)
+/obj/structure/necromantic_monolith/proc/force_minion_return(mob/living/simple_animal/hostile/rogue/skeleton/skeleton, list/state, reason, list/route)
 	if(skeleton.ai_controller)
 		skeleton.ai_controller.CancelActions()
 		skeleton.ai_controller.clear_blackboard_key(BB_BASIC_MOB_CURRENT_TARGET)
@@ -140,6 +221,7 @@
 	skeleton.LoseTarget()
 	state["chase_ref"] = null
 	state["chase_started_at"] = 0
+	state["route_index"] = find_necromonolith_nearest_route_index(skeleton, route, state["route_index"] || 1)
 	log_necromonolith_debug("[skeleton.type] at [necromonolith_debug_coords(skeleton)] forced back to route ([reason]); next waypoint index=[state["route_index"]]")
 
 /obj/structure/necromantic_monolith/proc/can_minion_engage(mob/living/skeleton, atom/the_target)
@@ -154,3 +236,167 @@
 			return FALSE
 		return TRUE
 	return TRUE
+
+// ---- Route distance & wall fallback ----
+
+/proc/find_necromonolith_nearest_route_index(atom/source, list/route, preferred_index = 1)
+	if(!source || !length(route))
+		return max(preferred_index, 1)
+	var/best_index = clamp(preferred_index || 1, 1, length(route))
+	var/best_distance = INFINITY
+	for(var/i in 1 to length(route))
+		var/turf/route_turf = route[i]
+		if(!route_turf || QDELETED(route_turf))
+			continue
+		var/distance = get_dist_3d(source, route_turf)
+		if(distance >= best_distance)
+			continue
+		best_distance = distance
+		best_index = i
+	return best_index
+
+/proc/necromonolith_route_window_distance(atom/source, list/route, center_index, window_size)
+	if(!source || !length(route))
+		return INFINITY
+	var/start_index = max(1, center_index - window_size)
+	var/end_index = min(length(route), center_index + window_size)
+	var/best_distance = INFINITY
+	for(var/i in start_index to end_index)
+		var/turf/route_turf = route[i]
+		if(!route_turf || QDELETED(route_turf))
+			continue
+		best_distance = min(best_distance, get_dist_3d(source, route_turf))
+	return best_distance
+
+/obj/structure/necromantic_monolith/proc/try_start_minion_wall_climb(mob/living/simple_animal/hostile/rogue/skeleton/skeleton, datum/weakref/minion_ref, list/state, list/route)
+	if((state["stuck_ticks"] || 0) < NECROMONOLITH_STUCK_WALL_CLIMB_TICKS)
+		return FALSE
+	if(state["wall_climb_cooldown"] && world.time < state["wall_climb_cooldown"])
+		return FALSE
+	if(skeleton.doing)
+		return FALSE
+	if(has_necromonolith_route_obstacle_to_break(skeleton))
+		return FALSE
+
+	var/turf/current_turf = get_turf(skeleton)
+	if(!current_turf)
+		return FALSE
+	var/turf/route_goal = length(route) ? route[length(route)] : get_turf(throne_ref?.resolve())
+
+	var/turf/closed/best_wall
+	var/turf/best_landing
+	var/best_distance = INFINITY
+	for(var/direction in GLOB.cardinals)
+		var/turf/closed/candidate_wall = get_step(current_turf, direction)
+		if(!istype(candidate_wall, /turf/closed) || !candidate_wall.wallclimb)
+			continue
+		var/turf/candidate_landing = get_necromonolith_wall_climb_landing(skeleton, candidate_wall)
+		if(!candidate_landing)
+			continue
+		var/distance = route_goal ? get_dist_3d(candidate_landing, route_goal) : 0
+		if(distance >= best_distance)
+			continue
+		best_wall = candidate_wall
+		best_landing = candidate_landing
+		best_distance = distance
+
+	if(!best_wall || !best_landing)
+		return FALSE
+
+	state["climbing_wall"] = TRUE
+	state["wall_climb_cooldown"] = world.time + NECROMONOLITH_WALL_CLIMB_COOLDOWN
+	if(skeleton.ai_controller)
+		skeleton.ai_controller.CancelActions()
+		skeleton.ai_controller.clear_blackboard_key(BB_TRAVEL_DESTINATION)
+	INVOKE_ASYNC(src, PROC_REF(perform_minion_wall_climb), minion_ref, WEAKREF(best_wall), WEAKREF(best_landing))
+	return TRUE
+
+/proc/has_necromonolith_route_obstacle_to_break(mob/living/simple_animal/hostile/rogue/skeleton/skeleton)
+	if(!skeleton?.ai_controller)
+		return FALSE
+	var/atom/destination = skeleton.ai_controller.blackboard[BB_TRAVEL_DESTINATION]
+	if(!destination || QDELETED(destination))
+		return FALSE
+	var/turf/next_step = get_step_towards(skeleton, destination)
+	if(!next_step || !next_step.is_blocked_turf(exclude_mobs = TRUE, source_atom = skeleton))
+		return FALSE
+	var/list/obstacle_whitelist = get_necromonolith_obstacle_whitelist()
+	for(var/obj/object as anything in next_step)
+		if(object.IsObscured())
+			continue
+		if(skeleton.see_invisible < object.invisibility)
+			continue
+		if(is_type_in_typecache(object, obstacle_whitelist))
+			return TRUE
+	return FALSE
+
+/obj/structure/necromantic_monolith/proc/get_necromonolith_wall_climb_landing(mob/living/simple_animal/hostile/rogue/skeleton/skeleton, turf/closed/wall)
+	var/turf/current_turf = get_turf(skeleton)
+	if(!current_turf || !wall || !wall.wallclimb)
+		return null
+	var/turf/above_current = get_step_multiz(current_turf, UP)
+	if(!istype(above_current, /turf/open/transparent/openspace))
+		return null
+	if(!skeleton.can_zTravel(above_current, UP))
+		return null
+
+	var/turf/landing = get_step_multiz(wall, UP)
+	if(!is_necromonolith_wall_landing_clear(landing, skeleton))
+		return null
+	return landing
+
+/proc/is_necromonolith_wall_landing_clear(turf/landing, mob/living/simple_animal/hostile/rogue/skeleton/skeleton)
+	if(!landing || landing.density)
+		return FALSE
+	if(istype(landing, /turf/closed) || istype(landing, /turf/open/transparent/openspace))
+		return FALSE
+	for(var/atom/movable/blocker in landing)
+		if(blocker == skeleton)
+			continue
+		if(blocker.density)
+			return FALSE
+	return TRUE
+
+/obj/structure/necromantic_monolith/proc/perform_minion_wall_climb(datum/weakref/minion_ref, datum/weakref/wall_ref, datum/weakref/landing_ref)
+	var/mob/living/simple_animal/hostile/rogue/skeleton/skeleton = minion_ref?.resolve()
+	var/turf/closed/wall = wall_ref?.resolve()
+	var/turf/landing = landing_ref?.resolve()
+	var/list/state = minion_states[minion_ref]
+	if(!skeleton || QDELETED(skeleton) || skeleton.stat == DEAD || !state)
+		return
+	if(!wall || QDELETED(wall) || !landing || QDELETED(landing))
+		state["climbing_wall"] = FALSE
+		return
+
+	skeleton.visible_message(span_warning("[skeleton] claws into [wall] and starts climbing."))
+	if(!do_after(skeleton, NECROMONOLITH_WALL_CLIMB_TIME, target = wall))
+		state["climbing_wall"] = FALSE
+		return
+	if(QDELETED(src) || QDELETED(skeleton) || skeleton.stat == DEAD)
+		return
+	if(!get_necromonolith_wall_climb_landing(skeleton, wall))
+		state["climbing_wall"] = FALSE
+		return
+
+	skeleton.forceMove(landing)
+	skeleton.visible_message(span_warning("[skeleton] pulls itself over [wall]."))
+	state["climbing_wall"] = FALSE
+	state["stuck_ticks"] = 0
+	state["last_turf_ref"] = WEAKREF(get_turf(skeleton))
+	rebuild_minion_personal_route(skeleton, state)
+
+/obj/structure/necromantic_monolith/proc/rebuild_minion_personal_route(mob/living/simple_animal/hostile/rogue/skeleton/skeleton, list/state)
+	var/atom/movable/resolved_throne = throne_ref?.resolve()
+	var/turf/current_turf = get_turf(skeleton)
+	if(!resolved_throne || QDELETED(resolved_throne) || !current_turf)
+		return
+
+	var/list/goal_turfs = get_necromonolith_goal_turfs(resolved_throne, include_blocked = TRUE)
+	var/list/routes = calculate_necromonolith_routes(current_turf, goal_turfs)
+	if(!length(routes))
+		state["route_index"] = find_necromonolith_nearest_route_index(skeleton, get_minion_route(state["route_slot"]), state["route_index"] || 1)
+		return
+
+	state["personal_route"] = sanitize_necromonolith_route(routes[1], current_turf)
+	state["route_index"] = 1
+	state["hold_turf"] = null

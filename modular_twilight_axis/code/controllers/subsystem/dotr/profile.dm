@@ -31,6 +31,7 @@
 	var/chase_target_y = 0
 	var/chase_target_z = 0
 	var/chase_started_at = 0
+	var/reengage_after = 0
 
 	/// Deferred death
 	var/is_withering = FALSE
