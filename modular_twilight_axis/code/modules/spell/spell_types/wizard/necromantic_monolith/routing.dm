@@ -82,6 +82,10 @@
 		return
 	if(state["climbing_wall"])
 		return
+	if(state["guard_role"] && world.time >= (state["guard_alert_until"] || 0) && has_busy_non_guard_minion())
+		if(skeleton.ai_controller.blackboard[BB_TRAVEL_DESTINATION])
+			skeleton.ai_controller.clear_blackboard_key(BB_TRAVEL_DESTINATION)
+		return
 
 	// No target — clear chase state and advance along route
 	state["chase_ref"] = null
@@ -251,13 +255,79 @@
 	state["route_index"] = find_necromonolith_nearest_route_index(skeleton, route, state["route_index"] || 1)
 	log_necromonolith_debug("[skeleton.type] at [necromonolith_debug_coords(skeleton)] forced back to route ([reason]); next waypoint index=[state["route_index"]]")
 
-/obj/structure/necromantic_monolith/proc/can_minion_engage(datum/weakref/minion_ref)
+/obj/structure/necromantic_monolith/proc/can_minion_engage(datum/weakref/minion_ref, atom/the_target)
 	var/list/state = minion_states[minion_ref]
 	if(!state)
 		return TRUE
 	var/reengage_after = state["reengage_after"]
 	if(reengage_after && world.time < reengage_after)
 		return FALSE
+	if(state["guard_role"] && world.time >= (state["guard_alert_until"] || 0) && has_busy_non_guard_minion())
+		return FALSE
+	return TRUE
+
+/obj/structure/necromantic_monolith/proc/has_busy_non_guard_minion()
+	for(var/datum/weakref/minion_ref as anything in active_minions)
+		var/list/state = minion_states[minion_ref]
+		if(!state || state["guard_role"])
+			continue
+		if(state["climbing_wall"])
+			return TRUE
+		var/mob/living/simple_animal/hostile/rogue/skeleton/minion = minion_ref.resolve()
+		if(!minion || QDELETED(minion) || minion.stat == DEAD || !minion.ai_controller)
+			continue
+		if(minion.ai_controller.blackboard[BB_BASIC_MOB_CURRENT_TARGET])
+			return TRUE
+		if(has_necromonolith_route_obstacle_to_break(minion))
+			return TRUE
+	return FALSE
+
+/obj/structure/necromantic_monolith/proc/on_minion_attacked(mob/living/simple_animal/hostile/rogue/skeleton/skeleton, datum/weakref/minion_ref, atom/attacker)
+	if(!skeleton || QDELETED(skeleton) || skeleton.stat == DEAD || !attacker || QDELETED(attacker))
+		return
+	if(set_minion_attack_target(skeleton, minion_ref, attacker, force = TRUE, guard_alert = TRUE))
+		alert_necromonolith_guards(attacker, skeleton, minion_ref)
+
+/obj/structure/necromantic_monolith/proc/alert_necromonolith_guards(atom/attacker, mob/living/simple_animal/hostile/rogue/skeleton/threatened_minion, datum/weakref/threatened_ref)
+	if(!attacker || QDELETED(attacker) || !threatened_minion || QDELETED(threatened_minion))
+		return
+	for(var/datum/weakref/minion_ref as anything in active_minions)
+		if(minion_ref == threatened_ref)
+			continue
+		var/list/state = minion_states[minion_ref]
+		if(!state || !state["guard_role"])
+			continue
+		var/mob/living/simple_animal/hostile/rogue/skeleton/guard = minion_ref.resolve()
+		if(!guard || QDELETED(guard) || guard.stat == DEAD)
+			continue
+		if(get_dist_3d(guard, threatened_minion) > NECROMONOLITH_GUARD_ASSIST_RANGE)
+			continue
+		set_minion_attack_target(guard, minion_ref, attacker, force = TRUE, guard_alert = TRUE)
+
+/obj/structure/necromantic_monolith/proc/set_minion_attack_target(mob/living/simple_animal/hostile/rogue/skeleton/skeleton, datum/weakref/minion_ref, atom/target, force = FALSE, guard_alert = FALSE)
+	if(!skeleton || QDELETED(skeleton) || skeleton.stat == DEAD || !target || QDELETED(target) || !skeleton.ai_controller)
+		return FALSE
+	if(!isliving(target))
+		return FALSE
+	var/list/state = minion_states[minion_ref]
+	if(!state)
+		return FALSE
+	if(force)
+		state["reengage_after"] = 0
+	if(guard_alert)
+		state["guard_alert_until"] = world.time + NECROMONOLITH_CHASE_TIMEOUT
+	var/datum/targetting_datum/targetting_datum = skeleton.ai_controller.blackboard[BB_TARGETTING_DATUM]
+	if(targetting_datum && !targetting_datum.can_attack(skeleton, target))
+		return FALSE
+	state["chase_ref"] = WEAKREF(target)
+	state["chase_started_at"] = world.time
+	state["chase_anchor_index"] = state["route_index"] || 1
+	skeleton.ai_controller.CancelActions()
+	skeleton.ai_controller.insert_blackboard_key_lazylist(BB_BASIC_MOB_RETALIATE_LIST, target)
+	skeleton.ai_controller.clear_blackboard_key(BB_BASIC_MOB_CURRENT_TARGET_HIDING_LOCATION)
+	skeleton.ai_controller.clear_blackboard_key(BB_TRAVEL_DESTINATION)
+	skeleton.ai_controller.set_blackboard_key(BB_BASIC_MOB_CURRENT_TARGET, target)
+	skeleton.ai_controller.nudge_target_scan()
 	return TRUE
 
 // ---- Route distance & wall fallback ----

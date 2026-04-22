@@ -18,10 +18,11 @@
 
 /datum/component/necromonolith_minion/RegisterWithParent()
 	RegisterSignal(parent, COMSIG_LIVING_LIFE, PROC_REF(on_life))
+	RegisterSignal(parent, COMSIG_ATOM_WAS_ATTACKED, PROC_REF(on_attacked))
 	RegisterSignal(parent, COMSIG_PARENT_QDELETING, PROC_REF(on_parent_destroying))
 
 /datum/component/necromonolith_minion/UnregisterFromParent()
-	UnregisterSignal(parent, list(COMSIG_LIVING_LIFE, COMSIG_PARENT_QDELETING))
+	UnregisterSignal(parent, list(COMSIG_LIVING_LIFE, COMSIG_ATOM_WAS_ATTACKED, COMSIG_PARENT_QDELETING))
 
 /datum/component/necromonolith_minion/Destroy()
 	var/obj/structure/necromantic_monolith/monolith = monolith_ref?.resolve()
@@ -42,6 +43,16 @@
 		return
 	monolith.direct_minion(parent, self_ref)
 
+/datum/component/necromonolith_minion/proc/on_attacked(mob/living/source, atom/attacker, damage)
+	SIGNAL_HANDLER
+	var/obj/structure/necromantic_monolith/monolith = monolith_ref?.resolve()
+	if(!monolith || QDELETED(monolith))
+		return
+	var/mob/living/simple_animal/hostile/rogue/skeleton/skeleton = source
+	if(!istype(skeleton))
+		return
+	monolith.on_minion_attacked(skeleton, self_ref, attacker)
+
 // ---- Route obstacle handling ----
 
 /proc/get_necromonolith_obstacle_whitelist()
@@ -57,8 +68,22 @@
 	target_key = BB_TRAVEL_DESTINATION
 	attack_behaviour = /datum/ai_behavior/attack_obstructions/necromonolith
 
+/datum/ai_planning_subtree/attack_obstacle_in_path/necromonolith_route/SelectBehaviors(datum/ai_controller/controller, seconds_per_tick)
+	if(controller.blackboard[BB_BASIC_MOB_CURRENT_TARGET])
+		return
+	return ..()
+
 /datum/ai_behavior/attack_obstructions/necromonolith
 	can_attack_dense_objects = TRUE
+
+/datum/ai_planning_subtree/simple_find_target/necromonolith
+
+/datum/ai_planning_subtree/simple_find_target/necromonolith/SelectBehaviors(datum/ai_controller/controller, delta_time)
+	controller.queue_behavior(/datum/ai_behavior/find_potential_targets/nearest/necromonolith, BB_BASIC_MOB_CURRENT_TARGET, BB_TARGETTING_DATUM, BB_BASIC_MOB_CURRENT_TARGET_HIDING_LOCATION)
+
+/datum/ai_behavior/find_potential_targets/nearest/necromonolith
+	action_cooldown = 0.5 SECONDS
+	vision_range = NECROMONOLITH_AGGRO_RANGE
 
 // ---- AI controllers ----
 
@@ -69,8 +94,7 @@
 		BB_TARGETTING_DATUM = new /datum/targetting_datum/basic/necromonolith()
 	)
 	planning_subtrees = list(
-		/datum/ai_planning_subtree/simple_find_target/closest,
-		/datum/ai_planning_subtree/attack_obstacle_in_path,
+		/datum/ai_planning_subtree/simple_find_target/necromonolith,
 		/datum/ai_planning_subtree/attack_obstacle_in_path/necromonolith_route,
 		/datum/ai_planning_subtree/basic_melee_attack_subtree/opportunistic/event_loc,
 		/datum/ai_planning_subtree/travel_to_point/and_clear_target,
@@ -85,8 +109,7 @@
 		BB_TARGETTING_DATUM = new /datum/targetting_datum/basic/necromonolith()
 	)
 	planning_subtrees = list(
-		/datum/ai_planning_subtree/simple_find_target/closest,
-		/datum/ai_planning_subtree/attack_obstacle_in_path,
+		/datum/ai_planning_subtree/simple_find_target/necromonolith,
 		/datum/ai_planning_subtree/attack_obstacle_in_path/necromonolith_route,
 		/datum/ai_planning_subtree/basic_melee_attack_subtree/opportunistic/event_loc,
 		/datum/ai_planning_subtree/travel_to_point/and_clear_target,
@@ -103,8 +126,7 @@
 	)
 	planning_subtrees = list(
 		/datum/ai_planning_subtree/basic_ranged_attack_subtree,
-		/datum/ai_planning_subtree/simple_find_target/closest,
-		/datum/ai_planning_subtree/attack_obstacle_in_path,
+		/datum/ai_planning_subtree/simple_find_target/necromonolith,
 		/datum/ai_planning_subtree/attack_obstacle_in_path/necromonolith_route,
 		/datum/ai_planning_subtree/travel_to_point/and_clear_target,
 		/datum/ai_planning_subtree/spacing/ranged,
@@ -116,27 +138,42 @@
 	. = ..()
 	if(!.)
 		return FALSE
+	if(!ismob(the_target))
+		return FALSE
+	var/mob/target_mob = the_target
+	if(!target_mob.client)
+		return FALSE
 	var/datum/component/necromonolith_minion/comp = living_mob.GetComponent(/datum/component/necromonolith_minion)
 	if(!comp)
 		return TRUE
 	var/obj/structure/necromantic_monolith/monolith = comp.monolith_ref?.resolve()
 	if(!monolith || QDELETED(monolith))
 		return TRUE
-	return monolith.can_minion_engage(comp.self_ref)
+	return monolith.can_minion_engage(comp.self_ref, the_target)
 
 // ---- Skeleton subtypes ----
 
 /mob/living/simple_animal/hostile/rogue/skeleton/necromonolith
 	ai_controller = /datum/ai_controller/necromonolith_skeleton
+	vision_range = NECROMONOLITH_AGGRO_RANGE
+	aggro_vision_range = NECROMONOLITH_AGGRO_RANGE
 
 /mob/living/simple_animal/hostile/rogue/skeleton/axe/necromonolith
 	ai_controller = /datum/ai_controller/necromonolith_skeleton
+	vision_range = NECROMONOLITH_AGGRO_RANGE
+	aggro_vision_range = NECROMONOLITH_AGGRO_RANGE
 
 /mob/living/simple_animal/hostile/rogue/skeleton/spear/necromonolith
 	ai_controller = /datum/ai_controller/necromonolith_skeleton_spear
+	vision_range = NECROMONOLITH_AGGRO_RANGE
+	aggro_vision_range = NECROMONOLITH_AGGRO_RANGE
 
 /mob/living/simple_animal/hostile/rogue/skeleton/guard/necromonolith
 	ai_controller = /datum/ai_controller/necromonolith_skeleton
+	vision_range = NECROMONOLITH_AGGRO_RANGE
+	aggro_vision_range = NECROMONOLITH_AGGRO_RANGE
 
 /mob/living/simple_animal/hostile/rogue/skeleton/bow/necromonolith
 	ai_controller = /datum/ai_controller/necromonolith_skeleton_ranged
+	vision_range = NECROMONOLITH_AGGRO_RANGE
+	aggro_vision_range = NECROMONOLITH_AGGRO_RANGE

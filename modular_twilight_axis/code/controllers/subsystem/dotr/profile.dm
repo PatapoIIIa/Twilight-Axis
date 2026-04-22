@@ -19,6 +19,8 @@
 	/// Route position
 	var/route_slot = 1
 	var/route_index = 1
+	var/virtual_move_accumulator = 0
+	var/virtual_step_delay = DOTR_DEFAULT_VIRTUAL_STEP_DELAY
 
 	/// Virtual position (fallback when route invalid)
 	var/turf_x = 0
@@ -68,6 +70,15 @@
 		turf_x = T.x
 		turf_y = T.y
 		turf_z = T.z
+
+/// Returns TRUE when the virtual marker may advance one tile this tick.
+/datum/dotr_profile/proc/consume_virtual_step()
+	var/step_delay = max(virtual_step_delay || DOTR_DEFAULT_VIRTUAL_STEP_DELAY, DOTR_CHECK_INTERVAL)
+	virtual_move_accumulator += DOTR_CHECK_INTERVAL
+	if(virtual_move_accumulator < step_delay)
+		return FALSE
+	virtual_move_accumulator = max(0, virtual_move_accumulator - step_delay)
+	return TRUE
 
 /// Tick wither damage. Returns TRUE if dead.
 /datum/dotr_profile/proc/apply_wither_tick(delta_seconds)

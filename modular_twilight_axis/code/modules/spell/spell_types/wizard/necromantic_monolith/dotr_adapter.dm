@@ -75,6 +75,7 @@
 	P.route_slot = found_state["route_slot"]
 	P.route_index = found_state["route_index"]
 	P.group_key = P.route_slot
+	P.virtual_step_delay = the_mob.ai_controller?.movement_delay || P.virtual_step_delay
 	P.reengage_after = found_state["reengage_after"]
 	// Chase
 	var/datum/weakref/chase_ref = found_state["chase_ref"]

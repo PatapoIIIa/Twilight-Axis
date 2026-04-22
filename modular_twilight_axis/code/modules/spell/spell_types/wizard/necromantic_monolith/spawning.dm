@@ -68,6 +68,8 @@
 	state["stuck_ticks"] = 0
 	state["climbing_wall"] = FALSE
 	state["wall_climb_cooldown"] = 0
+	state["guard_role"] = FALSE
+	state["guard_alert_until"] = 0
 	minion_states[minion_ref] = state
 
 	// Configure the skeleton for monolith service
@@ -92,6 +94,7 @@
 	var/list/route = get_minion_route(route_slot)
 	var/turf/goal = length(route) ? route[length(route)] : null
 	log_necromonolith_debug("registered [minion.type] at [necromonolith_debug_coords(minion)] route_slot=[route_slot] goal=[necromonolith_debug_coords(goal)]")
+	refresh_minion_guard_assignments()
 	return minion_ref
 
 /obj/structure/necromantic_monolith/proc/unregister_minion(mob/living/minion)
@@ -103,6 +106,29 @@
 		active_minions -= minion_ref
 		minion_states -= minion_ref
 		break
+	refresh_minion_guard_assignments()
+
+/obj/structure/necromantic_monolith/proc/refresh_minion_guard_assignments()
+	var/assigned_guard = FALSE
+	var/valid_index = 0
+	for(var/datum/weakref/minion_ref as anything in active_minions)
+		var/mob/living/simple_animal/hostile/rogue/skeleton/minion = minion_ref.resolve()
+		var/list/state = minion_states[minion_ref]
+		if(!minion || QDELETED(minion) || minion.stat == DEAD || !state)
+			continue
+		valid_index++
+		var/is_guard = (valid_index == 1) || (NECROMONOLITH_GUARD_EVERY > 0 && !(valid_index % NECROMONOLITH_GUARD_EVERY))
+		state["guard_role"] = is_guard
+		if(is_guard)
+			assigned_guard = TRUE
+	if(assigned_guard)
+		return
+	for(var/datum/weakref/minion_ref as anything in active_minions)
+		var/list/state = minion_states[minion_ref]
+		if(!state)
+			continue
+		state["guard_role"] = TRUE
+		return
 
 // ---- Minion cleanup ----
 
@@ -118,6 +144,7 @@
 			valid_states[minion_ref] = minion_states[minion_ref]
 	active_minions = valid_minions
 	minion_states = valid_states
+	refresh_minion_guard_assignments()
 	// Include virtualized profiles in the total count
 	var/virtual_count = 0
 	if(dotr_ctrl)

@@ -10,7 +10,7 @@ SUBSYSTEM_DEF(dotr)
 	var/list/all_profiles = list()
 	var/next_profile_id = 1
 	var/next_controller_id = 1
-	var/step_counter = 0
+	var/scan_counter = 0
 	/// Temporary per-tick cache: z-string -> list(turf)
 	var/list/player_cache
 
@@ -51,7 +51,15 @@ SUBSYSTEM_DEF(dotr)
 /datum/controller/subsystem/dotr/fire(resumed = 0)
 	if(!length(controllers))
 		return
-	// Build player cache
+	// Virtual movement is cheap and runs at walking speed.
+	advance_profiles()
+
+	scan_counter++
+	if(scan_counter < DOTR_SCAN_TICKS)
+		return
+	scan_counter = 0
+
+	// Build player cache for heavier virtualization gates.
 	player_cache = list()
 	for(var/client/C as anything in GLOB.clients)
 		if(!C?.mob || !isliving(C.mob))
@@ -71,13 +79,8 @@ SUBSYSTEM_DEF(dotr)
 	process_devirt()
 	// Virtualize
 	process_virt()
-	// Virtual movement
-	step_counter++
-	if(step_counter >= DOTR_VIRTUAL_STEP_TICKS)
-		step_counter = 0
-		advance_profiles()
 	// Wither + cleanup
-	process_wither()
+	process_wither(DOTR_CHECK_INTERVAL * DOTR_SCAN_TICKS * 0.1)
 	cleanup_dead()
 	player_cache = null
 
@@ -177,6 +180,8 @@ SUBSYSTEM_DEF(dotr)
 	for(var/datum/dotr_profile/P as anything in all_profiles)
 		if(P.current_health <= 0)
 			continue
+		if(!P.consume_virtual_step())
+			continue
 		// Chasing — move independently
 		var/atom/target = P.chase_target_ref?.resolve()
 		if(target && !QDELETED(target))
@@ -241,10 +246,10 @@ SUBSYSTEM_DEF(dotr)
 
 // ---- Wither ----
 
-/datum/controller/subsystem/dotr/proc/process_wither()
+/datum/controller/subsystem/dotr/proc/process_wither(delta_seconds)
 	for(var/datum/dotr_profile/P as anything in all_profiles)
 		if(P.is_withering)
-			P.apply_wither_tick(DOTR_CHECK_INTERVAL * 0.1)
+			P.apply_wither_tick(delta_seconds)
 
 // ---- Cleanup ----
 
