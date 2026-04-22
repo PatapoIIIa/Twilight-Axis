@@ -14,6 +14,8 @@
 	var/owner_faction_tag
 	var/datum/weakref/throne_ref
 	var/list/cached_routes = list()
+	var/list/cached_hold_turfs = list()
+	var/next_hold_turf_refresh = 0
 	var/list/active_minions = list()
 	var/spawn_timer_id
 	var/next_route_pick = 1
@@ -54,6 +56,7 @@
 	collapse_necromonolith_minions()
 	throne_ref = null
 	cached_routes = null
+	cached_hold_turfs = null
 	active_minions = null
 	minion_states = null
 	return ..()

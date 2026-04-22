@@ -13,6 +13,8 @@
 	if(!length(valid_routes))
 		log_necromonolith_debug("all routes invalidated, forcing full refresh")
 		cached_routes = list()
+		cached_hold_turfs = list()
+		next_hold_turf_refresh = 0
 		throne_ref = null
 		refresh_necromonolith_routes()
 	else if(length(valid_routes) < length(cached_routes))
@@ -22,6 +24,8 @@
 /obj/structure/necromantic_monolith/proc/refresh_necromonolith_routes()
 	var/atom/movable/resolved_throne = throne_ref?.resolve()
 	if(resolved_throne && !QDELETED(resolved_throne) && length(cached_routes))
+		if(!length(cached_hold_turfs) || world.time >= next_hold_turf_refresh)
+			refresh_necromonolith_hold_turfs()
 		return TRUE
 
 	var/mob/living/caster = owner_ref?.resolve()
@@ -31,6 +35,7 @@
 
 	throne_ref = WEAKREF(setup["throne"])
 	cached_routes = normalize_necromonolith_routes(setup["routes"], get_turf(src))
+	refresh_necromonolith_hold_turfs(force = TRUE)
 	next_route_pick = 1
 	resolved_throne = throne_ref?.resolve()
 	log_necromonolith_debug("refreshed routes monolith=[necromonolith_debug_coords(src)] throne=[necromonolith_debug_coords(resolved_throne)] routes=[describe_necromonolith_routes(cached_routes)]")
@@ -63,8 +68,12 @@
 	if(!state)
 		return
 
+	var/turf/current_turf = get_turf(skeleton)
+	if(!current_turf)
+		return
+
 	var/list/route = get_active_minion_route(state)
-	update_minion_route_progress(skeleton, state)
+	update_minion_route_progress(skeleton, state, current_turf)
 
 	// If skeleton is chasing a target, handle chase timeout
 	var/atom/current_target = skeleton.ai_controller.blackboard[BB_BASIC_MOB_CURRENT_TARGET]
@@ -82,12 +91,13 @@
 		return
 
 	var/route_index = state["route_index"]
-	while(route_index <= length(route))
+	var/route_length = length(route)
+	while(route_index <= route_length)
 		var/turf/next_turf = route[route_index]
 		if(!next_turf || QDELETED(next_turf))
 			route_index++
 			continue
-		if(get_turf(skeleton) == next_turf)
+		if(current_turf == next_turf)
 			route_index++
 			continue
 		state["route_index"] = route_index
@@ -99,8 +109,8 @@
 	state["route_index"] = route_index
 
 	// Route exhausted — head to final goal
-	var/turf/hold_turf = get_minion_hold_turf(skeleton, state, route)
-	if(hold_turf && get_turf(skeleton) != hold_turf)
+	var/turf/hold_turf = get_minion_hold_turf(skeleton, state, route, current_turf)
+	if(hold_turf && current_turf != hold_turf)
 		if(skeleton.ai_controller.blackboard[BB_TRAVEL_DESTINATION] != hold_turf)
 			skeleton.ai_controller.set_blackboard_key(BB_TRAVEL_DESTINATION, hold_turf)
 		return
@@ -115,8 +125,9 @@
 		return personal_route
 	return get_minion_route(state["route_slot"])
 
-/obj/structure/necromantic_monolith/proc/update_minion_route_progress(mob/living/simple_animal/hostile/rogue/skeleton/skeleton, list/state)
-	var/turf/current_turf = get_turf(skeleton)
+/obj/structure/necromantic_monolith/proc/update_minion_route_progress(mob/living/simple_animal/hostile/rogue/skeleton/skeleton, list/state, turf/current_turf)
+	if(!current_turf)
+		current_turf = get_turf(skeleton)
 	if(!current_turf)
 		return
 	var/datum/weakref/last_turf_ref = state["last_turf_ref"]
@@ -126,38 +137,53 @@
 	state["last_turf_ref"] = WEAKREF(current_turf)
 	state["stuck_ticks"] = 0
 
-/obj/structure/necromantic_monolith/proc/get_minion_hold_turf(mob/living/simple_animal/hostile/rogue/skeleton/skeleton, list/state, list/route)
+/obj/structure/necromantic_monolith/proc/get_minion_hold_turf(mob/living/simple_animal/hostile/rogue/skeleton/skeleton, list/state, list/route, turf/current_turf)
+	if(!current_turf)
+		current_turf = get_turf(skeleton)
+	var/route_length = length(route)
 	var/turf/assigned_turf = state["hold_turf"]
 	if(assigned_turf && !QDELETED(assigned_turf))
-		if(assigned_turf == get_turf(skeleton) || is_necromonolith_turf_clear(assigned_turf, skeleton))
+		if(assigned_turf == current_turf || is_necromonolith_turf_clear(assigned_turf, skeleton))
 			return assigned_turf
 
 	var/list/candidates = get_necromonolith_extended_goal_turfs()
-	if(!length(candidates))
-		return length(route) ? route[length(route)] : null
+	var/candidate_count = length(candidates)
+	if(!candidate_count)
+		return route_length ? route[route_length] : null
 
-	var/start_index = ((state["hold_offset"] || 1) - 1) % length(candidates) + 1
-	for(var/offset in 0 to length(candidates) - 1)
-		var/index = ((start_index + offset - 1) % length(candidates)) + 1
+	var/start_index = ((state["hold_offset"] || 1) - 1) % candidate_count + 1
+	for(var/offset in 0 to candidate_count - 1)
+		var/index = ((start_index + offset - 1) % candidate_count) + 1
 		var/turf/candidate = candidates[index]
 		if(!is_necromonolith_turf_clear(candidate, skeleton))
 			continue
 		state["hold_turf"] = candidate
 		return candidate
 
-	return length(route) ? route[length(route)] : null
+	return route_length ? route[route_length] : null
 
 /obj/structure/necromantic_monolith/proc/get_necromonolith_extended_goal_turfs()
+	if(length(cached_hold_turfs) && world.time < next_hold_turf_refresh)
+		return cached_hold_turfs
+	return refresh_necromonolith_hold_turfs()
+
+/obj/structure/necromantic_monolith/proc/refresh_necromonolith_hold_turfs(force = FALSE)
+	if(!force && length(cached_hold_turfs) && world.time < next_hold_turf_refresh)
+		return cached_hold_turfs
+	next_hold_turf_refresh = world.time + NECROMONOLITH_HOLD_TURF_REFRESH
 	var/atom/movable/resolved_throne = throne_ref?.resolve()
 	if(!resolved_throne || QDELETED(resolved_throne))
+		cached_hold_turfs = list()
 		return list()
 
 	var/list/goal_turfs = get_necromonolith_goal_turfs(resolved_throne)
 	if(length(goal_turfs) >= NECROMONOLITH_DESIRED_ROUTES)
+		cached_hold_turfs = goal_turfs
 		return goal_turfs
 
 	var/turf/throne_turf = get_turf(resolved_throne)
 	if(!throne_turf)
+		cached_hold_turfs = goal_turfs
 		return goal_turfs
 
 	for(var/turf/candidate in orange(2, throne_turf))
@@ -168,6 +194,7 @@
 		if(candidate in goal_turfs)
 			continue
 		goal_turfs += candidate
+	cached_hold_turfs = goal_turfs
 	return goal_turfs
 
 // ---- Chase management ----
@@ -224,27 +251,24 @@
 	state["route_index"] = find_necromonolith_nearest_route_index(skeleton, route, state["route_index"] || 1)
 	log_necromonolith_debug("[skeleton.type] at [necromonolith_debug_coords(skeleton)] forced back to route ([reason]); next waypoint index=[state["route_index"]]")
 
-/obj/structure/necromantic_monolith/proc/can_minion_engage(mob/living/skeleton, atom/the_target)
-	for(var/datum/weakref/minion_ref as anything in active_minions)
-		if(minion_ref.resolve() != skeleton)
-			continue
-		var/list/state = minion_states[minion_ref]
-		if(!state)
-			return TRUE
-		var/reengage_after = state["reengage_after"]
-		if(reengage_after && world.time < reengage_after)
-			return FALSE
+/obj/structure/necromantic_monolith/proc/can_minion_engage(datum/weakref/minion_ref)
+	var/list/state = minion_states[minion_ref]
+	if(!state)
 		return TRUE
+	var/reengage_after = state["reengage_after"]
+	if(reengage_after && world.time < reengage_after)
+		return FALSE
 	return TRUE
 
 // ---- Route distance & wall fallback ----
 
 /proc/find_necromonolith_nearest_route_index(atom/source, list/route, preferred_index = 1)
-	if(!source || !length(route))
+	var/route_length = length(route)
+	if(!source || !route_length)
 		return max(preferred_index, 1)
-	var/best_index = clamp(preferred_index || 1, 1, length(route))
+	var/best_index = clamp(preferred_index || 1, 1, route_length)
 	var/best_distance = INFINITY
-	for(var/i in 1 to length(route))
+	for(var/i in 1 to route_length)
 		var/turf/route_turf = route[i]
 		if(!route_turf || QDELETED(route_turf))
 			continue
@@ -256,10 +280,11 @@
 	return best_index
 
 /proc/necromonolith_route_window_distance(atom/source, list/route, center_index, window_size)
-	if(!source || !length(route))
+	var/route_length = length(route)
+	if(!source || !route_length)
 		return INFINITY
 	var/start_index = max(1, center_index - window_size)
-	var/end_index = min(length(route), center_index + window_size)
+	var/end_index = min(route_length, center_index + window_size)
 	var/best_distance = INFINITY
 	for(var/i in start_index to end_index)
 		var/turf/route_turf = route[i]
@@ -281,7 +306,8 @@
 	var/turf/current_turf = get_turf(skeleton)
 	if(!current_turf)
 		return FALSE
-	var/turf/route_goal = length(route) ? route[length(route)] : get_turf(throne_ref?.resolve())
+	var/route_length = length(route)
+	var/turf/route_goal = route_length ? route[route_length] : get_turf(throne_ref?.resolve())
 
 	var/turf/closed/best_wall
 	var/turf/best_landing

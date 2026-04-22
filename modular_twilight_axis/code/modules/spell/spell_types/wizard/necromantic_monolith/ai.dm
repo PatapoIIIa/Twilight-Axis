@@ -122,7 +122,7 @@
 	var/obj/structure/necromantic_monolith/monolith = comp.monolith_ref?.resolve()
 	if(!monolith || QDELETED(monolith))
 		return TRUE
-	return monolith.can_minion_engage(living_mob, the_target)
+	return monolith.can_minion_engage(comp.self_ref)
 
 // ---- Skeleton subtypes ----
 

@@ -85,6 +85,7 @@ SUBSYSTEM_DEF(dotr)
 
 /datum/controller/subsystem/dotr/proc/process_devirt()
 	var/list/devirtualized = list()
+	var/list/zone_counts = list()
 	for(var/datum/dotr_profile/profile as anything in all_profiles)
 		if(!profile.controller)
 			devirtualized += profile
@@ -108,7 +109,12 @@ SUBSYSTEM_DEF(dotr)
 		if(best > DOTR_PLAYER_ZONE_RANGE)
 			continue
 		// Spawn gate
-		if(count_physical_near(profile.controller, nearest) >= DOTR_MAX_PHYSICAL_PER_ZONE)
+		var/count_key = "[profile.controller.controller_id]-[nearest.x]-[nearest.y]-[nearest.z]"
+		var/physical_count = zone_counts[count_key]
+		if(isnull(physical_count))
+			physical_count = count_physical_near(profile.controller, nearest)
+			zone_counts[count_key] = physical_count
+		if(physical_count >= DOTR_MAX_PHYSICAL_PER_ZONE)
 			profile.last_devirt_attempt = world.time
 			log_dotr_debug("gate full near [nearest.x],[nearest.y],[nearest.z], deferring id=[profile.profile_id]")
 			continue
@@ -121,6 +127,7 @@ SUBSYSTEM_DEF(dotr)
 		var/mob/living/M = profile.controller.materialize(profile, st)
 		if(M && !QDELETED(M))
 			log_dotr_debug("devirt id=[profile.profile_id] [profile.mob_type] at [st.x],[st.y],[st.z] hp=[profile.current_health]")
+			zone_counts[count_key] = physical_count + 1
 			devirtualized += profile
 		else
 			profile.last_devirt_attempt = world.time
@@ -163,9 +170,10 @@ SUBSYSTEM_DEF(dotr)
 // ---- Virtual movement ----
 
 /datum/controller/subsystem/dotr/proc/advance_profiles()
-	// Group by controller + route_slot
+	// Group by controller + route position so blocked-step checks are shared.
 	var/list/groups = list()
 	var/list/devirtualized = list()
+	var/list/route_block_counts = list()
 	for(var/datum/dotr_profile/P as anything in all_profiles)
 		if(P.current_health <= 0)
 			continue
@@ -177,7 +185,7 @@ SUBSYSTEM_DEF(dotr)
 		if(P.chase_target_ref)
 			P.chase_target_ref = null
 			P.chase_started_at = 0
-		var/key = "[P.controller?.controller_id]-[P.route_slot]"
+		var/key = "[P.controller?.controller_id]-[P.route_slot]-[P.route_index]"
 		if(!groups[key])
 			groups[key] = list()
 		groups[key] += P
@@ -188,14 +196,19 @@ SUBSYSTEM_DEF(dotr)
 		var/list/routes = rep.controller?.get_routes()
 		if(!length(routes) || rep.route_slot < 1 || rep.route_slot > length(routes))
 			continue
-		var/rlen = length(routes[rep.route_slot])
+		var/list/route = routes[rep.route_slot]
+		var/rlen = length(route)
 		if(!rlen)
 			continue
+		var/turf/next_turf
+		var/next_turf_blocked = FALSE
+		if(rep.route_index < rlen)
+			next_turf = route[rep.route_index + 1]
+			next_turf_blocked = is_virtual_route_turf_blocked(rep, next_turf)
 		for(var/datum/dotr_profile/P as anything in grp)
 			if(P.route_index < rlen)
-				var/turf/next_turf = routes[P.route_slot][P.route_index + 1]
-				if(is_virtual_route_turf_blocked(P, next_turf))
-					if(try_materialize_route_block(P, next_turf))
+				if(next_turf_blocked)
+					if(try_materialize_route_block(P, next_turf, route_block_counts))
 						devirtualized += P
 					continue
 				P.route_index++
@@ -258,12 +271,20 @@ SUBSYSTEM_DEF(dotr)
 		return TRUE
 	return next_turf.is_blocked_turf(exclude_mobs = TRUE)
 
-/datum/controller/subsystem/dotr/proc/try_materialize_route_block(datum/dotr_profile/profile, turf/blocked_turf)
+/datum/controller/subsystem/dotr/proc/try_materialize_route_block(datum/dotr_profile/profile, turf/blocked_turf, list/physical_count_cache)
 	if(!profile?.controller || !blocked_turf)
 		return FALSE
 	if(world.time < profile.last_devirt_attempt + DOTR_DEVIRT_COOLDOWN)
 		return FALSE
-	if(count_physical_near(profile.controller, blocked_turf) >= DOTR_MAX_PHYSICAL_PER_ZONE)
+	var/count_key = "[profile.controller.controller_id]-[blocked_turf.x]-[blocked_turf.y]-[blocked_turf.z]"
+	var/physical_count
+	if(physical_count_cache)
+		physical_count = physical_count_cache[count_key]
+	if(isnull(physical_count))
+		physical_count = count_physical_near(profile.controller, blocked_turf)
+		if(physical_count_cache)
+			physical_count_cache[count_key] = physical_count
+	if(physical_count >= DOTR_MAX_PHYSICAL_PER_ZONE)
 		profile.last_devirt_attempt = world.time
 		return FALSE
 	var/turf/spawn_turf = find_route_spawn_turf(profile, blocked_turf)
@@ -273,6 +294,8 @@ SUBSYSTEM_DEF(dotr)
 	var/mob/living/M = profile.controller.materialize(profile, spawn_turf)
 	if(M && !QDELETED(M))
 		log_dotr_debug("route-block devirt id=[profile.profile_id] [profile.mob_type] at [spawn_turf.x],[spawn_turf.y],[spawn_turf.z] blocking=[blocked_turf.x],[blocked_turf.y],[blocked_turf.z]")
+		if(physical_count_cache)
+			physical_count_cache[count_key] = physical_count + 1
 		return TRUE
 	profile.last_devirt_attempt = world.time
 	return FALSE
