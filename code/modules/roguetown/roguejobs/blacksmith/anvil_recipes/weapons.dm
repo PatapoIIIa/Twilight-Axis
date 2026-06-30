@@ -801,6 +801,13 @@
 	created_item = /obj/item/rogueweapon/sword/long/kriegmesser
 	display_category = ITEM_CAT_WEAPONS_SWORDS
 
+/datum/anvil_recipe/weapons/steel/kriegmesser/zybantine // TA EDIT BEGIN
+	name = "Zybantine Heavy Scimitar, Steel (+1 Steel)"
+	req_bar = /obj/item/ingot/steel
+	additional_items = list(/obj/item/ingot/steel)
+	created_item = /obj/item/rogueweapon/sword/long/kriegmesser/zybantine
+	display_category = ITEM_CAT_WEAPONS_SWORDS // TA EDIT END
+
 /datum/anvil_recipe/weapons/steel/battleaxe
 	name = "Battle Axe, Steel (+1 Steel)"
 	req_bar = /obj/item/ingot/steel
