@@ -46,6 +46,6 @@
 #define COMSIG_MOB_QUERY_PARRY_WEAPON "mob_query_parry_weapon"
 //RONIN - END//
 
-/// Sent to the caster immediately before a legacy proc-holder spell performs its effects.
-/// Args: (obj/effect/proc_holder/spell/spell, list/targets)
 #define COMSIG_MOB_LEGACY_SPELL_CAST "mob_legacy_spell_cast"
+
+#define COMSIG_MOB_SUICIDE_PROP_USED "mob_suicide_prop_used"
