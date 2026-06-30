@@ -65,6 +65,17 @@
 	last_free_send[user.ckey] = world.time
 
 /obj/structure/roguemachine/mail/attack_hand(mob/user)
+	if(user.mind && length(user.mind.manor_packages)) //TA EDIT START
+		var/mob/living/carbon/human/H = user
+		var/obj/item/manor_delivery/D = pick(user.mind.manor_packages)
+		user.mind.manor_packages -= D
+		H.put_in_hands(D)
+		if(SSroguemachine.hermailermaster)
+			var/obj/item/roguemachine/mastermail/M = SSroguemachine.hermailermaster
+			if(!any_additional_mail(M, H))
+				H.remove_status_effect(/datum/status_effect/ugotmail)
+		else
+			H.remove_status_effect(/datum/status_effect/ugotmail) //TA EDIT END
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
 		var/addl_mail = FALSE
@@ -74,11 +85,11 @@
 				var/is_mine = FALSE
 				if(I.mailedto == H.real_name)
 					is_mine = TRUE 
-				else if(H.mind?.assigned_role == "Hand" || H.mind?.special_role == "Hand")
+				else if((H.mind && (H.mind.assigned_role in list("Hand", "Vizier"))) || (H.mind && (H.mind.special_role in list("Hand", "Vizier")))) // TA edit
 					if(findtext(I.mailedto, "#"))
 						var/box2find = text2num(copytext(I.mailedto, findtext(I.mailedto, "#")+1))
 						for(var/obj/structure/roguemachine/mail/X in SSroguemachine.hermailers) 
-							if(X.ournum == box2find && X.mailtag == "Hand") 
+							if(X.ournum == box2find && (X.mailtag in list("Hand", "Vizier"))) 
 								is_mine = TRUE 
 								break 
 				if(is_mine) 
@@ -166,6 +177,7 @@
 	. += span_info("Insert coins to purchase supplies or send a letters.")
 	. += span_info("Left click with a paper or package to send a prewritten letter for free.")
 	. += span_info("You can wrap an item in paper to create a mailable package.")
+	. += span_info("Роль придворного агента может посылать бесплатные письма через ПКМ-панель, но только деснице.") // TA EDIT
 	if(HAS_TRAIT(user, TRAIT_INQUISITION))
 		. += span_info("<br>The MARQUETTE can be accessed via a secret compartment fitted within the HERMES. Load a Marque to access it.")
 		. += span_info("You can send arrival slips, accusation slips, fully loaded INDEXERs or confessions here.")
@@ -178,7 +190,7 @@
 	var/is_court_agent = FALSE // TA EDIT BEGIN
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
-		if(H.mind?.assigned_role == "Court Agent" || H.mind?.special_role == "Court Agent")
+		if((H.mind?.assigned_role in list("Court Agent", "Enslaved kafir")) || (H.mind?.special_role in list("Court Agent", "Enslaved kafir")))
 			is_court_agent = TRUE 
 	if(!coin_loaded && !is_court_agent) 
 		to_chat(user, span_warning("Insert coins to use the terminal."))
@@ -191,7 +203,18 @@
 	if(inqcoins)
 		to_chat(user, span_warning("The machine doesn't respond."))
 		return
-	ui_interact(user)
+	if(coin_loaded) //TA EDIT START
+		if(ishuman(user))
+			var/mob/living/carbon/human/H = user
+			if(can_open_manor_panel(H))
+				var/choice = tgui_alert(user, "What would you like to do?", "HERMES Terminal", list("Send Mail", "Correspond with Estate"))
+				switch(choice)
+					if("Send Mail")
+						ui_interact(user)
+					if("Correspond with Estate")
+						open_manor_panel(user)
+				return FALSE
+	ui_interact(user) //TA EDIT END
 
 /obj/structure/roguemachine/mail/ui_state(mob/user)
 	return GLOB.human_adjacent_state
@@ -215,7 +238,7 @@
 	var/is_court_agent = FALSE // TA EDIT BEGIN
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
-		if(H.mind?.assigned_role == "Court Agent" || H.mind?.special_role == "Court Agent") 
+		if((H.mind?.assigned_role in list("Court Agent", "Enslaved kafir")) || (H.mind?.special_role in list("Court Agent", "Enslaved kafir"))) 
 			is_court_agent = TRUE
 	data["is_court_agent"] = is_court_agent // TA EDIT END
 	return data
@@ -237,20 +260,20 @@
 	var/is_court_agent = FALSE
 	if(ishuman(user))
 		var/mob/living/carbon/human/H_user = user 
-		if(H_user.mind?.assigned_role == "Court Agent" || H_user.mind?.special_role == "Court Agent")
+		if((H_user.mind?.assigned_role in list("Court Agent", "Enslaved kafir")) || (H_user.mind?.special_role in list("Court Agent", "Enslaved kafir")))
 			is_court_agent = TRUE 
 
 	var/is_hand = FALSE
 	if(findtext(send2place, "#"))
 		var/box2find = text2num(copytext(send2place, findtext(send2place, "#")+1))
 		for(var/obj/structure/roguemachine/mail/X in SSroguemachine.hermailers)
-			if(X.ournum == box2find && X.mailtag == "Hand")
+			if(X.ournum == box2find && (X.mailtag in list("Hand", "Vizier")))
 				is_hand = TRUE
 				break
 	else
 		for(var/mob/living/carbon/human/H_target in GLOB.human_list)
 			if(H_target.real_name == send2place)
-				if(H_target.mind?.assigned_role == "Hand" || H_target.mind?.special_role == "Hand")
+				if((H_target.mind?.assigned_role in list("Hand", "Vizier")) || (H_target.mind?.special_role in list("Hand", "Vizier")))
 					is_hand = TRUE
 				break
 	return (is_court_agent && is_hand) // TA EDIT END
@@ -309,7 +332,7 @@
 				for(var/mob/living/carbon/human/H in GLOB.human_list)
 					var/is_target = FALSE
 					if(findtext(send2place, "#"))
-						if(H.mind?.assigned_role == "Hand" || H.mind?.special_role == "Hand")
+						if((H.mind?.assigned_role in list("Hand", "Vizier")) || (H.mind?.special_role in list("Hand", "Vizier")))
 							is_target = TRUE 
 					else
 						if(H.real_name == send2place)
@@ -733,7 +756,7 @@
 				for(var/mob/living/carbon/human/H in GLOB.human_list)
 					var/is_target = FALSE
 					if(findtext(send2place, "#"))
-						if(H.mind?.assigned_role == "Hand" || H.mind?.special_role == "Hand")
+						if((H.mind?.assigned_role in list("Hand", "Vizier")) || (H.mind?.special_role in list("Hand", "Vizier")))
 							is_target = TRUE
 					else
 						if(H.real_name == send2place)
@@ -831,6 +854,16 @@
 		qdel(C)
 		playsound(src, 'sound/misc/coininsert.ogg', 100, FALSE, -1)
 		update_icon()
+		if(ishuman(user)) //TA EDIT START
+			var/mob/living/carbon/human/H = user
+			if(can_open_manor_panel(H))
+				var/choice = tgui_alert(user, "What would you like to do?", "HERMES Terminal", list("Send Mail", "Correspond with Estate"))
+				switch(choice)
+					if("Send Mail")
+						ui_interact(user)
+					if("Correspond with Estate")
+						open_manor_panel(user)
+				return FALSE //TA EDIT END
 		ui_interact(user)
 		return
 	..()
@@ -947,11 +980,11 @@
 		for(var/obj/item/I in SSroguemachine.secret_mail)
 			if(I.mailedto == H.real_name)
 				return TRUE
-			else if(H.mind?.assigned_role == "Hand" || H.mind?.special_role == "Hand")
+			else if((H.mind?.assigned_role in list("Hand", "Vizier")) || (H.mind?.special_role in list("Hand", "Vizier")))
 				if(findtext(I.mailedto, "#"))
 					var/box2find = text2num(copytext(I.mailedto, findtext(I.mailedto, "#")+1))
 					for(var/obj/structure/roguemachine/mail/X in SSroguemachine.hermailers)
-						if(X.ournum == box2find && X.mailtag == "Hand")
+						if(X.ournum == box2find && (X.mailtag in list("Hand", "Vizier")))
 							return TRUE
 	if(M)
 		for(var/obj/item/I in M.contents)

@@ -198,6 +198,7 @@ SAVEFILE UPDATING/VERSIONING - 'Simplified', or rather, more coder-friendly ~Car
 	// Custom hotkeys
 	S["key_bindings"]		>> key_bindings
 
+	S["no_runechat_animation"] >> no_runechat_animation //TA EDIT
 	S["defiant"]			>> defiant
 	// TA Addition start - new ERP SYSTEM
 	S["erp_custom_actions"] >> erp_custom_actions	
@@ -279,6 +280,25 @@ SAVEFILE UPDATING/VERSIONING - 'Simplified', or rather, more coder-friendly ~Car
 		if(!length(binds))
 			key_bindings -= key
 	// End
+
+/client/verb/export_savefile()
+	set name = "Export Preferences"
+	set desc = "Export your preferences to a file."
+	set category = "OOC"
+	if(!prefs.path)
+		return
+
+	if(alert("Are you sure you want to export your preferences? This will create a file on your computer that contains your preferences.", "Export Preferences", "Yes", "No") == "No")
+		return
+
+	if(!fexists(prefs.path))
+		to_chat(src, span_warning("No savefile, what?!"))
+		return
+
+	var/file_name = "[ckey].sav"
+	var/exportable_file = file(prefs.path)
+
+	DIRECT_OUTPUT(src, ftp(exportable_file, file_name))
 
 /datum/preferences/proc/save_preferences()
 	if(!path)
@@ -368,6 +388,7 @@ SAVEFILE UPDATING/VERSIONING - 'Simplified', or rather, more coder-friendly ~Car
 	WRITE_FILE(S["attack_blip_frequency"] , attack_blip_frequency)
 	WRITE_FILE(S["compliance_notifs"], compliance_notifs)
 	WRITE_FILE(S["defiant"], defiant)
+	WRITE_FILE(S["no_runechat_animation"], no_runechat_animation) //TA EDIT
 	// TA Addition start - new ERP SYSTEM
 	WRITE_FILE(S["erp_custom_actions"], erp_custom_actions)
 	WRITE_FILE(S["erp_kink_prefs"], erp_kink_prefs)
@@ -679,6 +700,10 @@ SAVEFILE UPDATING/VERSIONING - 'Simplified', or rather, more coder-friendly ~Car
 		if(!selected_patron) //failsafe
 			selected_patron = GLOB.patronlist[default_patron]
 
+	S["have_manor"] >> have_manor  //TA EDIT
+	S["manor_name"] >> manor_name  //TA EDIT
+	S["manor_type"] >> manor_type  //TA EDIT
+
 	//Custom names
 	for(var/custom_name_id in GLOB.preferences_custom_names)
 		var/savefile_slot_name = custom_name_id + "_name" //TODO remove this
@@ -979,6 +1004,9 @@ SAVEFILE UPDATING/VERSIONING - 'Simplified', or rather, more coder-friendly ~Car
 	WRITE_FILE(S["feature_mcolor3"]		, features["mcolor3"])
 	WRITE_FILE(S["feature_ethcolor"]	, features["ethcolor"])
 	WRITE_FILE(S["nickname"]			, nickname)
+	WRITE_FILE(S["have_manor"]		, have_manor) //TA EDIT
+	WRITE_FILE(S["manor_name"]		, manor_name) //TA EDIT
+	WRITE_FILE(S["manor_type"]		, manor_type) //TA EDIT
 	WRITE_FILE(S["highlight_color"]		, highlight_color)
 	WRITE_FILE(S["taur_type"]			, taur_type)
 	WRITE_FILE(S["taur_color"]			, taur_color)
