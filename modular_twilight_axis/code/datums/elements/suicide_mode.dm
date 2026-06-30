@@ -320,7 +320,7 @@
 	var/show_death = is_show_death(source)
 	var/obj/item/bodypart/target_part = source.get_bodypart(zone)
 	var/body_zone = check_zone(zone)
-	var/is_sharp = bclass in GLOB.artery_bclasses
+	var/is_sharp = (bclass in GLOB.artery_bclasses)
 
 	if(body_zone in list(BODY_ZONE_L_ARM, BODY_ZONE_R_ARM, BODY_ZONE_L_LEG, BODY_ZONE_R_LEG))
 		announce_trauma(
@@ -421,7 +421,10 @@
 			if(ASPECT_NAME_FULGURMANCY)
 				return SUICIDE_MAGIC_LIGHTNING
 
-	var/search_text = lowertext("[magic_source?.type] [magic_source?.name]")
+	var/magic_source_name
+	if(magic_source)
+		magic_source_name = magic_source.vars["name"]
+	var/search_text = lowertext("[magic_source?.type] [magic_source_name]")
 	if(findtext(search_text, "frost") || findtext(search_text, "ice") || findtext(search_text, "snow") || findtext(search_text, "cryo") || findtext(search_text, "cold") || findtext(search_text, "freeze") || findtext(search_text, "icicle"))
 		return SUICIDE_MAGIC_ICE
 	if(findtext(search_text, "lightning") || findtext(search_text, "thunder") || findtext(search_text, "fulgur") || findtext(search_text, "storm") || findtext(search_text, "electric"))
