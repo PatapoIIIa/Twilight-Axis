@@ -3607,6 +3607,7 @@
 #include "modular_twilight_axis\code\datums\combo\combo_expire.dm"
 #include "modular_twilight_axis\code\datums\combo\combo_ronin.dm"
 #include "modular_twilight_axis\code\datums\combo\soundbreaker\combo_soundbreaker.dm"
+#include "modular_twilight_axis\code\datums\elements\suicide_mode.dm"
 #include "modular_twilight_axis\code\datums\flaws\lawless.dm"
 #include "modular_twilight_axis\code\datums\mob_descriptors\descriptors\other.dm"
 #include "modular_twilight_axis\code\datums\sexcon\sexcon.dm"

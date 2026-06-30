@@ -49,5 +49,3 @@
 /// Sent to the caster immediately before a legacy proc-holder spell performs its effects.
 /// Args: (obj/effect/proc_holder/spell/spell, list/targets)
 #define COMSIG_MOB_LEGACY_SPELL_CAST "mob_legacy_spell_cast"
-
-#include "modular_twilight_axis\code\datums\elements\suicide_mode.dm"
