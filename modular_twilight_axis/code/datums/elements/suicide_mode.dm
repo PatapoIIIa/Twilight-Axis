@@ -12,12 +12,86 @@
 #define SUICIDE_UNARMED_TONGUE 4
 #define SUICIDE_UNARMED_SKULL 5
 
+#define SUICIDE_INTERVENTION_RANGE 7
+
 /datum/status_effect/freon/suicide
 	duration = 10 MINUTES
 	can_melt = FALSE
 
+/atom/movable/screen/alert/status_effect/debuff/suicide_intervention
+	name = "Моя жизнь кому-то очень важна, я не могу легко уйти прямо сейчас"
+	desc = "Моя жизнь кому-то очень важна, я не могу легко уйти прямо сейчас"
+	icon = 'icons/mob/screen_alert_combat.dmi'
+	icon_state = "clash"
+
+/datum/status_effect/debuff/suicide_intervention
+	id = "suicide_intervention"
+	duration = 10 MINUTES
+	status_type = STATUS_EFFECT_UNIQUE
+	alert_type = /atom/movable/screen/alert/status_effect/debuff/suicide_intervention
+
+/datum/status_effect/debuff/suicide_intervention/on_apply()
+	. = ..()
+	to_chat(owner, span_warning("Моя жизнь кому-то очень важна, я не могу легко уйти прямо сейчас"))
+	return TRUE
+
 /mob/living/carbon/human
 	var/suicide_mode_harmful_volume = 0
+
+/mob/living/carbon/human/canSuicide()
+	if(has_status_effect(/datum/status_effect/debuff/suicide_intervention))
+		to_chat(src, span_warning("Моя жизнь кому-то очень важна, я не могу легко уйти прямо сейчас"))
+		return FALSE
+	return ..()
+
+/mob/living/carbon/human/proc/suicide_mode_damage_log_matches(mob/living/attacker)
+	var/list/attack_log = logging["[LOG_ATTACK]"]
+	if(!islist(attack_log) || !length(attack_log))
+		return FALSE
+
+	var/attacker_marker
+	if(attacker.key)
+		attacker_marker = " by [attacker.key]"
+	else
+		attacker_marker = "/([attacker.real_name || attacker.name])"
+
+	var/static/list/damage_markers = list(
+		"has been attacked",
+		"has been shot",
+		"has been threw and hit",
+		"has been punched",
+		"has been kicked",
+		"has been kicks",
+		"has been bit",
+		"has been headbutted",
+		"has been limbsmashed",
+		"has been limbtwisted",
+		"has been limb chewed",
+		"has been tackled",
+		"has been charged",
+	)
+
+	for(var/log_key in attack_log)
+		var/log_text = attack_log[log_key]
+		if(!istext(log_text))
+			continue
+		log_text = strip_html_simple(log_text)
+		if(!findtext(log_text, attacker_marker))
+			continue
+		for(var/damage_marker in damage_markers)
+			if(findtext(log_text, damage_marker))
+				return TRUE
+	return FALSE
+
+/mob/living/carbon/human/proc/apply_suicide_intervention_if_needed()
+	for(var/mob/living/nearby in view(SUICIDE_INTERVENTION_RANGE, src))
+		if(nearby == src || nearby.stat == DEAD || !nearby.cmode)
+			continue
+		if(!suicide_mode_damage_log_matches(nearby))
+			continue
+		apply_status_effect(/datum/status_effect/debuff/suicide_intervention)
+		return TRUE
+	return FALSE
 
 /proc/twilight_try_suicide_prop_use(obj/item/prop, mob/user)
 	if(!ishuman(user) || !HAS_TRAIT(user, SUICIDE_MODE_TRAIT))
@@ -60,9 +134,14 @@
 	if(!canSuicide())
 		return
 
+	if(apply_suicide_intervention_if_needed())
+		return
+
 	var/old_key = ckey
 	var/confirmation = alert(src, "Мой следующий осознанный акт саморазрушения станет последним и катастрофическим. Продолжить?", "Последний акт", "Да", "Нет")
 	if(ckey != old_key || confirmation != "Да" || !canSuicide())
+		return
+	if(apply_suicide_intervention_if_needed())
 		return
 
 	AddElement(/datum/element/suicide_mode)
@@ -924,6 +1003,8 @@
 #undef SUICIDE_UNARMED_EYES
 #undef SUICIDE_UNARMED_NECK_SNAP
 #undef SUICIDE_UNARMED_STRANGLE
+
+#undef SUICIDE_INTERVENTION_RANGE
 
 #undef SUICIDE_MODE_DUST_SOURCE
 #undef SUICIDE_MODE_TRAIT
