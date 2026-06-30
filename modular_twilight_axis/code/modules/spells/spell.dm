@@ -28,6 +28,7 @@
 		if(L.rogue_sneaking)
 			L.mob_timers[MT_FOUNDSNEAK] = world.time
 			L.update_sneak_invis(reset = TRUE)
+	SEND_SIGNAL(user, COMSIG_MOB_LEGACY_SPELL_CAST, src, targets)
 	if(cast(targets, user = user))
 		// Self spells bypass the ranged_ability click pipeline, which is where
 		// releasedrain stamina cost is normally applied (via mob_helpers.dm).
