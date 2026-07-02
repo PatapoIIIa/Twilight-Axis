@@ -377,12 +377,13 @@
 	if(!poison_name)
 		return
 
-	var/delay = 1 SECOND
+	var/delay = 1 SECONDS
 	if(istype(container, /obj/item/reagent_containers/pill))
 		var/obj/item/reagent_containers/pill/pill = container
 		delay = max(delay, pill.self_delay + world.tick_lag)
+	var/previous_volume = get_harmful_reagent_volume(source)
 	addtimer(
-		CALLBACK(src, PROC_REF(verify_poison_use), WEAKREF(source), get_harmful_reagent_volume(source), poison_name),
+		CALLBACK(src, PROC_REF(verify_poison_use), WEAKREF(source), previous_volume, poison_name),
 		delay,
 	)
 
