@@ -37,6 +37,7 @@
 
 /mob/living/carbon/human
 	var/suicide_mode_harmful_volume = 0
+	var/list/suicide_mode_self_cast_spells
 
 /mob/living/carbon/human/canSuicide()
 	if(has_status_effect(/datum/status_effect/debuff/suicide_intervention))
@@ -44,50 +45,13 @@
 		return FALSE
 	return ..()
 
-/mob/living/carbon/human/proc/suicide_mode_damage_log_matches(mob/living/attacker)
-	var/list/attack_log = logging["[LOG_ATTACK]"]
-	if(!islist(attack_log) || !length(attack_log))
-		return FALSE
-
-	var/attacker_marker
-	if(attacker.key)
-		attacker_marker = " by [attacker.key]"
-	else
-		attacker_marker = "/([attacker.real_name || attacker.name])"
-
-	var/static/list/damage_markers = list(
-		"has been attacked",
-		"has been shot",
-		"has been threw and hit",
-		"has been punched",
-		"has been kicked",
-		"has been kicks",
-		"has been bit",
-		"has been headbutted",
-		"has been limbsmashed",
-		"has been limbtwisted",
-		"has been limb chewed",
-		"has been tackled",
-		"has been charged",
-	)
-
-	for(var/log_key in attack_log)
-		var/log_text = attack_log[log_key]
-		if(!istext(log_text))
-			continue
-		log_text = strip_html_simple(log_text)
-		if(!findtext(log_text, attacker_marker))
-			continue
-		for(var/damage_marker in damage_markers)
-			if(findtext(log_text, damage_marker))
-				return TRUE
-	return FALSE
-
 /mob/living/carbon/human/proc/apply_suicide_intervention_if_needed()
+	if(!mind)
+		return FALSE
 	for(var/mob/living/nearby in view(SUICIDE_INTERVENTION_RANGE, src))
 		if(nearby == src || nearby.stat == DEAD || !nearby.cmode)
 			continue
-		if(!suicide_mode_damage_log_matches(nearby))
+		if(!isnum(mind.attackedme[nearby.real_name]))
 			continue
 		apply_status_effect(/datum/status_effect/debuff/suicide_intervention)
 		return TRUE
@@ -112,14 +76,6 @@
 	if(twilight_try_suicide_prop_use(src, user))
 		return
 	return ..()
-
-/datum/action/cooldown/spell/is_valid_target(atom/cast_on)
-	if(click_to_activate && !self_cast_possible && cast_on == owner)
-		if(HAS_TRAIT(owner, SUICIDE_MODE_TRAIT))
-			return TRUE
-		owner.balloon_alert(owner, "Нельзя применить на себя!")
-		return FALSE
-	return TRUE
 
 /mob/living/carbon/human/verb/toggle_suicide_mode()
 	set name = "Подготовить последний акт"
@@ -149,11 +105,14 @@
 
 /datum/element/suicide_mode
 	element_flags = ELEMENT_DETACH
+	var/datum/suicide_trauma/trauma_handler
 
 /datum/element/suicide_mode/Attach(datum/target)
 	. = ..()
 	if(!ishuman(target))
 		return ELEMENT_INCOMPATIBLE
+	if(!trauma_handler)
+		trauma_handler = new
 
 	var/mob/living/carbon/human/human_target = target
 	ADD_TRAIT(human_target, SUICIDE_MODE_TRAIT, type)
@@ -168,6 +127,7 @@
 	RegisterSignal(human_target, COMSIG_LIVING_LIFE, PROC_REF(on_life))
 	RegisterSignal(human_target, COMSIG_MOB_SUICIDE_PROP_USED, PROC_REF(on_suicide_prop_used))
 	human_target.suicide_mode_harmful_volume = get_harmful_reagent_volume(human_target)
+	enable_spell_self_cast(human_target)
 
 /datum/element/suicide_mode/Detach(mob/living/carbon/human/source, ...)
 	REMOVE_TRAIT(source, SUICIDE_MODE_TRAIT, type)
@@ -184,7 +144,23 @@
 		COMSIG_MOB_SUICIDE_PROP_USED,
 	))
 	source.suicide_mode_harmful_volume = 0
+	disable_spell_self_cast(source)
 	return ..()
+
+/datum/element/suicide_mode/proc/enable_spell_self_cast(mob/living/carbon/human/source)
+	source.suicide_mode_self_cast_spells = list()
+	for(var/datum/action/cooldown/spell/spell in source.actions)
+		if(!spell.click_to_activate || spell.self_cast_possible)
+			continue
+		spell.self_cast_possible = TRUE
+		source.suicide_mode_self_cast_spells += WEAKREF(spell)
+
+/datum/element/suicide_mode/proc/disable_spell_self_cast(mob/living/carbon/human/source)
+	for(var/datum/weakref/spell_ref as anything in source.suicide_mode_self_cast_spells)
+		var/datum/action/cooldown/spell/spell = spell_ref.resolve()
+		if(spell)
+			spell.self_cast_possible = FALSE
+	source.suicide_mode_self_cast_spells = null
 
 /datum/element/suicide_mode/proc/on_moved(mob/living/carbon/human/source, atom/old_location, direction, forced)
 	SIGNAL_HANDLER
@@ -195,28 +171,20 @@
 	var/entered_deep_water = is_suicide_deep_water(new_turf) && !is_suicide_deep_water(old_turf)
 
 	if(istype(new_turf, /turf/open/lava/acid) && (fell_down || forced))
-		if(!consume_mode(source, "погружение в кислоту"))
-			return
-		addtimer(CALLBACK(src, PROC_REF(apply_acid_death), WEAKREF(source)), world.tick_lag)
+		commit_mode(source, "погружение в кислоту", CALLBACK(trauma_handler, TYPE_PROC_REF(/datum/suicide_trauma, apply_acid_death), WEAKREF(source)))
 		return
 
 	if(islava(new_turf) && (fell_down || forced))
-		if(!consume_mode(source, "погружение в лаву"))
-			return
-		addtimer(CALLBACK(src, PROC_REF(apply_lava_death), WEAKREF(source)), world.tick_lag)
+		commit_mode(source, "погружение в лаву", CALLBACK(trauma_handler, TYPE_PROC_REF(/datum/suicide_trauma, apply_lava_death), WEAKREF(source)))
 		return
 
 	if((fell_down && istype(new_turf, /turf/open/water)) || entered_deep_water)
-		if(!consume_mode(source, "падение в воду"))
-			return
-		addtimer(CALLBACK(src, PROC_REF(apply_water_death), WEAKREF(source)), world.tick_lag)
+		commit_mode(source, "падение в воду", CALLBACK(trauma_handler, TYPE_PROC_REF(/datum/suicide_trauma, apply_water_death), WEAKREF(source)))
 		return
 
 	if(!fell_down)
 		return
-	if(!consume_mode(source, "прыжок с высоты"))
-		return
-	addtimer(CALLBACK(src, PROC_REF(apply_fall_trauma), WEAKREF(source)), world.tick_lag)
+	commit_mode(source, "прыжок с высоты", CALLBACK(trauma_handler, TYPE_PROC_REF(/datum/suicide_trauma, apply_fall_trauma), WEAKREF(source)))
 
 /datum/element/suicide_mode/proc/on_item_attack(mob/living/carbon/human/source, obj/item/weapon, mob/living/attacker)
 	SIGNAL_HANDLER
@@ -229,9 +197,11 @@
 	var/weapon_name = weapon?.name || "оружие"
 	if(weapon && weapon.get_temperature() >= FIRE_MINIMUM_TEMPERATURE_TO_EXIST)
 		bclass = BCLASS_BURN
-	if(!consume_mode(source, "атака себя предметом [weapon_name]"))
-		return
-	addtimer(CALLBACK(src, PROC_REF(apply_targeted_trauma), WEAKREF(source), zone, bclass, weapon_name), world.tick_lag)
+	commit_mode(
+		source,
+		"атака себя предметом [weapon_name]",
+		CALLBACK(trauma_handler, TYPE_PROC_REF(/datum/suicide_trauma, apply_targeted_trauma), WEAKREF(source), zone, bclass, weapon_name),
+	)
 
 /datum/element/suicide_mode/proc/on_projectile_hit(mob/living/carbon/human/source, obj/projectile/projectile, def_zone)
 	SIGNAL_HANDLER
@@ -241,18 +211,22 @@
 
 	var/projectile_name = projectile.name
 	if(istype(projectile, /obj/projectile/magic))
-		var/magic_kind = get_magic_kind(projectile)
+		var/magic_kind = trauma_handler.get_magic_kind(projectile)
 		var/starting_fire_stacks = source.fire_stacks
-		if(!consume_mode(source, "попадание собственной магией [projectile_name]"))
-			return
-		addtimer(CALLBACK(src, PROC_REF(apply_magic_trauma), WEAKREF(source), magic_kind, projectile_name, starting_fire_stacks), world.tick_lag)
+		commit_mode(
+			source,
+			"попадание собственной магией [projectile_name]",
+			CALLBACK(trauma_handler, TYPE_PROC_REF(/datum/suicide_trauma, apply_magic_trauma), WEAKREF(source), magic_kind, projectile_name, starting_fire_stacks),
+		)
 		return
 
 	var/zone = def_zone || source.zone_selected || BODY_ZONE_CHEST
 	var/bclass = projectile.woundclass || ((projectile.damage_type == BURN) ? BCLASS_BURN : BCLASS_PIERCE)
-	if(!consume_mode(source, "выстрел в себя из [projectile_name]"))
-		return
-	addtimer(CALLBACK(src, PROC_REF(apply_targeted_trauma), WEAKREF(source), zone, bclass, projectile_name), world.tick_lag)
+	commit_mode(
+		source,
+		"выстрел в себя из [projectile_name]",
+		CALLBACK(trauma_handler, TYPE_PROC_REF(/datum/suicide_trauma, apply_targeted_trauma), WEAKREF(source), zone, bclass, projectile_name),
+	)
 
 /datum/element/suicide_mode/proc/on_modern_spell_cast(mob/living/carbon/human/source, datum/action/cooldown/spell/spell, atom/cast_on)
 	SIGNAL_HANDLER
@@ -260,11 +234,13 @@
 	if(cast_on != source || !is_harmful_modern_spell(spell))
 		return
 
-	var/magic_kind = get_magic_kind(spell)
+	var/magic_kind = trauma_handler.get_magic_kind(spell)
 	var/starting_fire_stacks = source.fire_stacks
-	if(!consume_mode(source, "применение [spell] на себя"))
-		return
-	addtimer(CALLBACK(src, PROC_REF(apply_magic_trauma), WEAKREF(source), magic_kind, spell.name, starting_fire_stacks), world.tick_lag)
+	commit_mode(
+		source,
+		"применение [spell] на себя",
+		CALLBACK(trauma_handler, TYPE_PROC_REF(/datum/suicide_trauma, apply_magic_trauma), WEAKREF(source), magic_kind, spell.name, starting_fire_stacks),
+	)
 
 /datum/element/suicide_mode/proc/is_harmful_modern_spell(datum/action/cooldown/spell/spell)
 	if(istype(spell, /datum/action/cooldown/spell/projectile))
@@ -281,11 +257,13 @@
 	if(!islist(targets) || !(source in targets) || !is_harmful_legacy_spell(spell))
 		return
 
-	var/magic_kind = get_magic_kind(spell)
+	var/magic_kind = trauma_handler.get_magic_kind(spell)
 	var/starting_fire_stacks = source.fire_stacks
-	if(!consume_mode(source, "применение [spell] на себя"))
-		return
-	addtimer(CALLBACK(src, PROC_REF(apply_magic_trauma), WEAKREF(source), magic_kind, spell.name, starting_fire_stacks), world.tick_lag)
+	commit_mode(
+		source,
+		"применение [spell] на себя",
+		CALLBACK(trauma_handler, TYPE_PROC_REF(/datum/suicide_trauma, apply_magic_trauma), WEAKREF(source), magic_kind, spell.name, starting_fire_stacks),
+	)
 
 /datum/element/suicide_mode/proc/is_harmful_legacy_spell(obj/effect/proc_holder/spell/spell)
 	return istype(spell, /obj/effect/proc_holder/spell/invoked/projectile) \
@@ -307,9 +285,11 @@
 	else if(zone == BODY_ZONE_PRECISE_MOUTH)
 		unarmed_kind = SUICIDE_UNARMED_TONGUE
 
-	if(!consume_mode(source, "обращение голых рук против себя"))
-		return
-	addtimer(CALLBACK(src, PROC_REF(apply_unarmed_trauma), WEAKREF(source), unarmed_kind), world.tick_lag)
+	commit_mode(
+		source,
+		"обращение голых рук против себя",
+		CALLBACK(trauma_handler, TYPE_PROC_REF(/datum/suicide_trauma, apply_unarmed_trauma), WEAKREF(source), unarmed_kind),
+	)
 
 /datum/element/suicide_mode/proc/on_ignited(mob/living/carbon/human/source)
 	SIGNAL_HANDLER
@@ -318,9 +298,11 @@
 	var/obj/item/held_item = source.get_active_held_item()
 	if(!on_pyre && (!held_item || held_item.get_temperature() < FIRE_MINIMUM_TEMPERATURE_TO_EXIST))
 		return
-	if(!consume_mode(source, on_pyre ? "восхождение на горящий погребальный костёр" : "самосожжение"))
-		return
-	addtimer(CALLBACK(src, PROC_REF(apply_immolation_trauma), WEAKREF(source), on_pyre, "пламя"), world.tick_lag)
+	commit_mode(
+		source,
+		on_pyre ? "восхождение на горящий погребальный костёр" : "самосожжение",
+		CALLBACK(trauma_handler, TYPE_PROC_REF(/datum/suicide_trauma, apply_immolation_trauma), WEAKREF(source), on_pyre, "пламя"),
+	)
 
 /datum/element/suicide_mode/proc/on_damage(mob/living/carbon/human/source, damage, damage_type, zone)
 	SIGNAL_HANDLER
@@ -333,57 +315,72 @@
 	if(!trap)
 		return
 
-	if(!consume_mode(source, "шаг в капкан"))
-		return
-	addtimer(CALLBACK(src, PROC_REF(apply_mantrap_trauma), WEAKREF(source), zone), world.tick_lag)
+	commit_mode(source, "шаг в капкан", CALLBACK(trauma_handler, TYPE_PROC_REF(/datum/suicide_trauma, apply_mantrap_trauma), WEAKREF(source), zone))
 
 /datum/element/suicide_mode/proc/on_life(mob/living/carbon/human/source)
 	SIGNAL_HANDLER
 
+	if(try_buckled_method(source))
+		return
+	if(try_lit_bomb_method(source))
+		return
+	try_poison_method(source)
+
+/datum/element/suicide_mode/proc/try_buckled_method(mob/living/carbon/human/source)
 	if(istype(source.buckled, /obj/machinery/light/rogue/campfire/pyre))
 		var/obj/machinery/light/rogue/campfire/pyre/pyre = source.buckled
 		if(pyre.on)
-			if(consume_mode(source, "восхождение на горящий погребальный костёр"))
-				addtimer(CALLBACK(src, PROC_REF(apply_immolation_trauma), WEAKREF(source), TRUE, pyre.name), world.tick_lag)
-			return
+			return commit_mode(
+				source,
+				"восхождение на горящий погребальный костёр",
+				CALLBACK(trauma_handler, TYPE_PROC_REF(/datum/suicide_trauma, apply_immolation_trauma), WEAKREF(source), TRUE, pyre.name),
+			)
 
 	if(istype(source.buckled, /obj/structure/meathook))
-		if(consume_mode(source, "жертва мясницкому крюку"))
-			addtimer(CALLBACK(src, PROC_REF(apply_meathook_trauma), WEAKREF(source)), world.tick_lag)
-		return
+		return commit_mode(source, "жертва мясницкому крюку", CALLBACK(trauma_handler, TYPE_PROC_REF(/datum/suicide_trauma, apply_meathook_trauma), WEAKREF(source)))
+	return FALSE
 
+/datum/element/suicide_mode/proc/try_lit_bomb_method(mob/living/carbon/human/source)
 	for(var/obj/item/bomb/bomb in source.contents)
 		if(!bomb.lit)
 			continue
-		if(consume_mode(source, "удерживание зажжённой алхимической бомбы"))
-			addtimer(CALLBACK(src, PROC_REF(apply_bomb_trauma), WEAKREF(source), WEAKREF(bomb)), world.tick_lag)
-		return
+		return commit_mode(
+			source,
+			"удерживание зажжённой алхимической бомбы",
+			CALLBACK(trauma_handler, TYPE_PROC_REF(/datum/suicide_trauma, apply_bomb_trauma), WEAKREF(source), WEAKREF(bomb)),
+		)
+	return FALSE
 
+/datum/element/suicide_mode/proc/try_poison_method(mob/living/carbon/human/source)
 	var/current_harmful_volume = get_harmful_reagent_volume(source)
 	if(current_harmful_volume > source.suicide_mode_harmful_volume + 0.01)
 		var/obj/item/held_item = source.get_active_held_item()
 		if(!istype(held_item, /obj/item/reagent_containers))
 			source.suicide_mode_harmful_volume = current_harmful_volume
-			return
+			return FALSE
 		var/obj/item/reagent_containers/held_container = held_item
 		if(!container_has_harmful_reagent(held_container))
 			source.suicide_mode_harmful_volume = current_harmful_volume
-			return
+			return FALSE
 		var/poison_name = get_dominant_harmful_reagent_name(source)
-		if(consume_mode(source, "принятие яда [poison_name]"))
-			addtimer(CALLBACK(src, PROC_REF(apply_poison_trauma), WEAKREF(source), poison_name), world.tick_lag)
-		return
+		return commit_mode(
+			source,
+			"принятие яда [poison_name]",
+			CALLBACK(trauma_handler, TYPE_PROC_REF(/datum/suicide_trauma, apply_poison_trauma), WEAKREF(source), poison_name),
+		)
 	source.suicide_mode_harmful_volume = min(source.suicide_mode_harmful_volume, current_harmful_volume)
+	return FALSE
 
 /datum/element/suicide_mode/proc/on_suicide_prop_used(mob/living/carbon/human/source, obj/item/prop)
 	SIGNAL_HANDLER
 
 	if(!istype(prop, /obj/item/rope) && !istype(prop, /obj/item/clothing/neck/cloak) && !istype(prop, /obj/item/storage/belt))
 		return FALSE
-	if(!consume_mode(source, "изготовление петли из [prop]"))
-		return FALSE
-	addtimer(CALLBACK(src, PROC_REF(apply_hanging_trauma), WEAKREF(source), prop.name), world.tick_lag)
-	return TRUE
+	return commit_mode(
+		source,
+		"изготовление петли из [prop]",
+		CALLBACK(trauma_handler, TYPE_PROC_REF(/datum/suicide_trauma, apply_hanging_trauma), WEAKREF(source), prop.name),
+	)
 
 /datum/element/suicide_mode/proc/is_suicide_deep_water(turf/target)
 	return istype(target, /turf/open/water/ocean/deep) || istype(target, /turf/open/water/swamp/deep)
@@ -410,20 +407,27 @@
 			dominant_reagent = reagent
 	return dominant_reagent?.name || "яд"
 
-/datum/element/suicide_mode/proc/consume_mode(mob/living/carbon/human/source, method)
-	if(!HAS_TRAIT(source, SUICIDE_MODE_TRAIT))
+/datum/element/suicide_mode/proc/commit_mode(mob/living/carbon/human/source, method, datum/callback/consequence)
+	if(!HAS_TRAIT(source, SUICIDE_MODE_TRAIT) || !consequence)
 		return FALSE
 
 	source.RemoveElement(/datum/element/suicide_mode)
+	addtimer(CALLBACK(src, PROC_REF(execute_consequence), WEAKREF(source), method, consequence), world.tick_lag)
+	return TRUE
+
+/datum/element/suicide_mode/proc/execute_consequence(datum/weakref/source_ref, method, datum/callback/consequence)
+	var/mob/living/carbon/human/source = source_ref.resolve()
+	if(!source || QDELETED(source) || !consequence)
+		return
 	source.set_suicide(TRUE)
 	source.log_message("запустил режим самоубийства: [method]", LOG_ATTACK)
 	source.suicide_log()
-	return TRUE
+	consequence.Invoke()
 
-/datum/element/suicide_mode/proc/is_show_death(mob/living/carbon/human/source)
+/datum/suicide_trauma/proc/is_show_death(mob/living/carbon/human/source)
 	return HAS_TRAIT(source, TRAIT_CRITICAL_WEAKNESS) || HAS_TRAIT(source, TRAIT_DNR)
 
-/datum/element/suicide_mode/proc/announce_trauma(mob/living/carbon/human/source, normal_message, show_message, self_message)
+/datum/suicide_trauma/proc/announce_trauma(mob/living/carbon/human/source, normal_message, show_message, self_message)
 	var/show_death = is_show_death(source)
 	var/public_message = show_death ? show_message : normal_message
 	if(show_death)
@@ -436,7 +440,7 @@
 		span_bigbold(span_userdanger(self_message))
 	)
 
-/datum/element/suicide_mode/proc/create_bloodbath(mob/living/carbon/human/source, spectacular = FALSE)
+/datum/suicide_trauma/proc/create_bloodbath(mob/living/carbon/human/source, spectacular = FALSE)
 	if(NOBLOOD in source.dna?.species?.species_traits)
 		return
 
@@ -454,7 +458,7 @@
 	source.add_splatter_wall(source, epicenter, spectacular ? 100 : 60, spectacular ? 12 : 7)
 	source.blood_volume = max(source.blood_volume - (spectacular ? 300 : 180), 0)
 
-/datum/element/suicide_mode/proc/ruin_organ(mob/living/carbon/human/source, organ_slot)
+/datum/suicide_trauma/proc/ruin_organ(mob/living/carbon/human/source, organ_slot)
 	var/obj/item/organ/organ = source.getorganslot(organ_slot)
 	if(!organ)
 		return
@@ -463,7 +467,7 @@
 	if(organ_slot == ORGAN_SLOT_HEART)
 		source.set_heartattack(TRUE)
 
-/datum/element/suicide_mode/proc/ruin_internal_organs(mob/living/carbon/human/source, include_brain = FALSE)
+/datum/suicide_trauma/proc/ruin_internal_organs(mob/living/carbon/human/source, include_brain = FALSE)
 	for(var/obj/item/organ/organ as anything in source.internal_organs)
 		if(!include_brain && organ.slot == ORGAN_SLOT_BRAIN)
 			continue
@@ -471,13 +475,13 @@
 		organ.organ_flags |= ORGAN_FAILING
 	source.set_heartattack(TRUE)
 
-/datum/element/suicide_mode/proc/damage_every_bodypart(mob/living/carbon/human/source, brute_damage, burn_damage)
+/datum/suicide_trauma/proc/damage_every_bodypart(mob/living/carbon/human/source, brute_damage, burn_damage)
 	for(var/obj/item/bodypart/bodypart as anything in source.bodyparts)
 		bodypart.receive_damage(brute_damage, burn_damage, 0, 0, FALSE)
 	source.updatehealth()
 	source.update_damage_overlays()
 
-/datum/element/suicide_mode/proc/fracture_every_bodypart(mob/living/carbon/human/source)
+/datum/suicide_trauma/proc/fracture_every_bodypart(mob/living/carbon/human/source)
 	for(var/obj/item/bodypart/bodypart as anything in source.bodyparts)
 		switch(bodypart.body_zone)
 			if(BODY_ZONE_HEAD)
@@ -489,7 +493,7 @@
 			else
 				bodypart.add_wound(/datum/wound/fracture)
 
-/datum/element/suicide_mode/proc/apply_hanging_trauma(datum/weakref/source_ref, prop_name)
+/datum/suicide_trauma/proc/apply_hanging_trauma(datum/weakref/source_ref, prop_name)
 	var/mob/living/carbon/human/source = source_ref.resolve()
 	if(!source || QDELETED(source))
 		return
@@ -511,7 +515,7 @@
 		if(head && !head.dismember(BRUTE, BCLASS_CHOP, source, BODY_ZONE_PRECISE_NECK, 999, vorpal = TRUE, skip_checks = TRUE))
 			source.death()
 
-/datum/element/suicide_mode/proc/apply_unarmed_trauma(datum/weakref/source_ref, unarmed_kind)
+/datum/suicide_trauma/proc/apply_unarmed_trauma(datum/weakref/source_ref, unarmed_kind)
 	var/mob/living/carbon/human/source = source_ref.resolve()
 	if(!source || QDELETED(source))
 		return
@@ -583,7 +587,7 @@
 		else if(source.stat != DEAD)
 			source.death()
 
-/datum/element/suicide_mode/proc/apply_immolation_trauma(datum/weakref/source_ref, on_pyre = FALSE, fire_source = "пламя")
+/datum/suicide_trauma/proc/apply_immolation_trauma(datum/weakref/source_ref, on_pyre = FALSE, fire_source = "пламя")
 	var/mob/living/carbon/human/source = source_ref.resolve()
 	if(!source || QDELETED(source))
 		return
@@ -610,7 +614,7 @@
 	ADD_TRAIT(source, TRAIT_DUSTABLE, SUICIDE_MODE_DUST_SOURCE)
 	source.dust(just_ash = TRUE, drop_items = TRUE, force = TRUE)
 
-/datum/element/suicide_mode/proc/apply_mantrap_trauma(datum/weakref/source_ref, zone)
+/datum/suicide_trauma/proc/apply_mantrap_trauma(datum/weakref/source_ref, zone)
 	var/mob/living/carbon/human/source = source_ref.resolve()
 	if(!source || QDELETED(source))
 		return
@@ -634,7 +638,7 @@
 	if(show_death && source.stat != DEAD)
 		source.death()
 
-/datum/element/suicide_mode/proc/apply_meathook_trauma(datum/weakref/source_ref)
+/datum/suicide_trauma/proc/apply_meathook_trauma(datum/weakref/source_ref)
 	var/mob/living/carbon/human/source = source_ref.resolve()
 	if(!source || QDELETED(source))
 		return
@@ -658,7 +662,7 @@
 		hook?.unbuckle_mob(source, TRUE)
 		source.gib()
 
-/datum/element/suicide_mode/proc/apply_bomb_trauma(datum/weakref/source_ref, datum/weakref/bomb_ref)
+/datum/suicide_trauma/proc/apply_bomb_trauma(datum/weakref/source_ref, datum/weakref/bomb_ref)
 	var/mob/living/carbon/human/source = source_ref.resolve()
 	if(!source || QDELETED(source))
 		return
@@ -681,7 +685,7 @@
 	if(show_death)
 		source.gib()
 
-/datum/element/suicide_mode/proc/apply_poison_trauma(datum/weakref/source_ref, poison_name)
+/datum/suicide_trauma/proc/apply_poison_trauma(datum/weakref/source_ref, poison_name)
 	var/mob/living/carbon/human/source = source_ref.resolve()
 	if(!source || QDELETED(source))
 		return
@@ -703,7 +707,7 @@
 	if(show_death && source.stat != DEAD)
 		source.death()
 
-/datum/element/suicide_mode/proc/apply_fall_trauma(datum/weakref/source_ref)
+/datum/suicide_trauma/proc/apply_fall_trauma(datum/weakref/source_ref)
 	var/mob/living/carbon/human/source = source_ref.resolve()
 	if(!source || QDELETED(source))
 		return
@@ -725,7 +729,7 @@
 	if(show_death)
 		source.gib()
 
-/datum/element/suicide_mode/proc/apply_lava_death(datum/weakref/source_ref)
+/datum/suicide_trauma/proc/apply_lava_death(datum/weakref/source_ref)
 	var/mob/living/carbon/human/source = source_ref.resolve()
 	if(!source || QDELETED(source))
 		return
@@ -740,7 +744,7 @@
 	ADD_TRAIT(source, TRAIT_DUSTABLE, SUICIDE_MODE_DUST_SOURCE)
 	source.dust(just_ash = TRUE, drop_items = TRUE, force = TRUE)
 
-/datum/element/suicide_mode/proc/apply_acid_death(datum/weakref/source_ref)
+/datum/suicide_trauma/proc/apply_acid_death(datum/weakref/source_ref)
 	var/mob/living/carbon/human/source = source_ref.resolve()
 	if(!source || QDELETED(source))
 		return
@@ -755,7 +759,7 @@
 	ADD_TRAIT(source, TRAIT_DUSTABLE, SUICIDE_MODE_DUST_SOURCE)
 	source.dust(just_ash = TRUE, drop_items = TRUE, force = TRUE)
 
-/datum/element/suicide_mode/proc/apply_water_death(datum/weakref/source_ref)
+/datum/suicide_trauma/proc/apply_water_death(datum/weakref/source_ref)
 	var/mob/living/carbon/human/source = source_ref.resolve()
 	if(!source || QDELETED(source))
 		return
@@ -789,7 +793,7 @@
 	if(show_death)
 		source.gib()
 
-/datum/element/suicide_mode/proc/apply_targeted_trauma(datum/weakref/source_ref, zone, bclass, weapon_name)
+/datum/suicide_trauma/proc/apply_targeted_trauma(datum/weakref/source_ref, zone, bclass, weapon_name)
 	var/mob/living/carbon/human/source = source_ref.resolve()
 	if(!source || QDELETED(source))
 		return
@@ -903,7 +907,7 @@
 		if(head && !head.dismember(BRUTE, BCLASS_CHOP, source, BODY_ZONE_PRECISE_NECK, 999, vorpal = TRUE, skip_checks = TRUE))
 			source.death()
 
-/datum/element/suicide_mode/proc/get_magic_kind(datum/magic_source)
+/datum/suicide_trauma/proc/get_magic_kind(datum/magic_source)
 	if(istype(magic_source, /datum/action/cooldown/spell))
 		var/datum/action/cooldown/spell/modern_spell = magic_source
 		switch(modern_spell.attunement_school)
@@ -926,7 +930,7 @@
 		return SUICIDE_MAGIC_FIRE
 	return SUICIDE_MAGIC_GENERIC
 
-/datum/element/suicide_mode/proc/apply_magic_trauma(datum/weakref/source_ref, magic_kind, spell_name, starting_fire_stacks)
+/datum/suicide_trauma/proc/apply_magic_trauma(datum/weakref/source_ref, magic_kind, spell_name, starting_fire_stacks)
 	var/mob/living/carbon/human/source = source_ref.resolve()
 	if(!source || QDELETED(source))
 		return

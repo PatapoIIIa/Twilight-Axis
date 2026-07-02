@@ -1,8 +1,8 @@
-/obj/effect/proc_holder/spell/perform(list/targets, recharge = TRUE, mob/user = usr) //if recharge is started is important for the trigger spells
+/obj/effect/proc_holder/spell/perform(list/targets, recharge = TRUE, mob/user = usr)
 	if(!ignore_los)
 		if(length(targets))
 			var/radius
-			if(range > 0)	//accounts for touch / self spells that use negative range
+			if(range > 0)
 				radius = range
 			else
 				radius = 1
@@ -28,11 +28,8 @@
 		if(L.rogue_sneaking)
 			L.mob_timers[MT_FOUNDSNEAK] = world.time
 			L.update_sneak_invis(reset = TRUE)
-	SEND_SIGNAL(user, COMSIG_MOB_LEGACY_SPELL_CAST, src, targets)
 	if(cast(targets, user = user))
-		// Self spells bypass the ranged_ability click pipeline, which is where
-		// releasedrain stamina cost is normally applied (via mob_helpers.dm).
-		// Apply it here so ALL spell types properly drain stamina on cast.
+		SEND_SIGNAL(user, COMSIG_MOB_LEGACY_SPELL_CAST, src, targets)
 		if(!ranged_ability_user && releasedrain > 0 && isliving(user))
 			var/mob/living/L = user
 			var/fatigue = calculate_fatigue_drain(L)
