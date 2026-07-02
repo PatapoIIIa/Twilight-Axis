@@ -382,10 +382,7 @@
 		var/obj/item/reagent_containers/pill/pill = container
 		delay = max(delay, pill.self_delay + world.tick_lag)
 	var/previous_volume = get_harmful_reagent_volume(source)
-	addtimer(
-		CALLBACK(src, PROC_REF(verify_poison_use), WEAKREF(source), previous_volume, poison_name),
-		delay,
-	)
+	addtimer(CALLBACK(src, PROC_REF(verify_poison_use), WEAKREF(source), previous_volume, poison_name), delay)
 
 /datum/element/suicide_mode/proc/verify_poison_use(datum/weakref/source_ref, previous_volume, poison_name)
 	var/mob/living/carbon/human/source = source_ref.resolve()
