@@ -39,6 +39,7 @@
 #include "./overrides/vampire_lord_title.dm"
 #include "./overrides/crucible_access.dm"
 #include "./overrides/thinblood_restrictions.dm"
+#include "./overrides/vitae_collar.dm"
 
 // Local defines
 #include "./TA_Vampires_uniclude.dm"
