@@ -6,9 +6,16 @@
 #define VITAE_COLLAR_BLOOD_VITAE_RATIO 7.5
 #define VITAE_COLLAR_CHECK_INTERVAL 1 MINUTES
 
+GLOBAL_LIST_EMPTY(vampire_bloodpools)
+
 /obj/structure/vampire/bloodpool/Initialize()
 	. = ..()
 	available_project_types += /datum/vampire_project/vitae_collar
+	GLOB.vampire_bloodpools += src
+
+/obj/structure/vampire/bloodpool/Destroy()
+	GLOB.vampire_bloodpools -= src
+	return ..()
 
 #define TA_VITAE_COLLAR_CRUCIBLE_MAX_BLOOD 20000 // mirrors CRUCIBLE_MAX_BLOOD, which bloodpool.dm #undefs at file scope
 /obj/structure/vampire/bloodpool/proc/ta_receive_passive_vitae(amount)
@@ -132,10 +139,25 @@
 
 	try_harvest_vitae(collar, user)
 
+/datum/element/vitae_collar/proc/get_nearest_bloodpool(atom/from)
+	var/obj/structure/vampire/bloodpool/nearest
+	var/nearest_dist = INFINITY
+	for(var/obj/structure/vampire/bloodpool/pool as anything in GLOB.vampire_bloodpools)
+		if(QDELETED(pool))
+			continue
+		var/dist = get_dist(from, pool)
+		if(dist < nearest_dist)
+			nearest_dist = dist
+			nearest = pool
+	return nearest
+
 /datum/element/vitae_collar/proc/try_harvest_vitae(obj/item/clothing/neck/roguetown/collar/vitae_collar/collar, mob/living/carbon/human/user)
 	var/obj/structure/vampire/bloodpool/pool = collar.linked_bloodpool
 	if(QDELETED(pool))
-		return
+		pool = get_nearest_bloodpool(user)
+		if(!pool)
+			return
+		collar.linked_bloodpool = pool
 
 	var/mortal_scale = user.mind && !user.clan
 	var/effective_vitae = mortal_scale ? (user.bloodpool * CLIENT_VITAE_MULTIPLIER) : user.bloodpool
