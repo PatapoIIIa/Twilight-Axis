@@ -1,0 +1,43 @@
+/datum/ai_controller/human_npc/ataman_bandit
+	blackboard = list(
+		BB_WEAPON_TYPE = /obj/item/rogueweapon,
+		BB_ARMOR_CLASS = 2,
+		BB_TARGETTING_DATUM = new /datum/targetting_datum/basic(),
+		BB_PET_TARGETING_DATUM = new /datum/targetting_datum/basic/not_friends(),
+
+		BB_HUMAN_NPC_ATTACK_ZONE_COUNTER = 0,
+		BB_HUMAN_NPC_LAST_ATTACK_ZONE = null,
+		BB_HUMAN_NPC_WEAKPOINT = null,
+		BB_HUMAN_NPC_JUMP_COOLDOWN = 0,
+		BB_HUMAN_NPC_FLANK_ANGLE = null,
+		BB_HUMAN_NPC_FLANK_TARGET = null,
+		BB_HUMAN_NPC_HARASS_MODE = FALSE,
+		BB_HUMAN_NPC_HARASS_RETREATING = FALSE,
+		BB_HUMAN_NPC_HARASS_COOLDOWN = 0,
+		BB_HUMAN_NPC_JUKE_COOLDOWN = 0,
+
+		BB_ATAMAN_SPAWN_TURF = null,
+		BB_ATAMAN_OWNER = null,
+	)
+	planning_subtrees = list(
+		/datum/ai_planning_subtree/call_for_help,
+		/datum/ai_planning_subtree/generic_break_restraints,
+		/datum/ai_planning_subtree/use_powder,
+		/datum/ai_planning_subtree/use_bandage,
+		/datum/ai_planning_subtree/use_throwable,
+		/datum/ai_planning_subtree/use_healing_drink,
+		/datum/ai_planning_subtree/generic_wield,
+		/datum/ai_planning_subtree/kick_attack,
+		/datum/ai_planning_subtree/generic_resist,
+		/datum/ai_planning_subtree/generic_stand,
+		/datum/ai_planning_subtree/tree_climb,
+		/datum/ai_planning_subtree/aggro_find_target,
+		/datum/ai_planning_subtree/ataman_leash,
+		/datum/ai_planning_subtree/attack_obstacle_in_path,
+		/datum/ai_planning_subtree/leap_attack,
+		/datum/ai_planning_subtree/ataman_disarm_restrain,
+		/datum/ai_planning_subtree/basic_melee_attack_subtree/human_npc,
+		/datum/ai_planning_subtree/find_weapon,
+		/datum/ai_planning_subtree/equip_item,
+		/datum/ai_planning_subtree/loot,
+	)
