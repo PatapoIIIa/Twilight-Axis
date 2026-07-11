@@ -35,6 +35,22 @@
 		finish_action(controller, FALSE, target_key)
 		return
 
+	// Casters get their mouth stopped before anything else - it silences their spells outright.
+	var/datum/ataman_squad/squad = controller.blackboard[BB_ATAMAN_SQUAD]
+	if(squad?.is_target_caster(target) && !ataman_target_mouth_secured(target))
+		if(pawn.pulling == target)
+			finish_action(controller, TRUE, target_key)
+			return
+		if(squad.claim_mouth_grab())
+			if(!ataman_prepare_capture_hand(controller))
+				finish_action(controller, FALSE, target_key)
+				return
+			if(!pawn.start_pulling(target, GRAB_PASSIVE, item_override = BODY_ZONE_PRECISE_MOUTH))
+				finish_action(controller, FALSE, target_key)
+				return
+			finish_action(controller, TRUE, target_key)
+			return
+
 	var/obj/item/armed_hand = target.get_active_held_item() || target.get_inactive_held_item()
 	if(!armed_hand)
 		finish_action(controller, TRUE, target_key)

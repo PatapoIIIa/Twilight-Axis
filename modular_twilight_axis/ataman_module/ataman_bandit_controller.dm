@@ -30,11 +30,13 @@
 		BB_HUMAN_NPC_HARASS_RETREATING = FALSE,
 		BB_HUMAN_NPC_HARASS_COOLDOWN = 0,
 		BB_HUMAN_NPC_JUKE_COOLDOWN = 0,
+		BB_HUMAN_NPC_FEINT_COOLDOWN = INFINITY, // the squad, not the base combat AI, decides when this bandit feints
 
 		BB_ATAMAN_SPAWN_TURF = null,
 		BB_ATAMAN_OWNER = null,
 		BB_ATAMAN_TARGET = null,
 		BB_ATAMAN_ROLE = ATAMAN_ROLE_ENFORCER,
+		BB_ATAMAN_SQUAD = null,
 	)
 	planning_subtrees = list(
 		/datum/ai_planning_subtree/generic_break_restraints,
@@ -45,6 +47,8 @@
 		/datum/ai_planning_subtree/generic_stand,
 		/datum/ai_planning_subtree/tree_climb,
 		/datum/ai_planning_subtree/ataman_leash,
+		/datum/ai_planning_subtree/squad_flank,
+		/datum/ai_planning_subtree/ataman_squad_tactics,
 		/datum/ai_planning_subtree/ataman_disarm_restrain,
 		/datum/ai_planning_subtree/attack_obstacle_in_path,
 		/datum/ai_planning_subtree/basic_melee_attack_subtree/human_npc,

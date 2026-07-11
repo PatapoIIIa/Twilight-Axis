@@ -16,6 +16,8 @@
 // ataman_marked_component.dm          - owned mark and overhead indicator
 // ataman_bandit.dm                    - summoned ambush NPC
 // ataman_bandit_controller.dm         - fixed-target, role-aware NPC controller
+// ataman_squad.dm                     - shared squad coordination datum (feints, guard, mouth claim)
+// ataman_squad_tactics.dm             - escape/cast reaction and staged feint economy
 // ataman_leash_subtree.dm             - pursuit leash
 // ataman_disarm_restrain_subtree.dm   - capture role coordinator
 // ataman_disarm_behavior.dm           - disarm, grab and shove behaviors
@@ -35,6 +37,8 @@
 #include "ataman_marked_component.dm"
 #include "ataman_bandit.dm"
 #include "ataman_bandit_controller.dm"
+#include "ataman_squad.dm"
+#include "ataman_squad_tactics.dm"
 #include "ataman_leash_subtree.dm"
 #include "ataman_disarm_restrain_subtree.dm"
 #include "ataman_disarm_behavior.dm"

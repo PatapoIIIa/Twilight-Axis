@@ -2,6 +2,7 @@
 #define BB_ATAMAN_OWNER "bb_ataman_owner"
 #define BB_ATAMAN_TARGET "bb_ataman_target"
 #define BB_ATAMAN_ROLE "bb_ataman_role"
+#define BB_ATAMAN_SQUAD "bb_ataman_squad"
 
 #define ATAMAN_ROLE_GRABBER "grabber"
 #define ATAMAN_ROLE_BINDER "binder"

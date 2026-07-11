@@ -111,8 +111,12 @@
 	if(!spawn_center || !isliving(trigger))
 		return
 
+	var/datum/ataman_squad/squad = new
+	squad.target_ref = WEAKREF(trigger)
+
 	var/list/used_spawn_turfs = list()
 	var/amount = rand(bandit_min, bandit_max)
+	var/grabber_count = amount >= 4 ? 2 : 1
 	for(var/i in 1 to amount)
 		var/turf/spawn_location = pick_ambush_spawn(spawn_center, used_spawn_turfs)
 		if(!spawn_location)
@@ -120,7 +124,8 @@
 		used_spawn_turfs += spawn_location
 		var/mob_type = pick(bandit_types)
 		var/mob/living/carbon/human/npc/ataman_bandit/bandit = new mob_type(spawn_location)
-		bandit.set_ataman(placer, spawn_center, trigger, i)
+		var/role = i <= grabber_count ? ATAMAN_ROLE_GRABBER : (i == grabber_count + 1 ? ATAMAN_ROLE_BINDER : ATAMAN_ROLE_ENFORCER)
+		bandit.set_ataman(placer, spawn_center, trigger, role, squad)
 
 	if(placer)
 		to_chat(placer, span_notice("My ambush springs on [trigger]!"))

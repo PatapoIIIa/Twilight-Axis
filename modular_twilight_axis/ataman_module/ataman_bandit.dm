@@ -9,6 +9,7 @@
 	var/datum/weakref/ataman_target_ref
 	var/turf/ataman_spawn_turf
 	var/ataman_role = ATAMAN_ROLE_ENFORCER
+	var/datum/ataman_squad/ataman_squad
 
 /mob/living/carbon/human/npc/ataman_bandit/Initialize(mapload)
 	. = ..()
@@ -33,9 +34,10 @@
 		real_name = pick(world.file2list("strings/names/first_male.txt"))
 	name = real_name
 
-/mob/living/carbon/human/npc/ataman_bandit/proc/set_ataman(mob/living/carbon/human/owner, turf/spawn_turf, mob/living/target, member_index = 3)
+/mob/living/carbon/human/npc/ataman_bandit/proc/set_ataman(mob/living/carbon/human/owner, turf/spawn_turf, mob/living/target, role = ATAMAN_ROLE_ENFORCER, datum/ataman_squad/squad)
 	ataman_spawn_turf = spawn_turf || get_turf(src)
-	ataman_role = member_index == 1 ? ATAMAN_ROLE_GRABBER : (member_index == 2 ? ATAMAN_ROLE_BINDER : ATAMAN_ROLE_ENFORCER)
+	ataman_role = role
+	ataman_squad = squad
 	if(target)
 		ataman_target_ref = WEAKREF(target)
 	if(ai_controller)
@@ -43,6 +45,7 @@
 		ai_controller.set_blackboard_key(BB_ATAMAN_OWNER, owner)
 		ai_controller.set_blackboard_key(BB_ATAMAN_TARGET, target)
 		ai_controller.set_blackboard_key(BB_ATAMAN_ROLE, ataman_role)
+		ai_controller.set_blackboard_key(BB_ATAMAN_SQUAD, squad)
 		ai_controller.set_blackboard_key(BB_BASIC_MOB_CURRENT_TARGET, target)
 		ai_controller.set_blackboard_key(BB_HIGHEST_THREAT_MOB, target)
 	if(!owner)
