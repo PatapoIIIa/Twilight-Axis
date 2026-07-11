@@ -1,9 +1,10 @@
 /obj/structure/trap/ataman_ambush_stone
-	name = "a stone"
-	desc = "An unremarkable stone."
-	icon = 'icons/obj/flora/rocks.dmi'
-	icon_state = "basalt"
+	name = "stone"
+	desc = "A piece of rough ground stone."
+	icon = 'icons/roguetown/items/natural.dmi'
+	icon_state = "stone1"
 	alpha = 0
+	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 	charges = 1
 	time_between_triggers = 0
 	checks_antimagic = FALSE
@@ -11,6 +12,7 @@
 	var/bandit_min = 3
 	var/bandit_max = 6
 	var/list/bandit_types = list(/mob/living/carbon/human/npc/ataman_bandit)
+	var/being_removed = FALSE
 
 /obj/structure/trap/ataman_ambush_stone/proc/set_placer(mob/living/carbon/human/placer)
 	if(!placer)
@@ -18,14 +20,24 @@
 	placed_by_ref = WEAKREF(placer)
 	if(placer.mind)
 		immune_minds += placer.mind
+	ataman_register_ambush(placer, src)
+	AddComponent(/datum/component/ataman_trap_owner_view, placer)
 
 /obj/structure/trap/ataman_ambush_stone/proc/disguise_as(obj/item/model)
 	if(!model)
 		return
 	icon = model.icon
 	icon_state = model.icon_state
+	dir = model.dir
+	color = model.color
+	transform = model.transform
+	pixel_x = model.pixel_x
+	pixel_y = model.pixel_y
+	overlays = model.overlays.Copy()
 	name = model.name
 	desc = model.desc
+	alpha = 0
+	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 
 /obj/structure/trap/ataman_ambush_stone/flare()
 	alpha = 200
@@ -34,39 +46,81 @@
 	animate(src, alpha = 0, time = 2)
 	QDEL_IN(src, 2)
 
+// Ataman traps are found by mob/living/look_around(); examining them never reveals them.
 /obj/structure/trap/ataman_ambush_stone/examine(mob/user)
-	if(!isliving(user) || !armed)
+	return
+
+/obj/structure/trap/ataman_ambush_stone/attack_hand(mob/user)
+	var/mob/living/carbon/human/placer = placed_by_ref?.resolve()
+	if(user == placer)
+		begin_owner_removal(placer)
+		return TRUE
+	return ..()
+
+/obj/structure/trap/ataman_ambush_stone/attackby(obj/item/I, mob/user, params)
+	var/mob/living/carbon/human/placer = placed_by_ref?.resolve()
+	if(user == placer)
+		begin_owner_removal(placer)
+		return TRUE
+	return ..()
+
+/obj/structure/trap/ataman_ambush_stone/proc/begin_owner_removal(mob/living/carbon/human/placer)
+	if(being_removed || QDELETED(src))
 		return
-	var/mob/living/luser = user
-	if(user.mind && (user.mind in immune_minds))
+	being_removed = TRUE
+	placer.visible_message(
+		span_notice("[placer] begins dismantling something hidden on the ground."),
+		span_notice("I begin dismantling my ambush."),
+	)
+	if(do_after(placer, 5 SECONDS, target = src) && !QDELETED(src))
+		to_chat(placer, span_notice("I dismantle my ambush."))
+		qdel(src)
 		return
-	if(luser.STAPER > 16 && prob(50))
-		to_chat(user, span_notice("Something about [src] feels wrong..."))
-		flare()
-		return
-	var/tracking_level = luser.get_skill_level(/datum/skill/misc/tracking)
-	if(tracking_level > 0 && prob(10 + 10 * tracking_level))
-		to_chat(user, span_notice("My tracking instincts spot [src] for what it truly is!"))
-		flare()
+	being_removed = FALSE
 
 /obj/structure/trap/ataman_ambush_stone/trap_effect(mob/living/L)
 	spring_ambush(L)
 
+/obj/structure/trap/ataman_ambush_stone/proc/is_valid_ambush_spawn(turf/candidate, turf/spawn_center, list/used_turfs, exact_distance)
+	if(!isopenturf(candidate) || candidate == spawn_center || candidate in used_turfs)
+		return FALSE
+	if(istype(candidate, /turf/open/transparent/openspace) || candidate.is_blocked_turf(exclude_mobs = TRUE))
+		return FALSE
+	if(exact_distance && get_dist(candidate, spawn_center) != exact_distance)
+		return FALSE
+	var/distance = get_dist(candidate, spawn_center)
+	return distance >= 1 && distance <= 5
+
+/obj/structure/trap/ataman_ambush_stone/proc/pick_ambush_spawn(turf/spawn_center, list/used_turfs)
+	var/desired_distance = rand(1, 5)
+	var/list/candidates = list()
+	for(var/turf/candidate as anything in RANGE_TURFS(5, spawn_center))
+		if(is_valid_ambush_spawn(candidate, spawn_center, used_turfs, desired_distance))
+			candidates += candidate
+	if(!length(candidates))
+		for(var/turf/candidate as anything in RANGE_TURFS(5, spawn_center))
+			if(is_valid_ambush_spawn(candidate, spawn_center, used_turfs, 0))
+				candidates += candidate
+	if(!length(candidates))
+		return null
+	return pick(candidates)
+
 /obj/structure/trap/ataman_ambush_stone/proc/spring_ambush(mob/living/trigger)
 	var/mob/living/carbon/human/placer = placed_by_ref?.resolve()
 	var/turf/spawn_center = get_turf(src)
-	if(!spawn_center)
+	if(!spawn_center || !isliving(trigger))
 		return
-	var/list/spawn_turfs = get_adjacent_ambush_turfs(spawn_center)
-	if(!length(spawn_turfs))
-		spawn_turfs = list(spawn_center)
 
+	var/list/used_spawn_turfs = list()
 	var/amount = rand(bandit_min, bandit_max)
 	for(var/i in 1 to amount)
-		var/turf/spawnloc = pick(spawn_turfs)
+		var/turf/spawn_location = pick_ambush_spawn(spawn_center, used_spawn_turfs)
+		if(!spawn_location)
+			break
+		used_spawn_turfs += spawn_location
 		var/mob_type = pick(bandit_types)
-		var/mob/living/carbon/human/npc/ataman_bandit/bandit = new mob_type(spawnloc)
-		bandit.set_ataman(placer, spawn_center)
+		var/mob/living/carbon/human/npc/ataman_bandit/bandit = new mob_type(spawn_location)
+		bandit.set_ataman(placer, spawn_center, trigger, i)
 
 	if(placer)
 		to_chat(placer, span_notice("My ambush springs on [trigger]!"))

@@ -1,36 +1,29 @@
 // === ATAMAN MODULE ===
-// Include hub for the Ataman wretch subclass. Include this file from the DME compile section;
-// it pulls in every sibling file via relative #include, so only this one line needs to be
-// registered in roguetown.dme.
-// #include "modular_twilight_axis\ataman_module\ataman_module_config.dm"
+// Include hub for the Ataman wretch subclass. Only this hub is registered in the DME;
+// every implementation file remains inside modular_twilight_axis/ataman_module.
 //
-// --- FILE MAP ---
-// ataman.dm                          - /datum/advclass/wretch/ataman + outfit/loadout
-// ataman_ambush.dm                   - "Устроить засаду" spell
-// ataman_trap.dm                     - "Поставить силок" spell
-// ataman_execute.dm                  - "Добивающий удар" spell (consumes ataman_marked)
-// ataman_exchange.dm                 - "Честный обмен" spell + looted-only appraisal
-// ataman_ambush_stone.dm             - disguised ambush trigger structure
-// ataman_snare.dm                    - invisible bleed trap structure
-// ataman_marked_component.dm         - /datum/component/ataman_marked, overhead marker
-// ataman_bandit.dm                   - /mob/living/carbon/human/npc/ataman_bandit
-// ataman_bandit_controller.dm        - /datum/ai_controller/human_npc/ataman_bandit
-// ataman_bandit_defines.dm           - BB_ATAMAN_* blackboard keys, ATAMAN_LEASH_RANGE
-// ataman_leash_subtree.dm            - leash-to-spawn-point planning subtree
-// ataman_disarm_restrain_subtree.dm  - disarm-then-restrain planning subtree
-// ataman_disarm_behavior.dm          - disarm behavior
-// ataman_restrain_behavior.dm        - restrain behavior
-// ataman_deathmark_subsystem.dm      - Death Mark: signal-based hit tracking, bounty stacking
-// ataman_treasury.dm                 - shared bounty-stacking helpers, loot tiers, Честный обмен treasury drain
-//
-// Notes:
-// - No core/upstream files are touched by this module. Hit tracking hooks COMSIG_MOB_APPLY_DAMGE
-//   and COMSIG_LIVING_DEATH via SSdcs's COMSIG_GLOB_MOB_CREATED, not direct edits.
-// - Subclass registration lives in modular_twilight_axis\code\modules\jobs\job_types\roguetown\adventurer\wretch.dm
-//   (job_subclasses += list(...) in /datum/job/roguetown/wretch/New()), not in core wretch.dm.
-// - When adding a new file, update this FILE MAP and the #include order below.
+// FILE MAP
+// ataman_bandit_defines.dm            - blackboard keys, squad roles and bounty constants
+// ataman_trap_common.dm               - overlap/limit helpers and owner-only trap rendering
+// ataman_treasury.dm                  - bounty stacking, trade tiers and treasury loss
+// ataman.dm                           - class, iron loadout and spell grants
+// ataman_ambush.dm                    - Set an Ambush action
+// ataman_trap.dm                      - Set a Snare action
+// ataman_execute.dm                   - Finishing Blow and one-shot armor bypass
+// ataman_exchange.dm                  - Honest Exchange and looted-only appraisal
+// ataman_ambush_stone.dm              - hidden ambush trigger and randomized spawning
+// ataman_snare.dm                     - hidden damaging snares
+// ataman_marked_component.dm          - owned mark and overhead indicator
+// ataman_bandit.dm                    - summoned ambush NPC
+// ataman_bandit_controller.dm         - fixed-target, role-aware NPC controller
+// ataman_leash_subtree.dm             - pursuit leash
+// ataman_disarm_restrain_subtree.dm   - capture role coordinator
+// ataman_disarm_behavior.dm           - disarm, grab and shove behaviors
+// ataman_restrain_behavior.dm         - single binder behavior
+// ataman_deathmark_subsystem.dm       - player-only murder bounty tracking
 
 #include "ataman_bandit_defines.dm"
+#include "ataman_trap_common.dm"
 #include "ataman_treasury.dm"
 #include "ataman.dm"
 #include "ataman_ambush.dm"

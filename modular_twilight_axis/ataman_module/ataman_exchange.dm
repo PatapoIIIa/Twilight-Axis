@@ -8,8 +8,8 @@
 	return total
 
 /datum/action/cooldown/spell/ataman_exchange
-	name = "Честный обмен"
-	desc = "Стоя рядом с нелегальным скупщиком, обменять мешок с чужим добром на 90% его стоимости монетами - без лишних вопросов. Считается только то, что когда-то принадлежало другим."
+	name = "Honest Exchange"
+	desc = "Trade a bag of stolen goods to a nearby fence. I receive 60% of their appraised value, while the duchy treasury loses 40%. Only goods that once belonged to someone else count."
 	click_to_activate = TRUE
 	self_cast_possible = FALSE
 	primary_resource_type = SPELL_COST_STAMINA
@@ -27,10 +27,10 @@
 	if(!.)
 		return FALSE
 	if(!istype(cast_on, /obj/item/storage))
-		owner.balloon_alert(owner, "Это не мешок с добром!")
+		owner.balloon_alert(owner, "that is not a bag of goods!")
 		return FALSE
 	if(!locate(/obj/structure/roguemachine/blackmarket) in range(2, owner))
-		owner.balloon_alert(owner, "Поблизости нет скупщика!")
+		owner.balloon_alert(owner, "there is no fence nearby!")
 		return FALSE
 	return TRUE
 
@@ -46,13 +46,15 @@
 	if(!fence)
 		return FALSE
 
-	var/value = round(ataman_appraise_looted(sack) * 0.9)
-	if(value < ATAMAN_TRADE_MIN_VALUE)
-		to_chat(H, span_warning("В [sack] недостаточно чужого добра для настоящей сделки."))
+	var/appraised_value = round(ataman_appraise_looted(sack))
+	if(appraised_value < ATAMAN_TRADE_MIN_VALUE)
+		to_chat(H, span_warning("There are not enough stolen goods in [sack] for a real exchange."))
 		return FALSE
+	var/payout_value = round(appraised_value * ATAMAN_TRADE_PAYOUT_MULTIPLIER)
+	var/treasury_damage = round(appraised_value * ATAMAN_TREASURY_DAMAGE_MULTIPLIER)
 
 	sack.forceMove(fence)
-	budget2change(value, H)
-	ataman_process_honest_trade(H, value)
-	to_chat(H, span_notice("Я передаю [sack] [fence] и получаю [value] маммон."))
+	budget2change(payout_value, H)
+	ataman_process_honest_trade(H, appraised_value, treasury_damage)
+	to_chat(H, span_notice("I hand [sack] to [fence] and receive [payout_value] mammons."))
 	return TRUE

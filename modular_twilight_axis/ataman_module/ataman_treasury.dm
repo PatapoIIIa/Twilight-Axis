@@ -1,4 +1,6 @@
 #define ATAMAN_TRADE_MIN_VALUE 250
+#define ATAMAN_TRADE_PAYOUT_MULTIPLIER 0.6
+#define ATAMAN_TREASURY_DAMAGE_MULTIPLIER 0.4
 #define ATAMAN_TIER_BASE_BOUNTY 100
 
 /datum/bounty
@@ -34,13 +36,11 @@
 		return 1
 	return 0
 
-// Called after an "Честный обмен" payout goes through. Drains the duchy treasury by the
-// paid-out sum, alerts the roles with fiscal authority, and grows the Ataman's own Excidium
-// theft bounty - which stacks across every qualifying trade and jumps again each time the
-// character's cumulative loot-sold total crosses into a new tier (1-5).
-/proc/ataman_process_honest_trade(mob/living/carbon/human/H, value)
-	SStreasury.burn(SStreasury.discretionary_fund, value, "Честный обмен")
-	send_ooc_note("Из казны герцогства похищено [value] монет!", job = list("Grand Duke", "Steward", "Clerk", "Sultan", "Vizier"))
+/// Completes an Honest Exchange: treasury loss and theft bounty use 40% of the
+/// appraisal, while tier progress records the full value of the goods sold.
+/proc/ataman_process_honest_trade(mob/living/carbon/human/H, appraised_value, treasury_damage)
+	SStreasury.burn(SStreasury.discretionary_fund, treasury_damage, "Honest Exchange")
+	send_ooc_note("[treasury_damage] coins have been stolen from the duchy treasury!", job = list("Grand Duke", "Steward", "Clerk", "Sultan", "Vizier"))
 
 	var/list/d_list = H.get_mob_descriptors()
 	var/descriptor_height = build_coalesce_description_nofluff(d_list, H, list(MOB_DESCRIPTOR_SLOT_HEIGHT), "%DESC1%")
@@ -49,18 +49,18 @@
 
 	var/datum/bounty/bounty = ataman_find_bounty(H, ATAMAN_EXCIDIUM, ATAMAN_BOUNTY_CATEGORY_THEFT)
 	if(bounty)
-		bounty.amount += value
+		bounty.amount += treasury_damage
 	else
-		bounty = ataman_create_bounty(H, value, "", ATAMAN_EXCIDIUM, ATAMAN_BOUNTY_CATEGORY_THEFT, H.dna.species, H.gender, descriptor_height, descriptor_body, descriptor_voice)
-	bounty.reason = "Кража из казны [SSmapping.config.map_name] - [bounty.amount] монет"
+		bounty = ataman_create_bounty(H, treasury_damage, "", ATAMAN_EXCIDIUM, ATAMAN_BOUNTY_CATEGORY_THEFT, H.dna.species, H.gender, descriptor_height, descriptor_body, descriptor_voice)
+	bounty.reason = "Theft from the [SSmapping.config.map_name] treasury - [bounty.amount] coins"
 
-	H.ataman_loot_sold_total += value
+	H.ataman_loot_sold_total += appraised_value
 	var/new_tier = ataman_get_loot_tier(H.ataman_loot_sold_total)
 	if(new_tier > H.ataman_loot_tier)
 		H.ataman_loot_tier = new_tier
 		var/tier_bonus = new_tier * ATAMAN_TIER_BASE_BOUNTY
 		bounty.amount += tier_bonus
-		to_chat(H, span_danger("Мой розыск достиг тира [new_tier] - Экзодиум назначает дополнительно [tier_bonus] монет за мою голову."))
+		to_chat(H, span_danger("My notoriety reaches tier [new_tier] - the Excidium adds [tier_bonus] coins to the price on my head."))
 
 	bounty.banner = null
 	compose_bounty(bounty)

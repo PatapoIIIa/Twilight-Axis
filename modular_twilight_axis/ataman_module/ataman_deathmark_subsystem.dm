@@ -52,25 +52,25 @@ SUBSYSTEM_DEF(ataman_deathmark)
 		return bandit.ataman_owner_ref?.resolve()
 	return attacker
 
-// Any contribution within the last 15 hits before death counts - the ataman doesn't need
-// to have landed the final blow, just to have had a hand (his or his gang's) in it.
+/// Any contribution within the last fifteen hits counts, including damage dealt by
+/// the Ataman's summoned bandits. NPC victims and disconnected bodies never create bounties.
 /proc/check_ataman_death_mark(mob/living/carbon/human/victim)
-	if(!length(victim.recent_attackers))
+	if(!victim?.client || !length(victim.recent_attackers))
 		return
 
 	var/mob/living/carbon/human/culprit
-	for(var/datum/weakref/ref in victim.recent_attackers)
+	for(var/datum/weakref/ref as anything in victim.recent_attackers)
 		var/mob/living/carbon/human/source = ataman_resolve_source(ref?.resolve())
-		if(istype(source) && source.mind && source.advjob == "Атаман")
+		if(istype(source) && source.client && source.mind && source.advjob == "Атаман")
 			culprit = source
 			break
 
-	if(!culprit)
+	if(!culprit?.client)
 		return
 
 	var/nearby_players = 0
 	for(var/mob/living/witness in view(5, victim))
-		if(!witness.mind)
+		if(!witness.client)
 			continue
 		nearby_players++
 		if(nearby_players > ATAMAN_DEATH_MARK_MAX_WITNESSES)
@@ -85,14 +85,14 @@ SUBSYSTEM_DEF(ataman_deathmark)
 	if(bounty)
 		bounty.ataman_victim_names += victim.real_name
 		bounty.amount += ATAMAN_DEATH_MARK_BOUNTY
-		bounty.reason = "убийство: [jointext(bounty.ataman_victim_names, ", ")]"
+		bounty.reason = "Murder: [jointext(bounty.ataman_victim_names, ", ")]"
 		bounty.banner = null
 		compose_bounty(bounty)
 	else
-		bounty = ataman_create_bounty(culprit, ATAMAN_DEATH_MARK_BOUNTY, "убийство: [victim.real_name]", ATAMAN_EXCIDIUM, ATAMAN_BOUNTY_CATEGORY_MURDER, culprit.dna.species, culprit.gender, descriptor_height, descriptor_body, descriptor_voice)
+		bounty = ataman_create_bounty(culprit, ATAMAN_DEATH_MARK_BOUNTY, "Murder: [victim.real_name]", ATAMAN_EXCIDIUM, ATAMAN_BOUNTY_CATEGORY_MURDER, culprit.dna.species, culprit.gender, descriptor_height, descriptor_body, descriptor_voice)
 		bounty.ataman_victim_names = list(victim.real_name)
 
-	to_chat(culprit, span_danger("Экзодиум помечает меня за убийство [victim.real_name] - на мою голову назначена награда."))
+	to_chat(culprit, span_danger("За мою голову назначена награда. Кто-то узнал о том, что я убил [victim.real_name]!"))
 
 #undef ATAMAN_DEATH_MARK_WINDOW
 #undef ATAMAN_DEATH_MARK_MAX_WITNESSES

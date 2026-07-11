@@ -1,6 +1,6 @@
 /datum/action/cooldown/spell/ataman_ambush
-	name = "Устроить засаду"
-	desc = "Установить замаскированный камень-ловушку. Тот, кто его потревожит, попадёт в засаду - горстка моих бандитов выскочит, чтобы окружить, обезоружить и связать его."
+	name = "Set an Ambush"
+	desc = "Place a completely hidden ambush trigger. The first intruder to disturb it will be surrounded by my bandits. I can maintain no more than three ambushes at once."
 	click_to_activate = TRUE
 	self_cast_possible = FALSE
 	primary_resource_type = SPELL_COST_STAMINA
@@ -13,6 +13,19 @@
 	associated_stat = null
 	spell_requirements = SPELL_REQUIRES_HUMAN | SPELL_REQUIRES_SAME_Z
 
+/datum/action/cooldown/spell/ataman_ambush/can_cast_spell(feedback = TRUE)
+	. = ..()
+	if(!.)
+		return FALSE
+	var/mob/living/carbon/human/H = owner
+	if(!istype(H))
+		return FALSE
+	if(ataman_active_ambush_count(H) >= ATAMAN_MAX_ACTIVE_AMBUSHES)
+		if(feedback)
+			H.balloon_alert(H, "three ambushes already set!")
+		return FALSE
+	return TRUE
+
 /datum/action/cooldown/spell/ataman_ambush/is_valid_target(atom/cast_on)
 	. = ..()
 	if(!.)
@@ -22,28 +35,40 @@
 		return FALSE
 	if(istype(target_turf, /turf/open/transparent/openspace))
 		return FALSE
+	if(ataman_turf_has_trap(target_turf))
+		owner.balloon_alert(owner, "another trap is already here!")
+		return FALSE
 	var/area/rogue/place = get_area(target_turf)
 	if(istype(place) && (place.town_area || place.keep_area))
-		owner.balloon_alert(owner, "Тут нельзя устраивать засады!")
+		owner.balloon_alert(owner, "I cannot set an ambush here!")
+		return FALSE
+	var/mob/living/carbon/human/H = owner
+	if(!istype(H) || ataman_active_ambush_count(H) >= ATAMAN_MAX_ACTIVE_AMBUSHES)
+		owner.balloon_alert(owner, "three ambushes already set!")
 		return FALSE
 	return TRUE
 
 /datum/action/cooldown/spell/ataman_ambush/cast(atom/target)
-	. = ..()
 	var/mob/living/carbon/human/H = owner
 	if(!istype(H))
 		return FALSE
 	var/turf/target_turf = get_turf(target)
-	if(!target_turf)
+	if(!target_turf || ataman_turf_has_trap(target_turf))
+		H.balloon_alert(H, "another trap is already here!")
 		return FALSE
+	if(ataman_active_ambush_count(H) >= ATAMAN_MAX_ACTIVE_AMBUSHES)
+		H.balloon_alert(H, "three ambushes already set!")
+		return FALSE
+	. = ..()
 
-	var/obj/structure/trap/ataman_ambush_stone/S = new(target_turf)
-	S.set_placer(H)
+	var/obj/structure/trap/ataman_ambush_stone/ambush = new(target_turf)
 	var/obj/item/disguise = H.get_active_held_item()
 	if(disguise)
-		S.disguise_as(disguise)
-		to_chat(H, span_notice("Я кладу [S] на землю, замаскировав под то, что держал в руке."))
+		ambush.disguise_as(disguise)
+	ambush.set_placer(H)
+	if(disguise)
+		to_chat(H, span_notice("I conceal [ambush] as the item I was holding."))
 		qdel(disguise)
 	else
-		to_chat(H, span_notice("Я кладу [S] среди окружения."))
+		to_chat(H, span_notice("I conceal [ambush] among the surrounding stones."))
 	return TRUE

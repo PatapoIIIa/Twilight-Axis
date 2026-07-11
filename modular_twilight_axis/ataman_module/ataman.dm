@@ -1,3 +1,8 @@
+/obj/item/gun/ballistic/revolver/grenadelauncher/crossbow/ataman_iron
+	name = "iron crossbow"
+	desc = "A sturdy crossbow whose lock and fittings are wrought from iron."
+	smeltresult = /obj/item/ingot/iron
+
 /datum/advclass/wretch/ataman
 	name = "Атаман"
 	tutorial = "Ты вёл горстку оборванцев-головорезов по глухим тропам и просёлкам, всегда мечтая о чём-то большем. Теперь ты пришёл в эти земли, чтобы установить собственные порядки - мечом, силком и петлёй, если придётся."
@@ -34,16 +39,16 @@
 /datum/outfit/job/roguetown/wretch/ataman/pre_equip(mob/living/carbon/human/H)
 	..()
 	head = /obj/item/clothing/head/roguetown/roguehood/shalal/heavyhood
-	neck = /obj/item/clothing/neck/roguetown/chaincoif
-	pants = /obj/item/clothing/under/roguetown/heavy_leather_pants
-	armor = /obj/item/clothing/suit/roguetown/armor/leather
+	neck = /obj/item/clothing/neck/roguetown/coif
+	pants = /obj/item/clothing/under/roguetown/trou/leather
+	armor = /obj/item/clothing/suit/roguetown/armor/plate/iron
 	shirt = /obj/item/clothing/suit/roguetown/shirt/undershirt/black
 	cloak = /obj/item/clothing/cloak/thief_cloak
 	backl = /obj/item/storage/backpack/rogue/satchel
-	belt = /obj/item/storage/belt/rogue/leather/knifebelt/black/steel
-	gloves = /obj/item/clothing/gloves/roguetown/plate
+	belt = /obj/item/storage/belt/rogue/leather/knifebelt/black/iron
+	gloves = /obj/item/clothing/gloves/roguetown/plate/iron
 	shoes = /obj/item/clothing/shoes/roguetown/boots/armor/iron
-	wrists = /obj/item/clothing/wrists/roguetown/bracers/jackchain
+	wrists = /obj/item/clothing/wrists/roguetown/bracers/iron
 	backpack_contents = list(
 		/obj/item/storage/belt/rogue/pouch/coins/poor = 1,
 		/obj/item/flashlight/flare/torch/lantern/prelit = 1,
@@ -68,14 +73,14 @@
 
 /datum/outfit/job/roguetown/wretch/ataman/proc/sword_shield_equip(mob/living/carbon/human/H)
 	r_hand = /obj/item/rogueweapon/sword/iron
-	backr = /obj/item/rogueweapon/shield/iron
+	backr = /obj/item/rogueweapon/shield/wood
 	beltr = /obj/item/rogueweapon/scabbard/sword
 	H.adjust_skillrank_up_to(/datum/skill/combat/swords, SKILL_LEVEL_EXPERT, TRUE)
 	H.adjust_skillrank_up_to(/datum/skill/combat/shields, SKILL_LEVEL_JOURNEYMAN, TRUE)
 
 /datum/outfit/job/roguetown/wretch/ataman/proc/spear_shield_equip(mob/living/carbon/human/H)
 	r_hand = /obj/item/rogueweapon/spear
-	backr = /obj/item/rogueweapon/shield/iron
+	backr = /obj/item/rogueweapon/shield/wood
 	H.adjust_skillrank_up_to(/datum/skill/combat/polearms, SKILL_LEVEL_EXPERT, TRUE)
 	H.adjust_skillrank_up_to(/datum/skill/combat/shields, SKILL_LEVEL_JOURNEYMAN, TRUE)
 
@@ -88,8 +93,8 @@
 
 /datum/outfit/job/roguetown/wretch/ataman/proc/mace_shield_crossbow_equip(mob/living/carbon/human/H)
 	r_hand = /obj/item/rogueweapon/mace
-	backr = /obj/item/rogueweapon/shield/iron
-	backl = /obj/item/gun/ballistic/revolver/grenadelauncher/crossbow
+	backr = /obj/item/rogueweapon/shield/wood
+	backl = /obj/item/gun/ballistic/revolver/grenadelauncher/crossbow/ataman_iron
 	beltl = /obj/item/quiver/bolt/standard
 	H.adjust_skillrank_up_to(/datum/skill/combat/maces, SKILL_LEVEL_JOURNEYMAN, TRUE)
 	H.adjust_skillrank_up_to(/datum/skill/combat/shields, SKILL_LEVEL_JOURNEYMAN, TRUE)

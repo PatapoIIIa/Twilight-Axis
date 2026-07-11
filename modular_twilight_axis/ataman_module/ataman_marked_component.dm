@@ -15,7 +15,9 @@
 	marker_overlay = mutable_appearance('icons/mob/mob_effects.dmi', "eff_exposed", ABOVE_MOB_LAYER)
 	marker_overlay.pixel_y = 32
 	marker_overlay.plane = ABOVE_LIGHTING_PLANE
-	L.overlays += marker_overlay
+	marker_overlay.alpha = 255
+	marker_overlay.appearance_flags = RESET_ALPHA | RESET_COLOR
+	L.add_overlay(marker_overlay)
 
 	expire_timer = addtimer(CALLBACK(src, PROC_REF(expire)), duration, TIMER_STOPPABLE)
 
@@ -30,7 +32,7 @@
 /datum/component/ataman_marked/Destroy()
 	var/mob/living/L = parent
 	if(L && marker_overlay)
-		L.overlays -= marker_overlay
+		L.cut_overlay(marker_overlay)
 	marker_overlay = null
 	if(expire_timer)
 		deltimer(expire_timer)

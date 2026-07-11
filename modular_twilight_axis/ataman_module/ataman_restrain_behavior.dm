@@ -13,21 +13,26 @@
 	. = ..()
 	var/mob/living/carbon/human/pawn = controller.pawn
 	var/mob/living/carbon/target = controller.blackboard[target_key]
-	if(!istype(pawn) || !istype(target) || QDELETED(target))
+	if(!istype(pawn) || !istype(target) || QDELETED(target) || ataman_target_is_secured(target))
 		finish_action(controller, FALSE, target_key)
 		return
-	if(!pawn.Adjacent(target))
+	if(!pawn.Adjacent(target) || !target.pulledby || (target.cmode && (target.mobility_flags & MOBILITY_STAND)))
 		finish_action(controller, FALSE, target_key)
 		return
-	if(target.handcuffed)
-		finish_action(controller, TRUE, target_key)
+	if(!ataman_prepare_capture_hand(controller))
+		finish_action(controller, FALSE, target_key)
 		return
 
 	var/obj/item/rope/binding = new(pawn)
-	pawn.put_in_hands(binding)
+	if(!pawn.put_in_hands(binding))
+		qdel(binding)
+		finish_action(controller, FALSE, target_key)
+		return
 	binding.try_cuff_arms(target, pawn)
 	if(QDELETED(pawn) || QDELETED(target) || QDELETED(controller) || controller.pawn != pawn)
 		return
 	if(!target.handcuffed && !QDELETED(binding))
 		binding.try_cuff_legs(target, pawn)
-	finish_action(controller, TRUE, target_key)
+	if(!target.handcuffed && !target.legcuffed && !QDELETED(binding))
+		qdel(binding)
+	finish_action(controller, target.handcuffed || target.legcuffed, target_key)

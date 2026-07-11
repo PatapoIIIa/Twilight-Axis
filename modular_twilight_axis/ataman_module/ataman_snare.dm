@@ -1,24 +1,19 @@
 /obj/structure/trap/ataman_snare
 	name = "hidden snare"
-	desc = ""
+	desc = "A concealed set of jaws, ready to bite down on the unwary."
 	icon = 'icons/roguetown/items/misc.dmi'
 	icon_state = "beartrap"
 	alpha = 0
+	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 	charges = 1
 	time_between_triggers = 0
 	trap_damage = 35
 	var/bleed_bonus = 30
 	var/datum/weakref/placed_by_ref
 
+// Ataman traps are found by mob/living/look_around(); examining them never reveals them.
 /obj/structure/trap/ataman_snare/examine(mob/user)
-	if(!isliving(user) || !armed)
-		return
-	var/mob/living/luser = user
-	if(user.mind && (user.mind in immune_minds))
-		return
-	if(luser.STAPER > 16 && prob(50))
-		to_chat(user, span_notice("I spot [src]!"))
-		flare()
+	return
 
 /obj/structure/trap/ataman_snare/proc/set_placer(mob/living/carbon/human/placer)
 	if(!placer)
@@ -26,6 +21,7 @@
 	placed_by_ref = WEAKREF(placer)
 	if(placer.mind)
 		immune_minds += placer.mind
+	AddComponent(/datum/component/ataman_trap_owner_view, placer)
 
 /obj/structure/trap/ataman_snare/trap_effect(mob/living/L)
 	def_zone = pick(BODY_ZONE_L_LEG, BODY_ZONE_R_LEG)
@@ -38,26 +34,30 @@
 	L.AddComponent(/datum/component/ataman_marked, placer)
 
 /obj/structure/trap/ataman_snare/beartrap_type
-	name = "hidden snare"
-	desc = "A concealed set of jaws, ready to bite down on the unwary."
+	name = "mantrap"
+	desc = "A crude iron mantrap."
+	icon = 'icons/roguetown/items/misc.dmi'
+	icon_state = "beartrap"
 
 /obj/structure/trap/ataman_snare/beartrap_type/trap_effect(mob/living/L)
 	..()
 	L.visible_message(span_danger("A hidden trap snaps shut on [L]!"))
 
 /obj/structure/trap/ataman_snare/bomb_type
-	name = "hidden charge"
-	desc = "A concealed charge, rigged to maim rather than kill."
-	icon_state = "trap-fire"
+	name = "stone"
+	desc = "A piece of rough ground stone."
+	icon = 'icons/roguetown/items/natural.dmi'
+	icon_state = "stone1"
 
 /obj/structure/trap/ataman_snare/bomb_type/trap_effect(mob/living/L)
 	..()
 	L.visible_message(span_danger("A buried charge rips into [L]!"))
 
 /obj/structure/trap/ataman_snare/stakes_type
-	name = "hidden stakes"
-	desc = "A pit of sharpened stakes, hidden beneath a false floor."
-	icon_state = "trap-earth"
+	name = "clod"
+	desc = "A handful of earth."
+	icon = 'icons/roguetown/items/natural.dmi'
+	icon_state = "clod1"
 
 /obj/structure/trap/ataman_snare/stakes_type/trap_effect(mob/living/L)
 	..()
