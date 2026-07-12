@@ -38,7 +38,7 @@
 			controller.queue_behavior(/datum/ai_behavior/npc_kick_attack, BB_ATAMAN_TARGET)
 			return SUBTREE_RETURN_FINISH_PLANNING
 		else
-			ataman_ai_log(pawn, "TACTICS: [target] held by [length(target.grabbedby)] grabs but no wall behind them - kick would whiff, skipping")
+			ataman_ai_log(pawn, "TACTICS: [target] held by [length(target.grabbedby)] grabs but nothing solid behind them - kick would whiff, skipping")
 
 	if(squad.target_channeling_spell())
 		if(!pawn.has_status_effect(/datum/status_effect/buff/clash) && squad.claim_guard())

@@ -10,6 +10,12 @@
 	var/list/bandit_types = list(/mob/living/carbon/human/npc/ataman_bandit)
 	var/being_removed = FALSE
 
+/obj/structure/trap/ataman_ambush_stone/Crossed(atom/movable/AM)
+	var/mob/living/carbon/human/placer = placed_by_ref?.resolve()
+	if(ataman_bandit_belongs_to(AM, placer))
+		return
+	return ..()
+
 /obj/structure/trap/ataman_ambush_stone/proc/set_placer(mob/living/carbon/human/placer)
 	if(!placer)
 		return

@@ -15,6 +15,12 @@
 /obj/structure/trap/ataman_snare/examine(mob/user)
 	return
 
+/obj/structure/trap/ataman_snare/Crossed(atom/movable/AM)
+	var/mob/living/carbon/human/placer = placed_by_ref?.resolve()
+	if(ataman_bandit_belongs_to(AM, placer))
+		return
+	return ..()
+
 /obj/structure/trap/ataman_snare/proc/set_placer(mob/living/carbon/human/placer)
 	if(!placer)
 		return

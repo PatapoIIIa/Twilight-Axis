@@ -12,7 +12,11 @@
 	return FALSE
 
 /// A kick only reliably drops someone if it has something solid to slam them into -
-/// mirrors the "walled" situational check the base kick_attack subtree itself uses.
+/// mirrors the "walled"/"stacked body" situational checks the base kick_attack subtree
+/// itself uses. Unlike the base subtree's stacked-enemy case (which only counts
+/// non-allied mobs), any other body counts here - the whole point of surrounding a
+/// target with the squad is that a bandit standing behind them is just as solid a
+/// backstop as a wall.
 /proc/ataman_target_is_walled(mob/living/pawn, mob/living/target)
 	var/turf/target_turf = get_turf(target)
 	if(!target_turf)
@@ -23,6 +27,10 @@
 	for(var/obj/structure/S in behind_target)
 		if(S.density)
 			return TRUE
+	for(var/mob/living/M in behind_target)
+		if(M == pawn || M == target)
+			continue
+		return TRUE
 	return FALSE
 
 /// Shared coordination state for one ambush's worth of bandits - lets the whole
