@@ -33,14 +33,19 @@
 			return SUBTREE_RETURN_FINISH_PLANNING
 		if(ATAMAN_ROLE_BINDER)
 			// Wait for the target to be grabbed and knocked down before moving in to bind them.
+			// Not ready yet? No point standing around - fall through to the generic melee
+			// subtree below and keep hitting them meanwhile.
 			if(target_is_armed || !target.pulledby || (target.mobility_flags & MOBILITY_STAND))
-				ataman_ai_log(pawn, "CAPTURE: binder waiting (armed=[target_is_armed ? "yes" : "no"] pulledby=[target.pulledby] standing=[(target.mobility_flags & MOBILITY_STAND) ? "yes" : "no"])")
-				return SUBTREE_RETURN_FINISH_PLANNING
+				ataman_ai_log(pawn, "CAPTURE: binder not ready (armed=[target_is_armed ? "yes" : "no"] pulledby=[target.pulledby] standing=[(target.mobility_flags & MOBILITY_STAND) ? "yes" : "no"]) - falling back to attacking")
+				return
 			ataman_ai_log(pawn, "CAPTURE: binder -> restrain")
 			controller.queue_behavior(/datum/ai_behavior/ataman_restrain, BB_ATAMAN_TARGET)
 			return SUBTREE_RETURN_FINISH_PLANNING
 		if(ATAMAN_ROLE_ENFORCER)
 			if(!target_is_armed || target.pulledby || !(target.mobility_flags & MOBILITY_STAND))
-				return SUBTREE_RETURN_FINISH_PLANNING
+				// Nothing role-specific to do right now (kick/bite/feint already had first
+				// refusal in ataman_squad_tactics) - fall back to plain attacking so no one
+				// is ever just standing around doing nothing.
+				return
 
 	return

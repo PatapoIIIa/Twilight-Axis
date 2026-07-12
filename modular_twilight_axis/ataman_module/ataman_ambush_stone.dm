@@ -3,8 +3,6 @@
 	desc = "A piece of rough ground stone."
 	icon = 'icons/roguetown/items/natural.dmi'
 	icon_state = "stone1"
-	alpha = 0
-	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 	charges = 1
 	time_between_triggers = 0
 	checks_antimagic = FALSE
@@ -19,15 +17,12 @@
 	if(placer.mind)
 		immune_minds += placer.mind
 	ataman_register_ambush(placer, src)
-	AddComponent(/datum/component/ataman_trap_owner_view, placer)
 
 /obj/structure/trap/ataman_ambush_stone/proc/disguise_as_prop(new_name, new_desc, new_icon, new_icon_state)
 	name = new_name
 	desc = new_desc
 	icon = new_icon
 	icon_state = new_icon_state
-	alpha = 0
-	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 
 /obj/structure/trap/ataman_ambush_stone/flare()
 	alpha = 200

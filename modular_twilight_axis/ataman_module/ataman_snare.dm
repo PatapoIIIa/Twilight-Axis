@@ -1,17 +1,17 @@
 /obj/structure/trap/ataman_snare
-	name = "hidden snare"
-	desc = "A concealed set of jaws, ready to bite down on the unwary."
-	icon = 'icons/roguetown/items/misc.dmi'
-	icon_state = "beartrap"
-	alpha = 0
-	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
+	name = "clod"
+	desc = "A handful of earth."
+	icon = 'icons/roguetown/items/natural.dmi'
+	icon_state = "clod1"
 	charges = 1
 	time_between_triggers = 0
 	trap_damage = 35
 	var/bleed_bonus = 30
 	var/datum/weakref/placed_by_ref
 
-// Ataman traps are found by mob/living/look_around(); examining them never reveals them.
+// The object itself is perfectly visible - it just looks like ordinary debris. Its
+// trap nature is never given away by examine; only mob/living/look_around() (Perception
+// + Tracking) can reveal it. See ataman_snare/beartrap_type etc for the actual disguises.
 /obj/structure/trap/ataman_snare/examine(mob/user)
 	return
 
@@ -21,7 +21,6 @@
 	placed_by_ref = WEAKREF(placer)
 	if(placer.mind)
 		immune_minds += placer.mind
-	AddComponent(/datum/component/ataman_trap_owner_view, placer)
 
 /obj/structure/trap/ataman_snare/trap_effect(mob/living/L)
 	def_zone = pick(BODY_ZONE_L_LEG, BODY_ZONE_R_LEG)
@@ -34,10 +33,10 @@
 	L.AddComponent(/datum/component/ataman_marked, placer)
 
 /obj/structure/trap/ataman_snare/beartrap_type
-	name = "mantrap"
-	desc = "A crude iron mantrap."
-	icon = 'icons/roguetown/items/misc.dmi'
-	icon_state = "beartrap"
+	name = "stick"
+	desc = "A tree branch perhaps."
+	icon = 'icons/roguetown/items/natural.dmi'
+	icon_state = "stick1"
 
 /obj/structure/trap/ataman_snare/beartrap_type/trap_effect(mob/living/L)
 	..()

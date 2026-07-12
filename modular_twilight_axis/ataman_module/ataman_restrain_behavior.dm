@@ -19,7 +19,7 @@
 	if(!pawn.Adjacent(target) || !target.pulledby || (target.cmode && (target.mobility_flags & MOBILITY_STAND)))
 		finish_action(controller, FALSE, target_key)
 		return
-	if(!ataman_prepare_capture_hand(controller))
+	if(!ataman_free_hands_for_grabbing(controller))
 		finish_action(controller, FALSE, target_key)
 		return
 

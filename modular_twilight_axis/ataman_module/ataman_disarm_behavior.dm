@@ -1,17 +1,36 @@
-/proc/ataman_prepare_capture_hand(datum/ai_controller/controller, preserve_grab = FALSE)
+// Frees up any non-grab item from BOTH hands (unwielding a two-handed weapon first if
+// needed) so a hand is open for a new grab. Existing /obj/item/grabbing items are left
+// alone - start_pulling() on an already-pulled target adds a second, independent grab
+// in the other hand rather than replacing the first (see grabbing.dm's dropped() proc,
+// which explicitly keeps the pull alive "if another hand grabs the person").
+/proc/ataman_free_hands_for_grabbing(datum/ai_controller/controller)
 	var/mob/living/carbon/human/pawn = controller?.pawn
 	if(!istype(pawn))
 		return FALSE
 	var/obj/item/active = pawn.get_active_held_item()
 	if(active?.wielded)
 		active.ungrip(pawn)
-		active = pawn.get_active_held_item()
-	if(!active || (preserve_grab && istype(active, /obj/item/grabbing)))
-		return TRUE
 	var/datum/component/ai_inventory_manager/inventory = controller.get_inventory()
-	if(!inventory?.stow_item(active))
-		pawn.dropItemToGround(active)
-	return !pawn.get_active_held_item()
+	for(var/obj/item/held in list(pawn.get_active_held_item(), pawn.get_inactive_held_item()))
+		if(!held || istype(held, /obj/item/grabbing))
+			continue
+		if(!inventory?.stow_item(held))
+			pawn.dropItemToGround(held)
+	return TRUE
+
+/proc/ataman_get_grab_on(mob/living/carbon/human/pawn, mob/living/target, sublimb)
+	for(var/obj/item/grabbing/grab in list(pawn.get_active_held_item(), pawn.get_inactive_held_item()))
+		if(grab.grabbed == target && grab.sublimb_grabbed == sublimb)
+			return grab
+	return null
+
+/proc/ataman_make_grab_active(mob/living/carbon/human/pawn, obj/item/grabbing/grab)
+	if(pawn.get_active_held_item() == grab)
+		return TRUE
+	if(pawn.get_inactive_held_item() != grab)
+		return FALSE
+	pawn.swap_hand()
+	return pawn.get_active_held_item() == grab
 
 /datum/ai_behavior/ataman_disarm
 	action_cooldown = 1 SECONDS
@@ -50,10 +69,11 @@
 			return
 		else if(squad.claim_mouth_grab())
 			ataman_ai_log(pawn, "DISARM: [target] is a caster, going for the mouth")
-			if(!ataman_prepare_capture_hand(controller))
+			if(!ataman_free_hands_for_grabbing(controller))
 				ataman_ai_log(pawn, "DISARM: couldn't free a hand for the mouth grab")
 				finish_action(controller, FALSE, target_key)
 				return
+			pawn.zone_selected = BODY_ZONE_PRECISE_MOUTH
 			if(!pawn.start_pulling(target, GRAB_PASSIVE, item_override = BODY_ZONE_PRECISE_MOUTH))
 				ataman_ai_log(pawn, "DISARM: mouth grab failed to start")
 				finish_action(controller, FALSE, target_key)
@@ -67,27 +87,30 @@
 		ataman_ai_log(pawn, "DISARM: [target] already unarmed, nothing to do")
 		finish_action(controller, TRUE, target_key)
 		return
-	if(pawn.pulling != target && !ataman_prepare_capture_hand(controller))
-		ataman_ai_log(pawn, "DISARM: couldn't free a hand to grab [target]")
-		finish_action(controller, FALSE, target_key)
-		return
 
 	var/grab_limb = target.get_active_held_item() ? BODY_ZONE_PRECISE_R_HAND : BODY_ZONE_PRECISE_L_HAND
-	if(pawn.pulling != target && !pawn.start_pulling(target, GRAB_PASSIVE, item_override = grab_limb))
-		ataman_ai_log(pawn, "DISARM: grab on [grab_limb] failed to start")
-		finish_action(controller, FALSE, target_key)
-		return
+	var/obj/item/grabbing/grab_item = ataman_get_grab_on(pawn, target, grab_limb)
+	if(!grab_item)
+		if(!ataman_free_hands_for_grabbing(controller))
+			ataman_ai_log(pawn, "DISARM: couldn't free a hand to grab [target]")
+			finish_action(controller, FALSE, target_key)
+			return
+		// find_used_grab_limb() (called inside start_pulling) reads OUR zone_selected, not
+		// item_override, to decide which bodypart actually receives the grab and therefore
+		// which intents (disarm included) become available - item_override alone only sets
+		// the cosmetic sublimb_grabbed tag, so it silently grabbed whatever stale zone we'd
+		// last aimed at (headhunting a masked caster, a prior melee swing, etc).
+		pawn.zone_selected = grab_limb
+		if(!pawn.start_pulling(target, GRAB_PASSIVE, item_override = grab_limb))
+			ataman_ai_log(pawn, "DISARM: grab on [grab_limb] failed to start")
+			finish_action(controller, FALSE, target_key)
+			return
+		grab_item = ataman_get_grab_on(pawn, target, grab_limb)
 
 	// The grab item has to be the ACTIVE hand's item before update_a_intents() runs, or
 	// it'll build possible_a_intents from whatever else (or nothing) is in that hand instead
 	// of the grab - which is why the disarm intent kept silently failing to show up.
-	var/obj/item/grabbing/grab_item
-	if(istype(pawn.get_active_held_item(), /obj/item/grabbing))
-		grab_item = pawn.get_active_held_item()
-	else if(istype(pawn.get_inactive_held_item(), /obj/item/grabbing))
-		pawn.swap_hand()
-		grab_item = pawn.get_active_held_item()
-	if(!grab_item)
+	if(!grab_item || !ataman_make_grab_active(pawn, grab_item))
 		ataman_ai_log(pawn, "DISARM: grab on [target] was lost before it could be used")
 		finish_action(controller, FALSE, target_key)
 		return
@@ -130,25 +153,25 @@
 		finish_action(controller, FALSE, target_key)
 		return
 
-	if(pawn.pulling != target)
-		if(!ataman_prepare_capture_hand(controller))
-			ataman_ai_log(pawn, "HOLD: couldn't free a hand to grab [target]")
+	// A hand grip from disarming is kept, not released - it's a second, independent grab.
+	// The free hand reinforces the hold with a torso grip alongside it (two hands, two
+	// grabs on the same target), and it's the torso grip that offers the shove/takedown
+	// intent, so once it exists we just keep trying the shove every tick until they fall.
+	var/obj/item/grabbing/torso_grab = ataman_get_grab_on(pawn, target, BODY_ZONE_CHEST)
+	if(!torso_grab)
+		if(!ataman_free_hands_for_grabbing(controller))
+			ataman_ai_log(pawn, "HOLD: couldn't free a hand to reinforce the grip on [target]")
 			finish_action(controller, FALSE, target_key)
 			return
 		pawn.zone_selected = BODY_ZONE_CHEST
-		if(!pawn.start_pulling(target, GRAB_PASSIVE))
-			ataman_ai_log(pawn, "HOLD: grab on [target] failed to start")
+		if(!pawn.start_pulling(target, GRAB_PASSIVE, item_override = BODY_ZONE_CHEST))
+			ataman_ai_log(pawn, "HOLD: torso grip on [target] failed to start")
 			finish_action(controller, FALSE, target_key)
 			return
-		ataman_ai_log(pawn, "HOLD: grabbed [target]")
+		ataman_ai_log(pawn, "HOLD: reinforced the grip with a hold on [target]'s torso")
+		torso_grab = ataman_get_grab_on(pawn, target, BODY_ZONE_CHEST)
 
-	var/obj/item/grabbing/grab_item
-	if(istype(pawn.get_active_held_item(), /obj/item/grabbing))
-		grab_item = pawn.get_active_held_item()
-	else if(istype(pawn.get_inactive_held_item(), /obj/item/grabbing))
-		grab_item = pawn.get_inactive_held_item()
-		pawn.swap_hand()
-	if(!grab_item)
+	if(!torso_grab || !ataman_make_grab_active(pawn, torso_grab))
 		finish_action(controller, FALSE, target_key)
 		return
 
