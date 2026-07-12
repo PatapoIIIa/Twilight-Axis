@@ -51,10 +51,9 @@
 		to_chat(H, span_warning("There are not enough stolen goods in [sack] for a real exchange."))
 		return FALSE
 	var/payout_value = round(appraised_value * ATAMAN_TRADE_PAYOUT_MULTIPLIER)
-	var/treasury_damage = round(appraised_value * ATAMAN_TREASURY_DAMAGE_MULTIPLIER)
 
 	sack.forceMove(fence)
 	budget2change(payout_value, H)
-	ataman_process_honest_trade(H, appraised_value, treasury_damage)
+	ataman_process_honest_trade(H, appraised_value)
 	to_chat(H, span_notice("I hand [sack] to [fence] and receive [payout_value] mammons."))
 	return TRUE

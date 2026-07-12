@@ -23,6 +23,8 @@
 	ADD_TRAIT(src, TRAIT_NOHUNGER, TRAIT_GENERIC)
 	ADD_TRAIT(src, TRAIT_NPC_EXAMINE, TRAIT_GENERIC)
 	equipOutfit(new /datum/outfit/job/roguetown/human/species/human/northern/highwayman)
+	ataman_apply_bandit_gear(src, ataman_squad?.gear_tier || 1)
+	ataman_ai_log(src, "gear applied at tier [ataman_squad?.gear_tier || 1]")
 	dna.species.handle_body(src)
 	random_voice_NPC()
 	random_hair_NPC()
@@ -38,6 +40,8 @@
 	ataman_spawn_turf = spawn_turf || get_turf(src)
 	ataman_role = role
 	ataman_squad = squad
+	if(role == ATAMAN_ROLE_GRABBER)
+		upgrade_ai_controller(/datum/ai_controller/human_npc/ataman_bandit/grabber)
 	if(target)
 		ataman_target_ref = WEAKREF(target)
 	if(ai_controller)
@@ -48,6 +52,7 @@
 		ai_controller.set_blackboard_key(BB_ATAMAN_SQUAD, squad)
 		ai_controller.set_blackboard_key(BB_BASIC_MOB_CURRENT_TARGET, target)
 		ai_controller.set_blackboard_key(BB_HIGHEST_THREAT_MOB, target)
+	ataman_ai_log(src, "spawned: role=[role] target=[target] spawn_turf=[ataman_spawn_turf] squad=[squad ? "#[REF(squad)]" : "none"]")
 	if(!owner)
 		return
 	ataman_owner_ref = WEAKREF(owner)

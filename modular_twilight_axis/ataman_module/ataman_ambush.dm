@@ -61,14 +61,23 @@
 		return FALSE
 	. = ..()
 
+	var/list/disguises = list(
+		"Stone" = list("stone", "A piece of rough ground stone.", 'icons/roguetown/items/natural.dmi', "stone1"),
+		"Clod of Earth" = list("clod", "A handful of earth.", 'icons/roguetown/items/natural.dmi', "clod1"),
+		"Stick" = list("stick", "A tree branch perhaps.", 'icons/roguetown/items/natural.dmi', "stick1"),
+	)
+	var/choice = input(H, "What should the ambush look like?", "Set an Ambush") as null|anything in disguises
+	if(!choice)
+		return FALSE
+	if(QDELETED(H) || H.z != target_turf.z || get_dist(H, target_turf) > cast_range || ataman_turf_has_trap(target_turf))
+		if(!QDELETED(H))
+			H.balloon_alert(H, "I can no longer set an ambush there!")
+		return FALSE
+	var/list/picked = disguises[choice]
+	. = ..()
+
 	var/obj/structure/trap/ataman_ambush_stone/ambush = new(target_turf)
-	var/obj/item/disguise = H.get_active_held_item()
-	if(disguise)
-		ambush.disguise_as(disguise)
+	ambush.disguise_as_prop(picked[1], picked[2], picked[3], picked[4])
 	ambush.set_placer(H)
-	if(disguise)
-		to_chat(H, span_notice("I conceal [ambush] as the item I was holding."))
-		qdel(disguise)
-	else
-		to_chat(H, span_notice("I conceal [ambush] among the surrounding stones."))
+	to_chat(H, span_notice("I conceal [ambush] as [picked[1]]."))
 	return TRUE

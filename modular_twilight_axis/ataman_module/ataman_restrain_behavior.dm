@@ -23,6 +23,7 @@
 		finish_action(controller, FALSE, target_key)
 		return
 
+	ataman_ai_log(pawn, "RESTRAIN: attempting to bind [target]")
 	var/obj/item/rope/binding = new(pawn)
 	if(!pawn.put_in_hands(binding))
 		qdel(binding)
@@ -35,4 +36,5 @@
 		binding.try_cuff_legs(target, pawn)
 	if(!target.handcuffed && !target.legcuffed && !QDELETED(binding))
 		qdel(binding)
+	ataman_ai_log(pawn, "RESTRAIN: result on [target] - handcuffed=[target.handcuffed ? "yes" : "no"] legcuffed=[target.legcuffed ? "yes" : "no"]")
 	finish_action(controller, target.handcuffed || target.legcuffed, target_key)

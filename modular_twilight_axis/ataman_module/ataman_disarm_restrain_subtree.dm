@@ -3,11 +3,13 @@
 	var/mob/living/carbon/human/pawn = controller.pawn
 	var/mob/living/carbon/target = controller.blackboard[BB_ATAMAN_TARGET]
 	if(!istype(pawn) || !istype(target) || target.stat == DEAD)
+		ataman_ai_log(pawn, "CAPTURE: target [target] gone/dead, clearing")
 		controller.clear_blackboard_key(BB_BASIC_MOB_CURRENT_TARGET)
 		controller.clear_blackboard_key(BB_HIGHEST_THREAT_MOB)
 		return SUBTREE_RETURN_FINISH_PLANNING
 
 	if(ataman_target_is_secured(target))
+		ataman_ai_log(pawn, "CAPTURE: [target] is secured, standing down")
 		controller.clear_blackboard_key(BB_BASIC_MOB_CURRENT_TARGET)
 		controller.clear_blackboard_key(BB_HIGHEST_THREAT_MOB)
 		if(pawn.pulling == target)
@@ -23,13 +25,18 @@
 	switch(role)
 		if(ATAMAN_ROLE_GRABBER)
 			if(target_is_armed)
+				ataman_ai_log(pawn, "CAPTURE: grabber -> disarm (target armed)")
 				controller.queue_behavior(/datum/ai_behavior/ataman_disarm, BB_ATAMAN_TARGET)
 			else
+				ataman_ai_log(pawn, "CAPTURE: grabber -> hold (target unarmed)")
 				controller.queue_behavior(/datum/ai_behavior/ataman_hold, BB_ATAMAN_TARGET)
 			return SUBTREE_RETURN_FINISH_PLANNING
 		if(ATAMAN_ROLE_BINDER)
-			if(target_is_armed || !target.pulledby || (target.cmode && (target.mobility_flags & MOBILITY_STAND)))
+			// Wait for the target to be grabbed and knocked down before moving in to bind them.
+			if(target_is_armed || !target.pulledby || (target.mobility_flags & MOBILITY_STAND))
+				ataman_ai_log(pawn, "CAPTURE: binder waiting (armed=[target_is_armed ? "yes" : "no"] pulledby=[target.pulledby] standing=[(target.mobility_flags & MOBILITY_STAND) ? "yes" : "no"])")
 				return SUBTREE_RETURN_FINISH_PLANNING
+			ataman_ai_log(pawn, "CAPTURE: binder -> restrain")
 			controller.queue_behavior(/datum/ai_behavior/ataman_restrain, BB_ATAMAN_TARGET)
 			return SUBTREE_RETURN_FINISH_PLANNING
 		if(ATAMAN_ROLE_ENFORCER)

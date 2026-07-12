@@ -77,3 +77,22 @@
 	var/mob/living/living_target = target
 	if(target == blackboard[BB_ATAMAN_OWNER] || target != blackboard[BB_ATAMAN_TARGET] || !istype(living_target) || living_target.stat == DEAD || ataman_target_is_secured(target))
 		return COMPONENT_NO_ATTACK_HAND
+
+// Grabbers physically drag whoever they're pulling, so they can't be allowed to keep
+// re-flanking to a "better" angle mid-grab - that's what was hauling the target away from
+// the rest of the squad. Same controller, just without squad_flank in the mix.
+/datum/ai_controller/human_npc/ataman_bandit/grabber
+	planning_subtrees = list(
+		/datum/ai_planning_subtree/generic_break_restraints,
+		/datum/ai_planning_subtree/use_powder,
+		/datum/ai_planning_subtree/use_bandage,
+		/datum/ai_planning_subtree/use_healing_drink,
+		/datum/ai_planning_subtree/generic_resist,
+		/datum/ai_planning_subtree/generic_stand,
+		/datum/ai_planning_subtree/tree_climb,
+		/datum/ai_planning_subtree/ataman_leash,
+		/datum/ai_planning_subtree/ataman_squad_tactics,
+		/datum/ai_planning_subtree/ataman_disarm_restrain,
+		/datum/ai_planning_subtree/attack_obstacle_in_path,
+		/datum/ai_planning_subtree/basic_melee_attack_subtree/human_npc,
+	)

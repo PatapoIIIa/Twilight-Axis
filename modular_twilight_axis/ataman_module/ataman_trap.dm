@@ -13,6 +13,12 @@
 	associated_stat = null
 	spell_requirements = SPELL_REQUIRES_HUMAN | SPELL_REQUIRES_SAME_Z
 
+/datum/action/cooldown/spell/ataman_trap/get_adjusted_cooldown()
+	var/mob/living/carbon/human/H = owner
+	if(istype(H) && H.ataman_loot_tier >= 5)
+		return 15 MINUTES
+	return ..()
+
 /datum/action/cooldown/spell/ataman_trap/is_valid_target(atom/cast_on)
 	. = ..()
 	if(!.)

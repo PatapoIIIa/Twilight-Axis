@@ -4,6 +4,7 @@
 //
 // FILE MAP
 // ataman_bandit_defines.dm            - blackboard keys, squad roles and bounty constants
+// ataman_ai_log.dm                    - dedicated trace log for every bandit AI decision
 // ataman_trap_common.dm               - overlap/limit helpers and owner-only trap rendering
 // ataman_treasury.dm                  - bounty stacking, trade tiers and treasury loss
 // ataman.dm                           - class, iron loadout and spell grants
@@ -25,6 +26,7 @@
 // ataman_deathmark_subsystem.dm       - player-only murder bounty tracking
 
 #include "ataman_bandit_defines.dm"
+#include "ataman_ai_log.dm"
 #include "ataman_trap_common.dm"
 #include "ataman_treasury.dm"
 #include "ataman.dm"

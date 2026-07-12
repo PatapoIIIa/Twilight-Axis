@@ -9,8 +9,6 @@
 	time_between_triggers = 0
 	checks_antimagic = FALSE
 	var/datum/weakref/placed_by_ref
-	var/bandit_min = 3
-	var/bandit_max = 6
 	var/list/bandit_types = list(/mob/living/carbon/human/npc/ataman_bandit)
 	var/being_removed = FALSE
 
@@ -23,19 +21,11 @@
 	ataman_register_ambush(placer, src)
 	AddComponent(/datum/component/ataman_trap_owner_view, placer)
 
-/obj/structure/trap/ataman_ambush_stone/proc/disguise_as(obj/item/model)
-	if(!model)
-		return
-	icon = model.icon
-	icon_state = model.icon_state
-	dir = model.dir
-	color = model.color
-	transform = model.transform
-	pixel_x = model.pixel_x
-	pixel_y = model.pixel_y
-	overlays = model.overlays.Copy()
-	name = model.name
-	desc = model.desc
+/obj/structure/trap/ataman_ambush_stone/proc/disguise_as_prop(new_name, new_desc, new_icon, new_icon_state)
+	name = new_name
+	desc = new_desc
+	icon = new_icon
+	icon_state = new_icon_state
 	alpha = 0
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 
@@ -113,10 +103,13 @@
 
 	var/datum/ataman_squad/squad = new
 	squad.target_ref = WEAKREF(trigger)
+	squad.gear_tier = placer ? clamp(max(placer.ataman_loot_tier, 1), 1, 5) : 1
 
+	var/list/squad_size_range = ataman_squad_size_for_tier(placer?.ataman_loot_tier || 0)
 	var/list/used_spawn_turfs = list()
-	var/amount = rand(bandit_min, bandit_max)
+	var/amount = rand(squad_size_range[1], squad_size_range[2])
 	var/grabber_count = amount >= 4 ? 2 : 1
+	ataman_ai_log(placer, "AMBUSH: springing on [trigger] at [spawn_center] - size=[amount] (range [squad_size_range[1]]-[squad_size_range[2]]) gear_tier=[squad.gear_tier] grabbers=[grabber_count]")
 	for(var/i in 1 to amount)
 		var/turf/spawn_location = pick_ambush_spawn(spawn_center, used_spawn_turfs)
 		if(!spawn_location)

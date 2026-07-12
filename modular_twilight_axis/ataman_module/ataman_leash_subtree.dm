@@ -7,6 +7,7 @@
 	if(get_dist(pawn, spawn_turf) <= ATAMAN_LEASH_RANGE)
 		return
 	var/atom/target = controller.blackboard[BB_ATAMAN_TARGET]
+	ataman_ai_log(pawn, "LEASH: giving up on [target] - [get_dist(pawn, spawn_turf)] tiles from spawn (limit [ATAMAN_LEASH_RANGE])")
 	if(pawn.pulling == target)
 		pawn.stop_pulling()
 	pawn.cmode = FALSE

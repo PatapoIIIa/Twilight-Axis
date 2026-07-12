@@ -11,6 +11,20 @@
 			return TRUE
 	return FALSE
 
+/// A kick only reliably drops someone if it has something solid to slam them into -
+/// mirrors the "walled" situational check the base kick_attack subtree itself uses.
+/proc/ataman_target_is_walled(mob/living/pawn, mob/living/target)
+	var/turf/target_turf = get_turf(target)
+	if(!target_turf)
+		return FALSE
+	var/turf/behind_target = get_step(target_turf, get_dir(pawn, target))
+	if(!behind_target || behind_target.density)
+		return TRUE
+	for(var/obj/structure/S in behind_target)
+		if(S.density)
+			return TRUE
+	return FALSE
+
 /// Shared coordination state for one ambush's worth of bandits - lets the whole
 /// squad manage its feints, guard reactions and mouth-grab claim as one unit
 /// instead of each bandit rolling independently.
@@ -20,6 +34,8 @@
 	var/last_feint_at = 0
 	var/mouth_grab_claimed = FALSE
 	var/guard_claimed_until = 0
+	var/bites_used = 0
+	var/gear_tier = 1
 
 /datum/ataman_squad/proc/get_target()
 	return target_ref?.resolve()

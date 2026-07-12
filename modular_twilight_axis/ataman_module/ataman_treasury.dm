@@ -36,9 +36,52 @@
 		return 1
 	return 0
 
+/// Min/max ambush squad size for a given notoriety tier.
+/proc/ataman_squad_size_for_tier(tier)
+	switch(tier)
+		if(3)
+			return list(4, 7)
+		if(4)
+			return list(5, 7)
+		if(5 to INFINITY)
+			return list(5, 5)
+	return list(3, 6)
+
+/// Equips an ambush bandit's armor to match the Ataman's current notoriety tier:
+/// leather at 1, heavy leather + iron at 2, iron at 3-4, steel at 5+.
+/proc/ataman_apply_bandit_gear(mob/living/carbon/human/npc/ataman_bandit/bandit, tier)
+	switch(tier)
+		if(2)
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/suit/roguetown/armor/leather/heavy, SLOT_ARMOR, TRUE)
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/gloves/roguetown/plate/iron, SLOT_GLOVES, TRUE)
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/shoes/roguetown/boots/armor/iron, SLOT_SHOES, TRUE)
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/wrists/roguetown/bracers/iron, SLOT_WRISTS, TRUE)
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/neck/roguetown/chaincoif/iron, SLOT_NECK, TRUE)
+		if(3, 4)
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/suit/roguetown/armor/plate/iron, SLOT_ARMOR, TRUE)
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/gloves/roguetown/plate/iron, SLOT_GLOVES, TRUE)
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/shoes/roguetown/boots/armor/iron, SLOT_SHOES, TRUE)
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/wrists/roguetown/bracers/iron, SLOT_WRISTS, TRUE)
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/neck/roguetown/chaincoif/iron, SLOT_NECK, TRUE)
+		if(5 to INFINITY)
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/suit/roguetown/armor/plate, SLOT_ARMOR, TRUE)
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/gloves/roguetown/plate, SLOT_GLOVES, TRUE)
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/shoes/roguetown/boots/armor, SLOT_SHOES, TRUE)
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/wrists/roguetown/bracers, SLOT_WRISTS, TRUE)
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/neck/roguetown/chaincoif, SLOT_NECK, TRUE)
+		else
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/suit/roguetown/armor/leather, SLOT_ARMOR, TRUE)
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/gloves/roguetown/leather, SLOT_GLOVES, TRUE)
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/shoes/roguetown/boots/leather/reinforced, SLOT_SHOES, TRUE)
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/wrists/roguetown/bracers/leather, SLOT_WRISTS, TRUE)
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/neck/roguetown/leather, SLOT_NECK, TRUE)
+
 /// Completes an Honest Exchange: treasury loss and theft bounty use 40% of the
-/// appraisal, while tier progress records the full value of the goods sold.
-/proc/ataman_process_honest_trade(mob/living/carbon/human/H, appraised_value, treasury_damage)
+/// appraisal (+10% per notoriety tier already reached), while tier progress
+/// records the full value of the goods sold.
+/proc/ataman_process_honest_trade(mob/living/carbon/human/H, appraised_value)
+	var/damage_multiplier = ATAMAN_TREASURY_DAMAGE_MULTIPLIER * (1 + (0.1 * H.ataman_loot_tier))
+	var/treasury_damage = round(appraised_value * damage_multiplier)
 	SStreasury.burn(SStreasury.discretionary_fund, treasury_damage, "Honest Exchange")
 	send_ooc_note("[treasury_damage] coins have been stolen from the duchy treasury!", job = list("Grand Duke", "Steward", "Clerk", "Sultan", "Vizier"))
 
