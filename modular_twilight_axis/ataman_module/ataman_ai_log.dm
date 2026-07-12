@@ -1,8 +1,3 @@
-// Dedicated, always-on trace log for the ambush bandit AI - every role assignment,
-// subtree branch, queued behavior and squad-tactic decision gets a line here so a
-// single test round is enough to see exactly what each bandit was thinking and when.
-// Toggle with GLOB.ataman_ai_logging (VV it to FALSE to quiet it down mid-round).
-// Read the file back with SendUserFile/an editor - it lives at data/logs/<round>/ataman_ai.log.
 GLOBAL_VAR_INIT(ataman_ai_logging, TRUE)
 GLOBAL_VAR_INIT(ataman_ai_log_file, null)
 

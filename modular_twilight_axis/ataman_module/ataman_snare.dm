@@ -9,9 +9,6 @@
 	var/bleed_bonus = 30
 	var/datum/weakref/placed_by_ref
 
-// The object itself is perfectly visible - it just looks like ordinary debris. Its
-// trap nature is never given away by examine; only mob/living/look_around() (Perception
-// + Tracking) can reveal it. See ataman_snare/beartrap_type etc for the actual disguises.
 /obj/structure/trap/ataman_snare/examine(mob/user)
 	return
 

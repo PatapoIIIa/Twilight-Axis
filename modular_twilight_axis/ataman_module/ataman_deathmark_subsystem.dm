@@ -52,8 +52,6 @@ SUBSYSTEM_DEF(ataman_deathmark)
 		return bandit.ataman_owner_ref?.resolve()
 	return attacker
 
-/// Any contribution within the last fifteen hits counts, including damage dealt by
-/// the Ataman's summoned bandits. NPC victims and disconnected bodies never create bounties.
 /proc/check_ataman_death_mark(mob/living/carbon/human/victim)
 	if(!victim?.client || !length(victim.recent_attackers))
 		return

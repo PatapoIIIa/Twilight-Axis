@@ -37,7 +37,6 @@
 	animate(src, alpha = 0, time = 2)
 	QDEL_IN(src, 2)
 
-// Ataman traps are found by mob/living/look_around(); examining them never reveals them.
 /obj/structure/trap/ataman_ambush_stone/examine(mob/user)
 	return
 

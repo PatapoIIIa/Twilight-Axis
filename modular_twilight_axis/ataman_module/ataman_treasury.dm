@@ -36,7 +36,6 @@
 		return 1
 	return 0
 
-/// Min/max ambush squad size for a given notoriety tier.
 /proc/ataman_squad_size_for_tier(tier)
 	switch(tier)
 		if(3)
@@ -47,8 +46,6 @@
 			return list(5, 5)
 	return list(3, 6)
 
-/// Equips an ambush bandit's armor to match the Ataman's current notoriety tier:
-/// leather at 1, heavy leather + iron at 2, iron at 3-4, steel at 5+.
 /proc/ataman_apply_bandit_gear(mob/living/carbon/human/npc/ataman_bandit/bandit, tier)
 	switch(tier)
 		if(2)
@@ -76,9 +73,6 @@
 			bandit.equip_to_slot_or_del(new /obj/item/clothing/wrists/roguetown/bracers/leather, SLOT_WRISTS, TRUE)
 			bandit.equip_to_slot_or_del(new /obj/item/clothing/neck/roguetown/leather, SLOT_NECK, TRUE)
 
-/// Completes an Honest Exchange: treasury loss and theft bounty use 40% of the
-/// appraisal (+10% per notoriety tier already reached), while tier progress
-/// records the full value of the goods sold.
 /proc/ataman_process_honest_trade(mob/living/carbon/human/H, appraised_value)
 	var/damage_multiplier = ATAMAN_TREASURY_DAMAGE_MULTIPLIER * (1 + (0.1 * H.ataman_loot_tier))
 	var/treasury_damage = round(appraised_value * damage_multiplier)

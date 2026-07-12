@@ -30,7 +30,7 @@
 		BB_HUMAN_NPC_HARASS_RETREATING = FALSE,
 		BB_HUMAN_NPC_HARASS_COOLDOWN = 0,
 		BB_HUMAN_NPC_JUKE_COOLDOWN = 0,
-		BB_HUMAN_NPC_FEINT_COOLDOWN = INFINITY, // the squad, not the base combat AI, decides when this bandit feints
+		BB_HUMAN_NPC_FEINT_COOLDOWN = INFINITY,
 
 		BB_ATAMAN_SPAWN_TURF = null,
 		BB_ATAMAN_OWNER = null,
@@ -78,9 +78,6 @@
 	if(target == blackboard[BB_ATAMAN_OWNER] || target != blackboard[BB_ATAMAN_TARGET] || !istype(living_target) || living_target.stat == DEAD || ataman_target_is_secured(target))
 		return COMPONENT_NO_ATTACK_HAND
 
-// Grabbers physically drag whoever they're pulling, so they can't be allowed to keep
-// re-flanking to a "better" angle mid-grab - that's what was hauling the target away from
-// the rest of the squad. Same controller, just without squad_flank in the mix.
 /datum/ai_controller/human_npc/ataman_bandit/grabber
 	planning_subtrees = list(
 		/datum/ai_planning_subtree/generic_break_restraints,

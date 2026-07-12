@@ -11,12 +11,17 @@
 			return TRUE
 	return FALSE
 
-/// A kick only reliably drops someone if it has something solid to slam them into -
-/// mirrors the "walled"/"stacked body" situational checks the base kick_attack subtree
-/// itself uses. Unlike the base subtree's stacked-enemy case (which only counts
-/// non-allied mobs), any other body counts here - the whole point of surrounding a
-/// target with the squad is that a bandit standing behind them is just as solid a
-/// backstop as a wall.
+/proc/ataman_recover_target(datum/ai_controller/controller, mob/living/carbon/human/npc/ataman_bandit/pawn)
+	if(!istype(pawn) || !controller)
+		return
+	if(istype(controller.blackboard[BB_ATAMAN_TARGET], /mob/living))
+		return
+	var/mob/living/restored = pawn.ataman_target_ref?.resolve()
+	if(!istype(restored) || restored.stat == DEAD)
+		return
+	ataman_ai_log(pawn, "CAPTURE: lost track of [restored] on the blackboard, recovering")
+	controller.set_blackboard_key(BB_ATAMAN_TARGET, restored)
+
 /proc/ataman_target_is_walled(mob/living/pawn, mob/living/target)
 	var/turf/target_turf = get_turf(target)
 	if(!target_turf)
@@ -33,9 +38,6 @@
 		return TRUE
 	return FALSE
 
-/// Shared coordination state for one ambush's worth of bandits - lets the whole
-/// squad manage its feints, guard reactions and mouth-grab claim as one unit
-/// instead of each bandit rolling independently.
 /datum/ataman_squad
 	var/datum/weakref/target_ref
 	var/feints_used = 0
@@ -80,10 +82,6 @@
 	guard_claimed_until = world.time + duration
 	return TRUE
 
-/// Should this bandit throw a feint right now? Staging: the opener is free, the
-/// second is held back about a second, and anything past that is reserved for
-/// a caster target or for re-trying after a whiffed attempt - unless it's an
-/// emergency (target trying to bolt), which always goes through immediately.
 /datum/ataman_squad/proc/consider_feint(mob/living/carbon/human/attacker, mob/living/target, emergency = FALSE)
 	if(!istype(attacker) || attacker.has_status_effect(/datum/status_effect/debuff/feintcd))
 		return FALSE

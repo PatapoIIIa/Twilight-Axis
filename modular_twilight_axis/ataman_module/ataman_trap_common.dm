@@ -28,8 +28,6 @@
 	LAZYINITLIST(owner.ataman_active_ambushes)
 	owner.ataman_active_ambushes += WEAKREF(ambush)
 
-/// The gang shouldn't spring its own boss's traps - any bandit currently working for
-/// this owner (from this ambush or any other active one) walks right over them.
 /proc/ataman_bandit_belongs_to(atom/movable/AM, mob/living/carbon/human/owner)
 	if(!owner || !istype(AM, /mob/living/carbon/human/npc/ataman_bandit))
 		return FALSE
