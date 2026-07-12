@@ -1,360 +1,3 @@
-/mob/living/carbon/human/npc/ataman_bandit
-	name = "bandit"
-	real_name = "bandit"
-	ai_controller = /datum/ai_controller/human_npc/ataman_bandit
-	faction = list(FACTION_BANDITS)
-	ambushable = FALSE
-
-	var/datum/weakref/ataman_owner_ref
-	var/datum/weakref/ataman_target_ref
-	var/turf/ataman_spawn_turf
-	var/ataman_role = ATAMAN_ROLE_ENFORCER
-	var/datum/ataman_squad/ataman_squad
-	var/ataman_gave_up = FALSE
-
-/mob/living/carbon/human/npc/ataman_bandit/Initialize(mapload)
-	. = ..()
-	set_species(pick(NPC_RACES_TYPES))
-	gender = pick(MALE, FEMALE)
-	dna.species.random_character(src)
-	addtimer(CALLBACK(src, PROC_REF(finish_bandit_setup)), 1 SECONDS)
-
-/mob/living/carbon/human/npc/ataman_bandit/proc/finish_bandit_setup()
-	ADD_TRAIT(src, TRAIT_NOMOOD, TRAIT_GENERIC)
-	ADD_TRAIT(src, TRAIT_NOHUNGER, TRAIT_GENERIC)
-	ADD_TRAIT(src, TRAIT_NPC_EXAMINE, TRAIT_GENERIC)
-	equipOutfit(new /datum/outfit/job/roguetown/human/species/human/northern/highwayman)
-	ataman_apply_bandit_gear(src, ataman_squad?.gear_tier || 1)
-	ataman_ai_log(src, "gear applied at tier [ataman_squad?.gear_tier || 1]")
-	dna.species.handle_body(src)
-	random_voice_NPC()
-	random_hair_NPC()
-	random_eye_color_NPC()
-	correct_features_NPC()
-	if(gender == FEMALE)
-		real_name = pick(world.file2list("strings/names/first_female.txt"))
-	else
-		real_name = pick(world.file2list("strings/names/first_male.txt"))
-	name = real_name
-
-/mob/living/carbon/human/npc/ataman_bandit/proc/set_ataman(mob/living/carbon/human/owner, turf/spawn_turf, mob/living/target, role = ATAMAN_ROLE_ENFORCER, datum/ataman_squad/squad)
-	ataman_spawn_turf = spawn_turf || get_turf(src)
-	ataman_role = role
-	ataman_squad = squad
-	if(role == ATAMAN_ROLE_GRABBER)
-		upgrade_ai_controller(/datum/ai_controller/human_npc/ataman_bandit/grabber)
-	if(target)
-		ataman_target_ref = WEAKREF(target)
-	if(ai_controller)
-		ai_controller.set_blackboard_key(BB_ATAMAN_SPAWN_TURF, ataman_spawn_turf)
-		ai_controller.set_blackboard_key(BB_ATAMAN_OWNER, owner)
-		ai_controller.set_blackboard_key(BB_ATAMAN_TARGET, target)
-		ai_controller.set_blackboard_key(BB_ATAMAN_ROLE, ataman_role)
-		ai_controller.set_blackboard_key(BB_ATAMAN_SQUAD, squad)
-		ai_controller.set_blackboard_key(BB_BASIC_MOB_CURRENT_TARGET, target)
-		ai_controller.set_blackboard_key(BB_HIGHEST_THREAT_MOB, target)
-	ataman_ai_log(src, "spawned: role=[role] target=[target] spawn_turf=[ataman_spawn_turf] squad=[squad ? "#[REF(squad)]" : "none"]")
-	if(!owner)
-		return
-	ataman_owner_ref = WEAKREF(owner)
-	summoner = owner.real_name
-	faction += "[owner.real_name]_ataman_gang"
-	apply_mob_lifespan(src, owner, 5 MINUTES)
-
-/proc/ataman_target_is_secured(atom/target)
-	var/mob/living/carbon/C = target
-	return istype(C) && (C.handcuffed || C.legcuffed)
-
-/datum/targetting_datum/basic/ataman_bandit/can_attack(mob/living/living_mob, atom/the_target)
-	var/datum/ai_controller/controller = living_mob.ai_controller
-	if(!controller || the_target != controller.blackboard[BB_ATAMAN_TARGET])
-		return FALSE
-	if(the_target == controller.blackboard[BB_ATAMAN_OWNER] || ataman_target_is_secured(the_target))
-		return FALSE
-	return ..()
-
-/datum/targetting_datum/basic/ataman_bandit/faction_check(mob/living/living_mob, mob/living/the_target)
-	return FALSE
-
-/datum/ai_controller/human_npc/ataman_bandit
-	blackboard = list(
-		BB_WEAPON_TYPE = /obj/item/rogueweapon,
-		BB_ARMOR_CLASS = 2,
-		BB_TARGETTING_DATUM = new /datum/targetting_datum/basic/ataman_bandit(),
-		BB_PET_TARGETING_DATUM = new /datum/targetting_datum/basic/ataman_bandit(),
-
-		BB_HUMAN_NPC_ATTACK_ZONE_COUNTER = 0,
-		BB_HUMAN_NPC_LAST_ATTACK_ZONE = null,
-		BB_HUMAN_NPC_WEAKPOINT = null,
-		BB_HUMAN_NPC_JUMP_COOLDOWN = 0,
-		BB_HUMAN_NPC_FLANK_ANGLE = null,
-		BB_HUMAN_NPC_FLANK_TARGET = null,
-		BB_HUMAN_NPC_HARASS_MODE = FALSE,
-		BB_HUMAN_NPC_HARASS_RETREATING = FALSE,
-		BB_HUMAN_NPC_HARASS_COOLDOWN = 0,
-		BB_HUMAN_NPC_JUKE_COOLDOWN = 0,
-		BB_HUMAN_NPC_FEINT_COOLDOWN = INFINITY,
-
-		BB_ATAMAN_SPAWN_TURF = null,
-		BB_ATAMAN_OWNER = null,
-		BB_ATAMAN_TARGET = null,
-		BB_ATAMAN_ROLE = ATAMAN_ROLE_ENFORCER,
-		BB_ATAMAN_SQUAD = null,
-	)
-	planning_subtrees = list(
-		/datum/ai_planning_subtree/generic_break_restraints,
-		/datum/ai_planning_subtree/use_powder,
-		/datum/ai_planning_subtree/use_bandage,
-		/datum/ai_planning_subtree/use_healing_drink,
-		/datum/ai_planning_subtree/generic_resist,
-		/datum/ai_planning_subtree/generic_stand,
-		/datum/ai_planning_subtree/tree_climb,
-		/datum/ai_planning_subtree/ataman_leash,
-		/datum/ai_planning_subtree/squad_flank,
-		/datum/ai_planning_subtree/ataman_squad_tactics,
-		/datum/ai_planning_subtree/ataman_disarm_restrain,
-		/datum/ai_planning_subtree/attack_obstacle_in_path,
-		/datum/ai_planning_subtree/basic_melee_attack_subtree/human_npc,
-	)
-
-/datum/ai_controller/human_npc/ataman_bandit/TryPossessPawn(atom/new_pawn)
-	. = ..()
-	RegisterSignal(new_pawn, COMSIG_MOB_ITEM_ATTACK_POST_SWINGDELAY, PROC_REF(cancel_invalid_item_attack))
-	RegisterSignal(new_pawn, COMSIG_HUMAN_EARLY_UNARMED_ATTACK, PROC_REF(cancel_invalid_unarmed_attack))
-
-/datum/ai_controller/human_npc/ataman_bandit/UnpossessPawn(destroy)
-	UnregisterSignal(pawn, list(COMSIG_MOB_ITEM_ATTACK_POST_SWINGDELAY, COMSIG_HUMAN_EARLY_UNARMED_ATTACK))
-	return ..()
-
-/datum/ai_controller/human_npc/ataman_bandit/proc/cancel_invalid_item_attack(mob/living/source, mob/living/target, mob/living/user, obj/item/weapon)
-	SIGNAL_HANDLER
-	if(user != pawn)
-		return
-	if(target == blackboard[BB_ATAMAN_OWNER] || target != blackboard[BB_ATAMAN_TARGET] || target.stat != CONSCIOUS || ataman_target_is_secured(target))
-		return COMPONENT_ITEM_NO_ATTACK
-	if(!ishuman(target))
-		return
-	var/mob/living/carbon/human/victim = target
-	var/mob/living/carbon/human/attacker = pawn
-	var/zone = check_zone(attacker.zone_selected)
-	if(zone == BODY_ZONE_CHEST && ataman_chest_broken(victim))
-		return COMPONENT_ITEM_NO_ATTACK
-	if(!ataman_weapon_is_blunt(weapon) && (zone == BODY_ZONE_HEAD || !ataman_zone_is_armored(victim, zone)))
-		return COMPONENT_ITEM_NO_ATTACK
-
-/datum/ai_controller/human_npc/ataman_bandit/proc/cancel_invalid_unarmed_attack(mob/living/source, atom/target, proximity)
-	SIGNAL_HANDLER
-	if(source != pawn)
-		return
-	var/mob/living/living_target = target
-	if(target == blackboard[BB_ATAMAN_OWNER] || target != blackboard[BB_ATAMAN_TARGET] || !istype(living_target) || living_target.stat != CONSCIOUS || ataman_target_is_secured(target))
-		return COMPONENT_NO_ATTACK_HAND
-
-/datum/ai_controller/human_npc/ataman_bandit/grabber
-	planning_subtrees = list(
-		/datum/ai_planning_subtree/generic_break_restraints,
-		/datum/ai_planning_subtree/use_powder,
-		/datum/ai_planning_subtree/use_bandage,
-		/datum/ai_planning_subtree/use_healing_drink,
-		/datum/ai_planning_subtree/generic_resist,
-		/datum/ai_planning_subtree/generic_stand,
-		/datum/ai_planning_subtree/tree_climb,
-		/datum/ai_planning_subtree/ataman_leash,
-		/datum/ai_planning_subtree/ataman_squad_tactics,
-		/datum/ai_planning_subtree/ataman_disarm_restrain,
-		/datum/ai_planning_subtree/attack_obstacle_in_path,
-		/datum/ai_planning_subtree/basic_melee_attack_subtree/human_npc,
-	)
-
-/proc/ataman_last_feint_landed(mob/living/target)
-	if(!istype(target))
-		return FALSE
-	return target.has_status_effect(/datum/status_effect/debuff/vulnerable) || target.has_status_effect(/datum/status_effect/debuff/exposed)
-
-/proc/ataman_target_mouth_secured(mob/living/carbon/target)
-	if(!istype(target))
-		return FALSE
-	for(var/obj/item/grabbing/grab in target.grabbedby)
-		if(grab.sublimb_grabbed == BODY_ZONE_PRECISE_MOUTH)
-			return TRUE
-	return FALSE
-
-/proc/ataman_recover_target(datum/ai_controller/controller, mob/living/carbon/human/npc/ataman_bandit/pawn)
-	if(!istype(pawn) || !controller)
-		return
-	if(istype(controller.blackboard[BB_ATAMAN_TARGET], /mob/living))
-		return
-	var/mob/living/restored = pawn.ataman_target_ref?.resolve()
-	if(!istype(restored) || restored.stat == DEAD)
-		return
-	if(pawn.ataman_gave_up)
-		var/turf/spawn_turf = controller.blackboard[BB_ATAMAN_SPAWN_TURF]
-		if(!spawn_turf || get_dist(restored, spawn_turf) > ATAMAN_LEASH_RANGE)
-			return
-		pawn.ataman_gave_up = FALSE
-	ataman_ai_log(pawn, "CAPTURE: lost track of [restored] on the blackboard, recovering")
-	controller.set_blackboard_key(BB_ATAMAN_TARGET, restored)
-
-/proc/ataman_weapon_is_blunt(obj/item/weapon)
-	return !weapon || weapon.d_type == "blunt"
-
-/proc/ataman_zone_is_armored(mob/living/carbon/human/target, zone)
-	return target.getarmor(zone, "blunt") > 0
-
-/proc/ataman_chest_broken(mob/living/carbon/human/target)
-	return target.has_wound(/datum/wound/fracture/chest)
-
-/proc/ataman_pick_capture_zone(mob/living/carbon/human/pawn, mob/living/carbon/human/target)
-	var/list/limbs = shuffle(list(BODY_ZONE_L_ARM, BODY_ZONE_R_ARM, BODY_ZONE_L_LEG, BODY_ZONE_R_LEG))
-	if(ataman_weapon_is_blunt(pawn.get_active_held_item()))
-		for(var/zone in limbs)
-			if(!ataman_zone_is_armored(target, zone))
-				return zone
-		if(!ataman_chest_broken(target) && !ataman_zone_is_armored(target, BODY_ZONE_CHEST))
-			return BODY_ZONE_CHEST
-		return limbs[1]
-	for(var/zone in limbs)
-		if(ataman_zone_is_armored(target, zone))
-			return zone
-	if(!ataman_chest_broken(target) && ataman_zone_is_armored(target, BODY_ZONE_CHEST))
-		return BODY_ZONE_CHEST
-	return null
-
-/proc/ataman_target_is_walled(mob/living/pawn, mob/living/target)
-	var/turf/target_turf = get_turf(target)
-	if(!target_turf)
-		return FALSE
-	var/turf/behind_target = get_step(target_turf, get_dir(pawn, target))
-	if(!behind_target || behind_target.density)
-		return TRUE
-	for(var/obj/structure/S in behind_target)
-		if(S.density)
-			return TRUE
-	for(var/mob/living/M in behind_target)
-		if(M == pawn || M == target)
-			continue
-		return TRUE
-	return FALSE
-
-/proc/ataman_free_hands_for_grabbing(datum/ai_controller/controller)
-	var/mob/living/carbon/human/pawn = controller?.pawn
-	if(!istype(pawn))
-		return FALSE
-	var/obj/item/active = pawn.get_active_held_item()
-	if(active?.wielded)
-		active.ungrip(pawn)
-	var/datum/component/ai_inventory_manager/inventory = controller.get_inventory()
-	for(var/obj/item/held in list(pawn.get_active_held_item(), pawn.get_inactive_held_item()))
-		if(!held || istype(held, /obj/item/grabbing))
-			continue
-		if(!inventory?.stow_item(held))
-			pawn.dropItemToGround(held)
-	return TRUE
-
-/proc/ataman_get_grab_on(mob/living/carbon/human/pawn, mob/living/target, sublimb)
-	for(var/obj/item/grabbing/grab in list(pawn.get_active_held_item(), pawn.get_inactive_held_item()))
-		if(grab.grabbed == target && grab.sublimb_grabbed == sublimb)
-			return grab
-	return null
-
-/proc/ataman_make_grab_active(mob/living/carbon/human/pawn, obj/item/grabbing/grab)
-	if(pawn.get_active_held_item() == grab)
-		return TRUE
-	if(pawn.get_inactive_held_item() != grab)
-		return FALSE
-	pawn.swap_hand()
-	return pawn.get_active_held_item() == grab
-
-/proc/ataman_try_mouth_grab(datum/ai_controller/controller, mob/living/carbon/human/pawn, mob/living/carbon/target, datum/ataman_squad/squad)
-	if(!squad || pawn.pulling == target || ataman_target_mouth_secured(target))
-		return FALSE
-	if(!get_location_accessible(target, BODY_ZONE_PRECISE_MOUTH))
-		return FALSE
-	if(!squad.claim_mouth_grab(target))
-		return FALSE
-	if(!ataman_free_hands_for_grabbing(controller))
-		return FALSE
-	pawn.zone_selected = BODY_ZONE_PRECISE_MOUTH
-	if(!pawn.start_pulling(target, GRAB_PASSIVE, item_override = BODY_ZONE_PRECISE_MOUTH))
-		ataman_ai_log(pawn, "MOUTH: grab on [target] failed to start")
-		return FALSE
-	ataman_ai_log(pawn, "MOUTH: secured [target]'s mouth")
-	return TRUE
-
-/datum/ataman_squad
-	var/datum/weakref/target_ref
-	var/feints_used = 0
-	var/last_feint_at = 0
-	var/mouth_claim_until = 0
-	var/guard_claimed_until = 0
-	var/bites_used = 0
-	var/gear_tier = 1
-	var/datum/weakref/holder_ref
-	var/owner_took_custody = FALSE
-
-/datum/ataman_squad/proc/get_target()
-	return target_ref?.resolve()
-
-/datum/ataman_squad/proc/is_target_caster(mob/living/target)
-	if(!ishuman(target))
-		return FALSE
-	var/mob/living/carbon/human/H = target
-	return H.get_skill_level(/datum/skill/magic/arcane) > SKILL_LEVEL_NONE || H.get_skill_level(/datum/skill/magic/holy) > SKILL_LEVEL_NONE
-
-/datum/ataman_squad/proc/target_channeling_spell()
-	var/mob/living/target = get_target()
-	if(!istype(target))
-		return FALSE
-	var/datum/action/cooldown/spell/casting = target.channeling_spell
-	return istype(casting) && (casting.currently_charging || casting.charged)
-
-/datum/ataman_squad/proc/target_channeling_escape_spell()
-	if(!target_channeling_spell())
-		return FALSE
-	var/mob/living/target = get_target()
-	var/datum/action/cooldown/spell/casting = target.channeling_spell
-	return casting.spell_color == GLOW_COLOR_DISPLACEMENT
-
-/datum/ataman_squad/proc/claim_mouth_grab(mob/living/carbon/target)
-	if(istype(target) && ataman_target_mouth_secured(target))
-		return FALSE
-	if(world.time < mouth_claim_until)
-		return FALSE
-	mouth_claim_until = world.time + 8 SECONDS
-	return TRUE
-
-/datum/ataman_squad/proc/claim_guard(duration = 2 SECONDS)
-	if(world.time < guard_claimed_until)
-		return FALSE
-	guard_claimed_until = world.time + duration
-	return TRUE
-
-/datum/ataman_squad/proc/claim_holder(mob/living/bandit)
-	var/mob/living/holder = holder_ref?.resolve()
-	if(holder == bandit)
-		return TRUE
-	if(istype(holder) && !QDELETED(holder) && holder.stat != DEAD)
-		return FALSE
-	holder_ref = WEAKREF(bandit)
-	return TRUE
-
-/datum/ataman_squad/proc/consider_feint(mob/living/carbon/human/attacker, mob/living/target, emergency = FALSE)
-	if(!istype(attacker) || attacker.has_status_effect(/datum/status_effect/debuff/feintcd))
-		return FALSE
-	if(!istype(attacker.rmb_intent, /datum/rmb_intent/feint))
-		return FALSE
-	if(emergency)
-		return TRUE
-	if(feints_used == 0)
-		return TRUE
-	if(feints_used == 1)
-		return world.time >= last_feint_at + 1 SECONDS
-	return is_target_caster(target) || !ataman_last_feint_landed(target)
-
-/datum/ataman_squad/proc/register_feint()
-	feints_used++
-	last_feint_at = world.time
-
 /datum/ai_behavior/npc_kick_attack/ataman_low
 
 /datum/ai_behavior/npc_kick_attack/ataman_low/perform(seconds_per_tick, datum/ai_controller/controller, target_key)
@@ -461,11 +104,9 @@
 	ataman_recover_target(controller, pawn)
 	var/mob/living/carbon/target = controller.blackboard[BB_ATAMAN_TARGET]
 	if(!istype(pawn) || !istype(target) || target.stat == DEAD)
-		if(istype(pawn) && (controller.blackboard[BB_BASIC_MOB_CURRENT_TARGET] || controller.blackboard[BB_HIGHEST_THREAT_MOB]))
+		if(istype(pawn))
 			ataman_ai_log(pawn, "CAPTURE: target [target] gone/dead, clearing")
-			controller.clear_blackboard_key(BB_BASIC_MOB_CURRENT_TARGET)
-			controller.clear_blackboard_key(BB_HIGHEST_THREAT_MOB)
-			pawn.cmode = FALSE
+			ataman_disband(controller, pawn)
 		return SUBTREE_RETURN_FINISH_PLANNING
 
 	if(ataman_target_is_secured(target))
@@ -477,13 +118,7 @@
 		if(squad && !squad.owner_took_custody && squad.claim_holder(pawn))
 			controller.queue_behavior(/datum/ai_behavior/ataman_hold_secured, BB_ATAMAN_TARGET)
 			return SUBTREE_RETURN_FINISH_PLANNING
-		if(controller.blackboard[BB_BASIC_MOB_CURRENT_TARGET] || pawn.pulling == target || pawn.cmode)
-			ataman_ai_log(pawn, "CAPTURE: [target] is secured, standing down")
-			controller.clear_blackboard_key(BB_BASIC_MOB_CURRENT_TARGET)
-			controller.clear_blackboard_key(BB_HIGHEST_THREAT_MOB)
-			if(pawn.pulling == target)
-				pawn.stop_pulling()
-			pawn.cmode = FALSE
+		ataman_disband(controller, pawn)
 		return SUBTREE_RETURN_FINISH_PLANNING
 
 	controller.set_blackboard_key(BB_BASIC_MOB_CURRENT_TARGET, target)
@@ -693,6 +328,18 @@
 		else
 			qdel(rag)
 
+	if(!target.legcuffed && !(target.cmode && (target.mobility_flags & MOBILITY_STAND)))
+		var/obj/item/rope/binding = new(pawn)
+		if(pawn.put_in_hands(binding))
+			ataman_ai_log(pawn, "CUSTODY: tying [target]'s legs as well")
+			binding.try_cuff_legs(target, pawn)
+			if(QDELETED(pawn) || QDELETED(target) || QDELETED(controller) || controller.pawn != pawn)
+				return
+			if(!QDELETED(binding) && binding.loc == pawn)
+				qdel(binding)
+		else
+			qdel(binding)
+
 	if(pawn.pulling != target)
 		if(!ataman_free_hands_for_grabbing(controller))
 			finish_action(controller, FALSE, target_key)
@@ -738,18 +385,19 @@
 		finish_action(controller, FALSE, target_key)
 		return
 
-	ataman_ai_log(pawn, "RESTRAIN: attempting to bind [target]")
+	ataman_ai_log(pawn, "RESTRAIN: attempting to bind [target]'s [target.handcuffed ? "legs" : "arms"]")
 	var/obj/item/rope/binding = new(pawn)
 	if(!pawn.put_in_hands(binding))
 		qdel(binding)
 		finish_action(controller, FALSE, target_key)
 		return
-	binding.try_cuff_arms(target, pawn)
+	if(!target.handcuffed)
+		binding.try_cuff_arms(target, pawn)
+	else if(!target.legcuffed)
+		binding.try_cuff_legs(target, pawn)
 	if(QDELETED(pawn) || QDELETED(target) || QDELETED(controller) || controller.pawn != pawn)
 		return
-	if(!target.handcuffed && !QDELETED(binding))
-		binding.try_cuff_legs(target, pawn)
-	if(!target.handcuffed && !target.legcuffed && !QDELETED(binding))
+	if(!QDELETED(binding) && binding.loc == pawn)
 		qdel(binding)
 	ataman_ai_log(pawn, "RESTRAIN: result on [target] - handcuffed=[target.handcuffed ? "yes" : "no"] legcuffed=[target.legcuffed ? "yes" : "no"]")
-	finish_action(controller, target.handcuffed || target.legcuffed, target_key)
+	finish_action(controller, target.handcuffed, target_key)
