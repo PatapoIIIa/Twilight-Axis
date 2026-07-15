@@ -75,6 +75,32 @@
 
 	return
 
+/datum/ai_planning_subtree/ataman_intercept/SelectBehaviors(datum/ai_controller/controller, delta_time)
+	. = ..()
+	var/mob/living/carbon/human/npc/ataman_bandit/pawn = controller.pawn
+	if(!istype(pawn) || pawn.ataman_role != ATAMAN_ROLE_ENFORCER)
+		return
+	var/datum/ataman_squad/squad = controller.blackboard[BB_ATAMAN_SQUAD]
+	if(!squad)
+		return
+	var/mob/living/carbon/target = controller.blackboard[BB_ATAMAN_TARGET]
+	if(!istype(target) || target.stat == DEAD || ataman_target_is_secured(target) || length(target.grabbedby))
+		squad.release_interceptor(pawn)
+		return
+	if(pawn.Adjacent(target))
+		squad.release_interceptor(pawn)
+		return
+	if(!squad.claim_interceptor(pawn))
+		return
+	var/turf/intercept_point = squad.get_intercept_point()
+	if(!intercept_point)
+		squad.release_interceptor(pawn)
+		return
+	ataman_ai_log(pawn, "INTERCEPT: cutting off [target] toward [intercept_point]")
+	controller.set_blackboard_key(BB_ATAMAN_INTERCEPT_TURF, intercept_point)
+	controller.queue_behavior(/datum/ai_behavior/travel_towards/stop_on_arrival, BB_ATAMAN_INTERCEPT_TURF)
+	return SUBTREE_RETURN_FINISH_PLANNING
+
 /datum/ai_planning_subtree/ataman_leash/SelectBehaviors(datum/ai_controller/controller, delta_time)
 	. = ..()
 	var/turf/spawn_turf = controller.blackboard[BB_ATAMAN_SPAWN_TURF]

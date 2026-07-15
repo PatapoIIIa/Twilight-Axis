@@ -63,7 +63,7 @@
 /datum/status_effect/buff/ataman_finishing_blow
 	id = "ataman_finishing_blow"
 	alert_type = /atom/movable/screen/alert/status_effect/buff/ataman_finishing_blow
-	duration = 30 SECONDS
+	duration = 10 SECONDS
 	tick_interval = -1
 	status_type = STATUS_EFFECT_UNIQUE
 

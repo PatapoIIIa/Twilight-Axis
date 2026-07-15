@@ -36,18 +36,26 @@
 	pawn.cmode = FALSE
 	controller.clear_blackboard_key(BB_BASIC_MOB_CURRENT_TARGET)
 	controller.clear_blackboard_key(BB_HIGHEST_THREAT_MOB)
-	ataman_ai_log(pawn, "DISBAND: job's done, scattering and fading")
-	var/turf/pawn_turf = get_turf(pawn)
-	var/list/candidates = list()
-	if(pawn_turf)
-		for(var/turf/candidate as anything in RANGE_TURFS(6, pawn_turf))
-			if(isopenturf(candidate) && get_dist(candidate, pawn_turf) >= 3 && !candidate.is_blocked_turf(exclude_mobs = TRUE))
+	ataman_ai_log(pawn, "DISBAND: job's done, heading home to scatter and fade")
+	var/turf/home_turf = controller.blackboard[BB_ATAMAN_SPAWN_TURF] || get_turf(pawn)
+	var/travel_time = 0
+	if(home_turf)
+		var/list/candidates = list()
+		for(var/turf/candidate as anything in RANGE_TURFS(3, home_turf))
+			if(isopenturf(candidate) && !candidate.is_blocked_turf(exclude_mobs = TRUE))
 				candidates += candidate
-	if(length(candidates))
-		controller.set_blackboard_key(BB_ATAMAN_FLEE_TURF, pick(candidates))
-		controller.queue_behavior(/datum/ai_behavior/travel_towards/stop_on_arrival, BB_ATAMAN_FLEE_TURF)
-	var/mob/living/owner_mob = controller.blackboard[BB_ATAMAN_OWNER]
-	apply_mob_lifespan(pawn, owner_mob, rand(6 SECONDS, 12 SECONDS))
+		if(length(candidates))
+			var/turf/flee_turf = pick(candidates)
+			controller.set_blackboard_key(BB_ATAMAN_FLEE_TURF, flee_turf)
+			controller.queue_behavior(/datum/ai_behavior/travel_towards/stop_on_arrival, BB_ATAMAN_FLEE_TURF)
+			travel_time = clamp(get_dist(pawn, flee_turf) SECONDS, 2 SECONDS, 15 SECONDS)
+	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(ataman_finish_disband), pawn), travel_time + rand(2 SECONDS, 4 SECONDS))
+
+/proc/ataman_finish_disband(mob/living/carbon/human/npc/ataman_bandit/pawn)
+	if(QDELETED(pawn) || pawn.stat == DEAD)
+		return
+	pawn.visible_message(span_warning("[pawn] slips away and fades into nothing."))
+	pawn.death(FALSE)
 
 /proc/ataman_weapon_is_blunt(obj/item/weapon)
 	return !weapon || weapon.d_type == "blunt"
@@ -145,6 +153,10 @@
 	var/gear_tier = 1
 	var/datum/weakref/holder_ref
 	var/owner_took_custody = FALSE
+	var/turf/last_target_turf
+	var/last_target_check = 0
+	var/intercept_dir = 0
+	var/datum/weakref/interceptor_ref
 
 /datum/ataman_squad/proc/get_target()
 	return target_ref?.resolve()
@@ -208,3 +220,40 @@
 /datum/ataman_squad/proc/register_feint()
 	feints_used++
 	last_feint_at = world.time
+
+/datum/ataman_squad/proc/claim_interceptor(mob/living/bandit)
+	var/mob/living/current = interceptor_ref?.resolve()
+	if(current == bandit)
+		return TRUE
+	if(istype(current) && !QDELETED(current) && current.stat != DEAD)
+		return FALSE
+	interceptor_ref = WEAKREF(bandit)
+	return TRUE
+
+/datum/ataman_squad/proc/release_interceptor(mob/living/bandit)
+	if(interceptor_ref?.resolve() == bandit)
+		interceptor_ref = null
+
+/datum/ataman_squad/proc/get_intercept_point()
+	var/mob/living/target = get_target()
+	if(!istype(target))
+		return null
+	var/turf/current_turf = get_turf(target)
+	if(!current_turf)
+		return null
+	if(world.time >= last_target_check + 2 SECONDS)
+		if(last_target_turf && last_target_turf != current_turf)
+			intercept_dir = get_dir(last_target_turf, current_turf)
+		last_target_turf = current_turf
+		last_target_check = world.time
+	if(!intercept_dir)
+		return null
+	var/turf/ahead = current_turf
+	for(var/i in 1 to 6)
+		var/turf/next_turf = get_step(ahead, intercept_dir)
+		if(!next_turf || next_turf.density)
+			break
+		ahead = next_turf
+	if(ahead == current_turf)
+		return null
+	return ahead

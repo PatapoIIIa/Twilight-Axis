@@ -101,6 +101,7 @@
 		BB_ATAMAN_TARGET = null,
 		BB_ATAMAN_ROLE = ATAMAN_ROLE_ENFORCER,
 		BB_ATAMAN_SQUAD = null,
+		BB_ATAMAN_INTERCEPT_TURF = null,
 	)
 	planning_subtrees = list(
 		/datum/ai_planning_subtree/generic_break_restraints,
@@ -111,6 +112,7 @@
 		/datum/ai_planning_subtree/generic_stand,
 		/datum/ai_planning_subtree/tree_climb,
 		/datum/ai_planning_subtree/ataman_leash,
+		/datum/ai_planning_subtree/ataman_intercept,
 		/datum/ai_planning_subtree/squad_flank,
 		/datum/ai_planning_subtree/ataman_squad_tactics,
 		/datum/ai_planning_subtree/ataman_disarm_restrain,
