@@ -63,15 +63,30 @@ SUBSYSTEM_DEF(ta_vampire_lord_expansion)
 		return crucible
 	return null
 
+/proc/ta_turf_is_free(turf/candidate)
+	if(!isturf(candidate) || candidate.density)
+		return FALSE
+	for(var/atom/movable/blocker in candidate)
+		if(blocker.density)
+			return FALSE
+	return TRUE
+
 /proc/ta_crucible_spawn_turf()
 	var/obj/structure/vampire/bloodpool/crucible = ta_get_crimson_crucible()
-	if(crucible)
-		return get_turf(crucible)
-	if(length(GLOB.vlord_starts))
-		return pick(GLOB.vlord_starts)
-	if(length(GLOB.vspawn_starts))
-		return pick(GLOB.vspawn_starts)
+	var/turf/crucible_turf = get_turf(crucible)
+	if(crucible_turf)
+		for(var/turf/candidate in orange(1, crucible_turf))
+			if(ta_turf_is_free(candidate))
+				return candidate
+		return crucible_turf
+	for(var/turf/landmark_turf in GLOB.vlord_starts)
+		return landmark_turf
+	for(var/turf/landmark_turf in GLOB.vspawn_starts)
+		return landmark_turf
 	return null
+
+/proc/ta_vampire_lord_expansion_has_spawn()
+	return length(GLOB.vlord_starts) && ta_crucible_spawn_turf()
 
 /proc/ta_get_vampire_lord_body()
 	for(var/datum/antagonist/vampire/lord/methuselah in GLOB.antagonists)
@@ -243,8 +258,11 @@ SUBSYSTEM_DEF(ta_vampire_lord_expansion)
 	watch?.evaluate()
 
 /proc/ta_refresh_vampire_zone_watches()
-	for(var/datum/mind/vampire_mind as anything in SSmapping.retainer?.vampires)
-		ta_sync_vampire_zone_watch(vampire_mind?.current)
+	var/list/vampire_minds = SSmapping?.retainer?.vampires
+	if(!islist(vampire_minds))
+		return
+	for(var/datum/mind/vampire_mind in vampire_minds)
+		ta_sync_vampire_zone_watch(vampire_mind.current)
 
 /mob/living/carbon/human/set_clan(setting_clan, joining_round)
 	. = ..()
@@ -337,6 +355,11 @@ SUBSYSTEM_DEF(ta_vampire_lord_expansion)
 		return FALSE
 	if(!istype(lord_body) || !lord_body.mind)
 		return FALSE
+	var/turf/spawn_turf = ta_crucible_spawn_turf()
+	if(!spawn_turf || !length(GLOB.vlord_starts))
+		message_admins("Vampire Lord Expansion: на карте нет Багрового Тигеля или стартовой точки лорда, роль отменена для [key_name(lord_body)].")
+		log_game("Vampire Lord Expansion: aborted lord setup for [key_name(lord_body)], no crucible or vlord landmark on the map.")
+		return FALSE
 	GLOB.ta_vampire_lord_taken = TRUE
 	var/datum/job/lord_job = SSjob.GetJob("Vampire Lord")
 	if(lord_job)
@@ -346,9 +369,8 @@ SUBSYSTEM_DEF(ta_vampire_lord_expansion)
 		var/datum/antagonist/vampire/lord/methuselah = new /datum/antagonist/vampire/lord()
 		methuselah.antag_flags |= FLAG_ANTAG_CAP_IGNORE
 		lord_body.mind.add_antag_datum(methuselah)
-	var/turf/spawn_turf = ta_crucible_spawn_turf()
-	if(spawn_turf)
-		lord_body.forceMove(spawn_turf)
+	lord_body.forceMove(spawn_turf)
+	log_game("Vampire Lord Expansion: [key_name(lord_body)] placed at [get_area(lord_body)] ([lord_body.x],[lord_body.y],[lord_body.z]).")
 	ta_vampire_lord_expansion_open_retinue()
 	ta_refresh_vampire_zone_watches()
 	return TRUE
@@ -369,6 +391,7 @@ SUBSYSTEM_DEF(ta_vampire_lord_expansion)
 	var/turf/spawn_turf = ta_crucible_spawn_turf()
 	if(spawn_turf)
 		retinue_body.forceMove(spawn_turf)
+		log_game("Vampire Lord Expansion: [key_name(retinue_body)] placed at [get_area(retinue_body)] ([retinue_body.x],[retinue_body.y],[retinue_body.z]).")
 	ta_sync_vampire_zone_watch(retinue_body)
 	ta_vampire_lord_expansion_open_retinue()
 	return TRUE
@@ -445,6 +468,9 @@ SUBSYSTEM_DEF(ta_vampire_lord_expansion)
 		return
 
 	var/enabling = !GLOB.ta_vampire_lord_expansion
+	if(enabling && !ta_vampire_lord_expansion_has_spawn())
+		to_chat(src, span_warning("На карте не найден Багровый Тигель или стартовая точка вампир-лорда. Режим включать нельзя, иначе лорд появится в пустоте."))
+		return
 	if(enabling && GLOB.ta_vampire_lord_taken)
 		to_chat(src, span_warning("Вампир-лорд уже занят в этом раунде, откроется только свита."))
 
