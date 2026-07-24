@@ -14,32 +14,23 @@
 #define VL_MANOR_SOURCE "ta_manor_shelter"
 #define VL_WARD_WARNING "Астрата хранит покой этого города, уходи!"
 #define VL_ASCENSION_LOCK_DELAY (1 MINUTES)
-#define VL_WRETCH_REFUND_INTERVAL (30 SECONDS)
 
 GLOBAL_VAR_INIT(ta_vampire_lord_expansion, FALSE)
 GLOBAL_VAR_INIT(ta_vampire_lord_taken, FALSE)
 GLOBAL_VAR_INIT(ta_vampire_knights_taken, 0)
 GLOBAL_VAR_INIT(ta_vampire_servants_taken, 0)
+GLOBAL_VAR_INIT(ta_vampire_wretch_slots_refunded, FALSE)
 GLOBAL_VAR_INIT(ta_storyteller_vampire_lord, FALSE)
 GLOBAL_VAR_INIT(ta_vampire_lord_ascension_locked, FALSE)
 
 SUBSYSTEM_DEF(ta_vampire_lord_expansion)
 	name = "TA Vampire Lord Expansion"
-	wait = VL_WRETCH_REFUND_INTERVAL
+	flags = SS_NO_FIRE
 	init_order = INIT_ORDER_DEFAULT
-	runlevels = RUNLEVEL_GAME
 
 /datum/controller/subsystem/ta_vampire_lord_expansion/Initialize(timeofday)
 	. = ..()
 	SSticker.OnRoundstart(CALLBACK(src, PROC_REF(schedule_ascension_lock)))
-
-/datum/controller/subsystem/ta_vampire_lord_expansion/fire(resumed)
-	if(!GLOB.ta_vampire_lord_expansion)
-		return
-	var/datum/job/lord_job = SSjob.GetJob("Vampire Lord")
-	if(lord_job)
-		lord_job.total_positions = lord_job.current_positions + (GLOB.ta_vampire_lord_taken ? 0 : 1)
-	ta_vampire_lord_expansion_open_retinue()
 
 /datum/controller/subsystem/ta_vampire_lord_expansion/proc/schedule_ascension_lock()
 	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(ta_lock_vampire_lord_ascension)), VL_ASCENSION_LOCK_DELAY)
@@ -313,15 +304,20 @@ GLOBAL_LIST_INIT(ta_astrata_extra_wards, typecacheof(list(
 	return min(max(0, scaling["combat_total"] - 10), 5, cap - tier1)
 
 /proc/ta_restore_stolen_wretch_slots()
+	if(GLOB.ta_vampire_wretch_slots_refunded)
+		return
 	var/datum/job/wretch_job = SSjob.GetJob("Wretch")
 	if(!wretch_job || wretch_job.admin_slot_override)
 		return
 	var/refund = ta_vampire_lord_blocked_wretch_slots()
 	if(refund <= 0)
 		return
+	GLOB.ta_vampire_wretch_slots_refunded = TRUE
 	var/list/scaling = calculate_wretch_scaling()
 	wretch_job.total_positions = max(wretch_job.current_positions, max(0, scaling["final_slots"]) + refund)
 	wretch_job.spawn_positions = wretch_job.total_positions
+	wretch_job.admin_slot_override = TRUE
+	log_game("Vampire Lord Expansion: returned [refund] Wretch slot(s) blocked by the expansion lord (now [wretch_job.total_positions]).")
 
 /proc/ta_vampire_lord_expansion_open_retinue()
 	if(!GLOB.ta_vampire_lord_expansion || !GLOB.ta_vampire_lord_taken)
@@ -497,4 +493,3 @@ GLOBAL_LIST_INIT(ta_astrata_extra_wards, typecacheof(list(
 #undef VL_MANOR_SOURCE
 #undef VL_WARD_WARNING
 #undef VL_ASCENSION_LOCK_DELAY
-#undef VL_WRETCH_REFUND_INTERVAL
