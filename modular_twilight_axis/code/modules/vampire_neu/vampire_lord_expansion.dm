@@ -18,6 +18,8 @@
 
 GLOBAL_VAR_INIT(ta_vampire_lord_expansion, FALSE)
 GLOBAL_VAR_INIT(ta_vampire_lord_taken, FALSE)
+GLOBAL_VAR_INIT(ta_vampire_knights_taken, 0)
+GLOBAL_VAR_INIT(ta_vampire_servants_taken, 0)
 GLOBAL_VAR_INIT(ta_storyteller_vampire_lord, FALSE)
 GLOBAL_VAR_INIT(ta_vampire_lord_ascension_locked, FALSE)
 
@@ -32,7 +34,12 @@ SUBSYSTEM_DEF(ta_vampire_lord_expansion)
 	SSticker.OnRoundstart(CALLBACK(src, PROC_REF(schedule_ascension_lock)))
 
 /datum/controller/subsystem/ta_vampire_lord_expansion/fire(resumed)
-	ta_restore_stolen_wretch_slots()
+	if(!GLOB.ta_vampire_lord_expansion)
+		return
+	var/datum/job/lord_job = SSjob.GetJob("Vampire Lord")
+	if(lord_job)
+		lord_job.total_positions = lord_job.current_positions + (GLOB.ta_vampire_lord_taken ? 0 : 1)
+	ta_vampire_lord_expansion_open_retinue()
 
 /datum/controller/subsystem/ta_vampire_lord_expansion/proc/schedule_ascension_lock()
 	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(ta_lock_vampire_lord_ascension)), VL_ASCENSION_LOCK_DELAY)
@@ -56,37 +63,10 @@ SUBSYSTEM_DEF(ta_vampire_lord_expansion)
 	. = ..()
 	. += /client/proc/toggle_vampire_lord_expansion
 
-/proc/ta_get_crimson_crucible()
-	for(var/obj/structure/vampire/bloodpool/crucible in GLOB.vampire_objects)
-		if(QDELETED(crucible))
-			continue
-		return crucible
-	return null
-
-/proc/ta_turf_is_free(turf/candidate)
-	if(!isturf(candidate) || candidate.density)
-		return FALSE
-	for(var/atom/movable/blocker in candidate)
-		if(blocker.density)
-			return FALSE
-	return TRUE
-
-/proc/ta_crucible_spawn_turf()
-	var/obj/structure/vampire/bloodpool/crucible = ta_get_crimson_crucible()
-	var/turf/crucible_turf = get_turf(crucible)
-	if(crucible_turf)
-		for(var/turf/candidate in orange(1, crucible_turf))
-			if(ta_turf_is_free(candidate))
-				return candidate
-		return crucible_turf
-	for(var/turf/landmark_turf in GLOB.vlord_starts)
-		return landmark_turf
-	for(var/turf/landmark_turf in GLOB.vspawn_starts)
-		return landmark_turf
-	return null
-
-/proc/ta_vampire_lord_expansion_has_spawn()
-	return length(GLOB.vlord_starts) && ta_crucible_spawn_turf()
+/proc/ta_vampire_lord_spawn_turf()
+	if(!length(GLOB.vlord_starts))
+		return null
+	return pick(GLOB.vlord_starts)
 
 /proc/ta_get_vampire_lord_body()
 	for(var/datum/antagonist/vampire/lord/methuselah in GLOB.antagonists)
@@ -108,6 +88,17 @@ SUBSYSTEM_DEF(ta_vampire_lord_expansion)
 	if(target_node == lord_node)
 		return TRUE
 	return (lord_node in target_node.get_all_superiors())
+
+GLOBAL_LIST_INIT(ta_astrata_extra_wards, typecacheof(list(
+	/area/rogue/indoors/inq/chapel,
+	/area/rogue/druidsgrove,
+)))
+
+/proc/ta_in_astrata_ward_zone(mob/living/carbon/human/target)
+	if(is_in_roguetown(target))
+		return TRUE
+	var/area/current_area = get_area(target)
+	return current_area && is_type_in_typecache(current_area.type, GLOB.ta_astrata_extra_wards)
 
 /proc/ta_astrata_ward_applies(mob/living/carbon/human/target)
 	if(!istype(target) || QDELETED(target) || target.stat == DEAD)
@@ -210,7 +201,7 @@ SUBSYSTEM_DEF(ta_vampire_lord_expansion)
 	vampire.remove_status_effect(/datum/status_effect/vampire_spawn_protection/ta_manor)
 
 /datum/component/ta_vampire_zone_watch/proc/update_ward(mob/living/carbon/human/vampire)
-	var/should_burn = is_in_roguetown(vampire) && ta_astrata_ward_applies(vampire)
+	var/should_burn = ta_in_astrata_ward_zone(vampire) && ta_astrata_ward_applies(vampire)
 	if(should_burn == warded)
 		return
 	if(!should_burn)
@@ -219,8 +210,11 @@ SUBSYSTEM_DEF(ta_vampire_lord_expansion)
 	warded = TRUE
 	ward_started_at = world.time
 	ADD_TRAIT(vampire, TRAIT_NO_EXTINGUISH, VL_WARD_SOURCE)
-	ward_timer = addtimer(CALLBACK(src, PROC_REF(ward_tick)), VL_WARD_TICK, TIMER_STOPPABLE|TIMER_LOOP)
+	schedule_ward_tick()
 	to_chat(vampire, span_userdanger(VL_WARD_WARNING))
+
+/datum/component/ta_vampire_zone_watch/proc/schedule_ward_tick()
+	ward_timer = addtimer(CALLBACK(src, PROC_REF(ward_tick)), VL_WARD_TICK, TIMER_STOPPABLE)
 
 /datum/component/ta_vampire_zone_watch/proc/stop_ward(mob/living/carbon/human/vampire)
 	warded = FALSE
@@ -232,17 +226,19 @@ SUBSYSTEM_DEF(ta_vampire_lord_expansion)
 		REMOVE_TRAIT(vampire, TRAIT_NO_EXTINGUISH, VL_WARD_SOURCE)
 
 /datum/component/ta_vampire_zone_watch/proc/ward_tick()
+	ward_timer = null
 	var/mob/living/carbon/human/vampire = parent
 	if(!ishuman(vampire) || QDELETED(vampire) || vampire.stat == DEAD)
 		stop_ward(ishuman(vampire) ? vampire : null)
 		return
-	if(!is_in_roguetown(vampire) || !ta_astrata_ward_applies(vampire))
+	if(!ta_in_astrata_ward_zone(vampire) || !ta_astrata_ward_applies(vampire))
 		stop_ward(vampire)
 		return
 	to_chat(vampire, span_userdanger(VL_WARD_WARNING))
 	var/stacks = ((world.time - ward_started_at) > VL_WARD_ESCALATE_AFTER) ? VL_WARD_STACKS_LATE : VL_WARD_STACKS_EARLY
 	vampire.adjust_fire_stacks(stacks, /datum/status_effect/fire_handler/fire_stacks/sunder)
 	vampire.ignite_mob()
+	schedule_ward_tick()
 
 
 /proc/ta_sync_vampire_zone_watch(mob/living/carbon/human/vampire)
@@ -332,11 +328,11 @@ SUBSYSTEM_DEF(ta_vampire_lord_expansion)
 		return
 	var/datum/job/knight_job = SSjob.GetJob("Vampire Guard")
 	if(knight_job)
-		knight_job.total_positions = max(knight_job.current_positions, VL_KNIGHT_SLOTS)
+		knight_job.total_positions = knight_job.current_positions + max(0, VL_KNIGHT_SLOTS - GLOB.ta_vampire_knights_taken)
 		knight_job.min_pq = VL_KNIGHT_PQ
 	var/datum/job/servant_job = SSjob.GetJob("Vampire Servant")
 	if(servant_job)
-		servant_job.total_positions = max(servant_job.current_positions, VL_SERVANT_SLOTS)
+		servant_job.total_positions = servant_job.current_positions + max(0, VL_SERVANT_SLOTS - GLOB.ta_vampire_servants_taken)
 		servant_job.min_pq = VL_SERVANT_PQ
 	ta_restore_stolen_wretch_slots()
 
@@ -355,15 +351,16 @@ SUBSYSTEM_DEF(ta_vampire_lord_expansion)
 		return FALSE
 	if(!istype(lord_body) || !lord_body.mind)
 		return FALSE
-	var/turf/spawn_turf = ta_crucible_spawn_turf()
-	if(!spawn_turf || !length(GLOB.vlord_starts))
-		message_admins("Vampire Lord Expansion: на карте нет Багрового Тигеля или стартовой точки лорда, роль отменена для [key_name(lord_body)].")
-		log_game("Vampire Lord Expansion: aborted lord setup for [key_name(lord_body)], no crucible or vlord landmark on the map.")
+	var/turf/spawn_turf = ta_vampire_lord_spawn_turf()
+	if(!spawn_turf)
+		message_admins("Vampire Lord Expansion: на карте нет стартовой точки вампир-лорда, роль отменена для [key_name(lord_body)].")
+		log_game("Vampire Lord Expansion: aborted lord setup for [key_name(lord_body)], GLOB.vlord_starts is empty.")
 		return FALSE
 	GLOB.ta_vampire_lord_taken = TRUE
 	var/datum/job/lord_job = SSjob.GetJob("Vampire Lord")
 	if(lord_job)
 		lord_job.total_positions = lord_job.current_positions
+		lord_job.job_reopens_slots_on_death = FALSE
 	if(!lord_body.mind.has_antag_datum(/datum/antagonist/vampire/lord))
 		lord_body.unequip_everything()
 		var/datum/antagonist/vampire/lord/methuselah = new /datum/antagonist/vampire/lord()
@@ -375,11 +372,15 @@ SUBSYSTEM_DEF(ta_vampire_lord_expansion)
 	ta_refresh_vampire_zone_watches()
 	return TRUE
 
-/proc/ta_vampire_lord_expansion_setup_retinue(mob/living/carbon/human/retinue_body, generation, position_name)
+/proc/ta_vampire_lord_expansion_setup_retinue(mob/living/carbon/human/retinue_body, generation, position_name, knight)
 	if(!GLOB.ta_vampire_lord_expansion)
 		return FALSE
 	if(!istype(retinue_body) || !retinue_body.mind)
 		return FALSE
+	if(knight)
+		GLOB.ta_vampire_knights_taken++
+	else
+		GLOB.ta_vampire_servants_taken++
 	var/mob/living/carbon/human/lord_body = ta_get_vampire_lord_body()
 	var/datum/clan/lord_clan = lord_body?.clan
 	if(!retinue_body.mind.has_antag_datum(/datum/antagonist/vampire))
@@ -388,7 +389,7 @@ SUBSYSTEM_DEF(ta_vampire_lord_expansion)
 		retinue_body.mind.add_antag_datum(retinue_antag)
 	ADD_TRAIT(retinue_body, TRAIT_DUSTABLE, TRAIT_GENERIC)
 	ta_assign_vampire_lord_subordinate(retinue_body, position_name)
-	var/turf/spawn_turf = ta_crucible_spawn_turf()
+	var/turf/spawn_turf = ta_vampire_lord_spawn_turf()
 	if(spawn_turf)
 		retinue_body.forceMove(spawn_turf)
 		log_game("Vampire Lord Expansion: [key_name(retinue_body)] placed at [get_area(retinue_body)] ([retinue_body.x],[retinue_body.y],[retinue_body.z]).")
@@ -445,12 +446,12 @@ SUBSYSTEM_DEF(ta_vampire_lord_expansion)
 	return TRUE
 
 /datum/job/roguetown/vampire_guard/override_latejoin_spawn(mob/living/carbon/human/H)
-	if(!ta_vampire_lord_expansion_setup_retinue(H, GENERATION_ANCILLAE, "Рыцарь клана"))
+	if(!ta_vampire_lord_expansion_setup_retinue(H, GENERATION_ANCILLAE, "Рыцарь клана", TRUE))
 		return ..()
 	return TRUE
 
 /datum/job/roguetown/vampire_servant/override_latejoin_spawn(mob/living/carbon/human/H)
-	if(!ta_vampire_lord_expansion_setup_retinue(H, GENERATION_NEONATE, "Слуга клана"))
+	if(!ta_vampire_lord_expansion_setup_retinue(H, GENERATION_NEONATE, "Слуга клана", FALSE))
 		return ..()
 	return TRUE
 
@@ -468,8 +469,8 @@ SUBSYSTEM_DEF(ta_vampire_lord_expansion)
 		return
 
 	var/enabling = !GLOB.ta_vampire_lord_expansion
-	if(enabling && !ta_vampire_lord_expansion_has_spawn())
-		to_chat(src, span_warning("На карте не найден Багровый Тигель или стартовая точка вампир-лорда. Режим включать нельзя, иначе лорд появится в пустоте."))
+	if(enabling && !length(GLOB.vlord_starts))
+		to_chat(src, span_warning("На карте нет стартовой точки вампир-лорда. Режим не включён."))
 		return
 	if(enabling && GLOB.ta_vampire_lord_taken)
 		to_chat(src, span_warning("Вампир-лорд уже занят в этом раунде, откроется только свита."))
