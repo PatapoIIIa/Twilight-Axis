@@ -72,7 +72,7 @@
 	spring_ambush(L)
 
 /obj/structure/trap/ataman_ambush_stone/proc/is_valid_ambush_spawn(turf/candidate, turf/spawn_center, list/used_turfs, exact_distance)
-	if(!isopenturf(candidate) || candidate == spawn_center || candidate in used_turfs)
+	if(!isopenturf(candidate) || candidate == spawn_center || (candidate in used_turfs))
 		return FALSE
 	if(istype(candidate, /turf/open/transparent/openspace) || candidate.is_blocked_turf(exclude_mobs = TRUE))
 		return FALSE

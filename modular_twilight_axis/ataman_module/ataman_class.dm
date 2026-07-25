@@ -57,6 +57,7 @@
 		)
 
 	if(H.mind)
+		H.set_patron(/datum/patron/godless)
 		var/weapon_sets = list("Меч и щит", "Копьё и щит", "Лук и кинжал", "Булава, щит и арбалет")
 		var/weapon_choice = input(H, "Выбери вооружение своей банды.", "Снаряжение Атамана") as anything in weapon_sets
 		switch(weapon_choice)

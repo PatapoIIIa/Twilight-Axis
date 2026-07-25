@@ -61,7 +61,8 @@
 	return !weapon || weapon.d_type == "blunt"
 
 /proc/ataman_zone_is_armored(mob/living/carbon/human/target, zone)
-	return target.getarmor(zone, "blunt") > 0
+	var/list/layers = target.get_best_worn_armor_layered(zone, "blunt")
+	return length(layers) > 0
 
 /proc/ataman_chest_broken(mob/living/carbon/human/target)
 	return target.has_wound(/datum/wound/fracture/chest)
