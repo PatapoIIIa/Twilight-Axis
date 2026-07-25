@@ -332,6 +332,9 @@ GLOBAL_VAR_INIT(rpg_loot_items, FALSE)
 					B.apply()
 				if (obj_broken)
 					update_damaged_state()
+			if(override_state)
+				icon_state = "[override_state][gripsprite ? "1" : ""]"
+			refresh_detail_overlay()
 			return
 		if(wielded)
 			if(gripsprite)
@@ -345,6 +348,7 @@ GLOBAL_VAR_INIT(rpg_loot_items, FALSE)
 					update_damaged_state()
 			if(override_state)
 				icon_state = "[override_state]1"
+			refresh_detail_overlay()
 			return
 		if(gripsprite)
 			if(!override_state)
@@ -356,6 +360,7 @@ GLOBAL_VAR_INIT(rpg_loot_items, FALSE)
 				B.remove()
 				B.generate_appearance()
 				B.apply()
+			refresh_detail_overlay()
 			if (obj_broken)
 				update_damaged_state()
 
@@ -576,7 +581,7 @@ GLOBAL_VAR_INIT(rpg_loot_items, FALSE)
 		Penetration = armor tier: 20% damage through. Armor absorbs remaining %.\n\
 		Penetration < armor tier: Fully blocked.\n\
 		All attacks go through armor with no protection of that type, including attacks with no armor penetration.\n\
-		Blunt / Burn / Acid attacks bypass this system entirely and use damage reduction instead.")
+		Blunt / Burn / Bullet attacks bypass this system entirely and use damage reduction instead.")
 		if(!usr.client.prefs.no_examine_blocks)
 			output = examine_block(output)
 		to_chat(usr, output)
@@ -1540,8 +1545,6 @@ GLOBAL_VAR_INIT(rpg_loot_items, FALSE)
 	if(user.get_active_held_item() == src)
 		user.update_a_intents()
 	user.changeNext_move(CLICK_CD_RAPID)
-	if(override_state)
-		apply_override_state(override_state)
 	return TRUE
 
 /obj/item/proc/altgrip(mob/living/carbon/user)
@@ -1600,7 +1603,7 @@ GLOBAL_VAR_INIT(rpg_loot_items, FALSE)
 		var/obj/item/clothing/C = src
 		if(C.armor)
 			var/datum/armor/def_armor = C.armor
-			return def_armor.blunt || def_armor.slash || def_armor.stab || def_armor.piercing
+			return def_armor.blunt || def_armor.slash || def_armor.stab || def_armor.piercing || def_armor.fire || def_armor.bullet
 
 	return FALSE
 
@@ -1610,14 +1613,13 @@ GLOBAL_VAR_INIT(rpg_loot_items, FALSE)
 		var/obj/item/clothing/C = src
 		if(C.armor)
 			var/datum/armor/def_armor = C.armor
-			if(!def_armor.blunt && !def_armor.slash && !def_armor.stab && !def_armor.piercing)
+			if(!def_armor.blunt && !def_armor.slash && !def_armor.stab && !def_armor.piercing && !def_armor.fire && !def_armor.bullet)
 				str += "<b>NO ARMOR!</b>"
 			else
 				var/defense = "[SPAN_TOOLTIP("Each tier increases effective HP of the armor by 20%. Absorbed attacks never reach HP. The armor must be broken first.", "<u><b>ABSORB:</b></u>")] [colorgrade_rating("BLUNT", def_armor.blunt, elaborate = TRUE, max_tier = 5)]"
 				defense += "<br>"
 				defense += "[SPAN_TOOLTIP("Each tier reduces damage by 20% of base. Reduced damage still reaches HP. Armor absorbs what was blocked.", "<u><b>REDUCE:</b></u>")] [colorgrade_rating("BURN", def_armor.fire, elaborate = TRUE, max_tier = 5)]"
-				defense += " | [colorgrade_rating("ACID", def_armor.acid, elaborate = TRUE, max_tier = 5)]"
-				defense += " | [colorgrade_rating("BULLET", def_armor.bullet, elaborate = TRUE, max_tier = 5)]" //TA EDIT
+				defense += " | [colorgrade_rating("BULLET", def_armor.bullet, elaborate = TRUE, max_tier = 5)]"
 				defense += "<br>"
 				defense += "[SPAN_TOOLTIP("Blocks attacks below this tier (Armor takes all damage). Same tier penetrates 20% (80% goes to armor). Exceeding tier penetrates fully.", "<u><b>BLOCK:</b></u>")] "
 				defense += "[colorgrade_rating("SLASH", def_armor.slash, elaborate = TRUE)] | "

@@ -16,7 +16,6 @@
 	flags_inv = HIDEBOOB
 	experimental_inhand = TRUE
 	salvage_amount = 2
-
 	grid_width = 64
 	grid_height = 64
 
@@ -182,6 +181,12 @@
 	desc = "A sleeveless shirt woven from glossy material. Custom-fit for its (now deceased) wearer."
 	allowed_race = list(/datum/species/elf/dark/raider)
 	sellprice = 10
+
+/obj/item/clothing/suit/roguetown/shirt/shadowshirt/elflock/loadout
+	name = "aesthetic custom-fit silk shirt"
+	armor_class = ARMOR_CLASS_NONE
+	armor = ARMOR_CLOTHING
+	max_integrity = ARMOR_INT_CHEST_CIVILIAN
 
 /obj/item/clothing/suit/roguetown/shirt/apothshirt
 	name = "apothecary shirt"
@@ -899,3 +904,13 @@
 		if(get_detail_color())
 			pic.color = get_detail_color()
 		add_overlay(pic)
+
+/obj/item/clothing/suit/roguetown/shirt/dress/saree
+	name = "saree"
+	slot_flags = ITEM_SLOT_SHIRT|ITEM_SLOT_ARMOR|ITEM_SLOT_CLOAK
+	desc  = "A delicate, unstitched garment that can be draped across the body. It is commonly worn amongst Ranesheni women."
+	icon_state = "saree"
+	item_state = "saree"
+	sleeved = 'icons/roguetown/clothing/onmob/helpers/sleeves_shirts.dmi'
+	detail_tag = "_detail"
+	detail_color = CLOTHING_WHITE

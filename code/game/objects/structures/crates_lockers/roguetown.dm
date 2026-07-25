@@ -9,7 +9,6 @@
 	close_sound = 'sound/misc/chestclose.ogg'
 	keylock = TRUE
 	locked = FALSE
-	sellprice = 1
 	max_integrity = 200
 	blade_dulling = DULLING_BASHCHOP
 	mob_storage_capacity = 1
@@ -29,7 +28,7 @@
 	name = "otavan chest"
 	desc = "A foreboding red chest with black dye-washed silver embellishments."
 	icon_state = "chestweird2"
-	base_icon_state = "chestweird2"	
+	base_icon_state = "chestweird2"
 
 //obj/structure/closet/crate/chest/Initialize(mapload)
 //	. = ..()
@@ -323,7 +322,7 @@
 	name = "coffin"
 	desc = "A coffin of some burgher."
 	icon_state = "vcasket" //Fancy casket
-	base_icon_state = "vcasket" 
+	base_icon_state = "vcasket"
 	locked = TRUE
 
 /obj/structure/closet/crate/chest/coffinlootbox_middle/PopulateContents()

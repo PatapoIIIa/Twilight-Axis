@@ -302,7 +302,7 @@
 		worn = TRUE
 
 /obj/item/clothing/mask/rogue/facemask/steel/confessor/ComponentInitialize()
-	AddComponent(/datum/component/armour_filtering/positive, TRAIT_NOSTINK, "plague_resistant")
+	AddElement(/datum/element/plague_ward)
 
 /obj/item/clothing/mask/rogue/facemask/steel/confessor/dropped(mob/user)
 	. = ..()
@@ -561,7 +561,7 @@
 	item_state = "feldmask"
 
 /obj/item/clothing/mask/rogue/physician/ComponentInitialize()
-	AddComponent(/datum/component/armour_filtering/positive, TRAIT_NOSTINK, "plague_resistant")
+	AddElement(/datum/element/plague_ward)
 
 /obj/item/clothing/mask/rogue/skullmask
 	name = "skull mask"
@@ -691,7 +691,7 @@
 	salvage_result = /obj/item/natural/bone
 
 /obj/item/clothing/mask/rogue/courtphysician/ComponentInitialize()
-	AddComponent(/datum/component/armour_filtering/positive, TRAIT_NOSTINK, "plague_resistant")
+	AddElement(/datum/element/plague_ward)
 
 //gemcarved masks from Vanderlin
 
@@ -711,7 +711,6 @@
 	max_integrity = ARMOR_INT_SIDE_CLOTH
 	anvilrepair = /datum/skill/craft/armorsmithing //Maybe these shouldn't be repairable, someone else can do that if they want.
 	clothing_flags = CANT_SLEEP_IN
-	sellprice = 70
 	smeltresult = null
 	salvage_result = null
 

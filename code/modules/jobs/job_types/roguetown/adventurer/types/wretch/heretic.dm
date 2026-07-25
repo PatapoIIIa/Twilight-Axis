@@ -35,7 +35,18 @@
     )
 
 	extra_context = "This subclass gain the Wound Heal miracle and the Convert Heretic spell."
-	tempo_capable = FALSE
+
+/datum/advclass/wretch/heretic/get_vice_limits(mob/living/carbon/human/H)
+	. = ..()
+	if(istype(H.patron, /datum/patron/old_god) || HAS_TRAIT(H, TRAIT_PSYDONIAN_GRIT))
+		if(!(/datum/charflaw/silverweakness in .))
+			. += /datum/charflaw/silverweakness
+
+/datum/advclass/wretch/heretic/get_prefs_vice_limits(client/player)
+	. = ..()
+	if(istype(player?.prefs?.selected_patron, /datum/patron/old_god))
+		if(!(/datum/charflaw/silverweakness in .))
+			. += /datum/charflaw/silverweakness
 
 /datum/outfit/job/roguetown/wretch/heretic
 	has_loadout = TRUE
@@ -92,7 +103,6 @@
 
 	// You can convert those the church has shunned.
 	H.mind?.AddSpell(new /datum/action/cooldown/spell/convert_heretic)
-	H.mind?.AddSpell(new /datum/action/cooldown/spell/miracle/intervention)
 	if (istype (H.patron, /datum/patron/inhumen/zizo))
 		if(H.mind)
 			H.mind.AddSpell(new /datum/action/cooldown/spell/minion_order)
@@ -319,7 +329,6 @@
         "Sewing Kit" =  /obj/item/repair_kit,
     )
 	extra_context = "This subclass gain the Wound Heal miracle and the Convert Heretic spell."
-	tempo_capable = FALSE
 
 
 /datum/outfit/job/roguetown/wretch/hereticspy
@@ -533,7 +542,10 @@
 			"WHO IS YOUR SHEPHERD!?",
 		)
 		src.visible_message(span_warning("[src] shoves the decrepit zcross into [H]'s lux!"))
-		say(pick(faith_lines), spans = list("torture"))
+		if(HAS_TRAIT(src, TRAIT_UNFORGIVABLE))
+			say(pick(faith_lines), spans = list("bloody"))//Vheslynites aren't people.
+		else
+			say(pick(faith_lines), spans = list("torture"))
 		H.emote("agony", forced = TRUE)
 
 		if(!(do_mob(src, H, 10 SECONDS)))

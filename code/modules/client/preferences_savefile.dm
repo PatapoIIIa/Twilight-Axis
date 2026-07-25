@@ -466,6 +466,7 @@ SAVEFILE UPDATING/VERSIONING - 'Simplified', or rather, more coder-friendly ~Car
 		statpack = GLOB.statpacks[statpack]
 		//statpack = new statpack
 
+
 /datum/preferences/proc/copy_virtue_choices(list/choices)
 	if(!islist(choices))
 		return list()
@@ -558,6 +559,7 @@ SAVEFILE UPDATING/VERSIONING - 'Simplified', or rather, more coder-friendly ~Car
 	S["loadout_1_hex"] >> loadout_1_hex
 	S["loadout_2_hex"] >> loadout_2_hex
 	S["loadout_3_hex"] >> loadout_3_hex
+
 
 /datum/preferences/proc/_load_height(S)
 	var/preview_height
@@ -718,6 +720,8 @@ SAVEFILE UPDATING/VERSIONING - 'Simplified', or rather, more coder-friendly ~Car
 	S["job_preferences"] >> job_preferences
 
 	S["job_characters"] >> job_characters //TA EDIT
+	S["job_subclass_preferences"] >> job_subclass_preferences // TA EDIT START
+	S["job_subclass_strict"] >> job_subclass_strict // TA EDIT END
 
 	//Quirks
 	S["all_quirks"] >> all_quirks
@@ -895,6 +899,31 @@ SAVEFILE UPDATING/VERSIONING - 'Simplified', or rather, more coder-friendly ~Car
 		var/slot_num = job_characters[job_title]
 		if(!isnum(slot_num) || slot_num < 1 || slot_num > max_save_slots)
 			job_characters -= job_title //TA EDIT END
+
+	if(!islist(job_subclass_preferences)) // TA EDIT START
+		job_subclass_preferences = list()
+	if(!islist(job_subclass_strict))
+		job_subclass_strict = list()
+	for(var/job_title in job_subclass_preferences.Copy())
+		var/subclass_name = job_subclass_preferences[job_title]
+		var/datum/job/J = SSjob.GetJob(job_title)
+		var/valid_subclass = FALSE
+		if(istext(subclass_name) && length(J?.job_subclasses))
+			for(var/subclass_path in J.job_subclasses)
+				var/datum/advclass/subclass_type = subclass_path
+				if(initial(subclass_type.name) == subclass_name)
+					valid_subclass = TRUE
+					break
+		if(!valid_subclass)
+			job_subclass_preferences -= job_title
+			job_subclass_strict -= job_title
+	for(var/job_title in job_subclass_strict.Copy())
+		if(!(job_title in job_subclass_preferences))
+			job_subclass_strict -= job_title
+		else
+			job_subclass_strict[job_title] = sanitize_integer(job_subclass_strict[job_title], FALSE, TRUE, FALSE)
+			if(!job_subclass_strict[job_title])
+				job_subclass_strict -= job_title // TA EDIT END
 	
 	all_quirks = SANITIZE_LIST(all_quirks)
 
@@ -1027,6 +1056,8 @@ SAVEFILE UPDATING/VERSIONING - 'Simplified', or rather, more coder-friendly ~Car
 	WRITE_FILE(S["job_preferences"] , job_preferences)
 
 	WRITE_FILE(S["job_characters"]  , job_characters) //TA EDIT
+	WRITE_FILE(S["job_subclass_preferences"], job_subclass_preferences) // TA EDIT START
+	WRITE_FILE(S["job_subclass_strict"], job_subclass_strict) // TA EDIT END
 
 	//Quirks
 	WRITE_FILE(S["all_quirks"]			, all_quirks)
@@ -1082,7 +1113,9 @@ SAVEFILE UPDATING/VERSIONING - 'Simplified', or rather, more coder-friendly ~Car
 	WRITE_FILE(S["titles_pref"] , titles_pref)
 	WRITE_FILE(S["clothes_pref"] , clothes_pref)
 	WRITE_FILE(S["statpack"] , statpack.type)
+
 	write_clean_virtue_paths(S, virtue ? virtue.type : /datum/virtue/none, virtuetwo ? virtuetwo.type : /datum/virtue/none, virtue_origin ? virtue_origin.type : /datum/virtue/none, virtue ? virtue.picked_choices : null, virtuetwo ? virtuetwo.picked_choices : null)
+
 	WRITE_FILE(S["race_bonus"], race_bonus)
 	var/combat_music_save_type = default_cmusic_type // TA EDIT START
 	if(!custom_cmode_enabled && combat_music)
