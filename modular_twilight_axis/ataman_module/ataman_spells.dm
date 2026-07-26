@@ -213,13 +213,14 @@
 	to_chat(H, span_notice("I bury [snare] in the ground."))
 	return TRUE
 
-/proc/ataman_appraise_looted(atom/movable/container)
+/proc/ataman_appraise_loot(atom/movable/container, mob/living/carbon/human/owner)
 	var/total = 0
 	for(var/obj/item/I in container.contents)
 		if(length(I.contents))
-			total += ataman_appraise_looted(I)
-		if(I.looted)
-			total += I.get_real_price()
+			total += ataman_appraise_loot(I, owner)
+		if(ataman_item_is_own_gear(I, owner))
+			continue
+		total += I.get_real_price()
 	return total
 
 /datum/action/cooldown/spell/ataman_exchange
@@ -261,9 +262,9 @@
 	if(!fence)
 		return FALSE
 
-	var/appraised_value = round(ataman_appraise_looted(sack))
+	var/appraised_value = round(ataman_appraise_loot(sack, H))
 	if(appraised_value < ATAMAN_TRADE_MIN_VALUE)
-		to_chat(H, span_warning("There are not enough stolen goods in [sack] for a real exchange."))
+		to_chat(H, span_warning("There are not enough stolen goods in [sack] for a real exchange - [appraised_value] of the [ATAMAN_TRADE_MIN_VALUE] mammons a fence would bother with."))
 		return FALSE
 	var/payout_value = round(appraised_value * ATAMAN_TRADE_PAYOUT_MULTIPLIER)
 
