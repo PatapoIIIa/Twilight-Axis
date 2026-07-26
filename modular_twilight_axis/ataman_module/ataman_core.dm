@@ -26,8 +26,9 @@
 #define ATAMAN_TRAP_PLAYER_EXCLUSION_RANGE 8
 #define ATAMAN_TRAP_MIN_SPACING 8
 
-#define ATAMAN_TRADE_MIN_VALUE 100
-#define ATAMAN_TRADE_PAYOUT_MULTIPLIER 0.6
+#define ATAMAN_TRADE_MIN_ITEM_VALUE 25
+#define ATAMAN_TRADE_MIN_VALUE 200
+#define ATAMAN_TRADE_PAYOUT_MULTIPLIER 0.55
 #define ATAMAN_TREASURY_DAMAGE_MULTIPLIER 0.4
 #define ATAMAN_TIER_BASE_BOUNTY 100
 
@@ -54,7 +55,6 @@ GLOBAL_VAR_INIT(ataman_ai_log_file, null)
 	var/ataman_loot_tier = 0
 	var/list/recent_attackers = list()
 	var/ataman_deathmark_bound = FALSE
-	var/list/ataman_own_gear
 
 /datum/bounty
 	var/ataman_reason_category
@@ -112,18 +112,6 @@ GLOBAL_VAR_INIT(ataman_ai_log_file, null)
 		if(existing_turf && existing_turf.z == target_turf.z && get_dist(existing_turf, target_turf) < min_distance)
 			return TRUE
 	return FALSE
-
-/proc/ataman_mark_own_gear(mob/living/carbon/human/H)
-	if(!istype(H))
-		return
-	LAZYINITLIST(H.ataman_own_gear)
-	for(var/obj/item/I as anything in H.GetAllContents(/obj/item))
-		H.ataman_own_gear |= WEAKREF(I)
-
-/proc/ataman_item_is_own_gear(obj/item/I, mob/living/carbon/human/owner)
-	if(!I || !owner || !LAZYLEN(owner.ataman_own_gear))
-		return FALSE
-	return (WEAKREF(I) in owner.ataman_own_gear)
 
 /proc/ataman_bandit_belongs_to(atom/movable/AM, mob/living/carbon/human/owner)
 	if(!owner || !istype(AM, /mob/living/carbon/human/npc/ataman_bandit))

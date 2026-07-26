@@ -213,19 +213,19 @@
 	to_chat(H, span_notice("I bury [snare] in the ground."))
 	return TRUE
 
-/proc/ataman_appraise_loot(atom/movable/container, mob/living/carbon/human/owner)
+/proc/ataman_appraise_loot(atom/movable/container)
 	var/total = 0
 	for(var/obj/item/I in container.contents)
 		if(length(I.contents))
-			total += ataman_appraise_loot(I, owner)
-		if(ataman_item_is_own_gear(I, owner))
-			continue
-		total += I.get_real_price()
+			total += ataman_appraise_loot(I)
+		var/price = I.get_real_price()
+		if(price > ATAMAN_TRADE_MIN_ITEM_VALUE)
+			total += price
 	return total
 
 /datum/action/cooldown/spell/ataman_exchange
 	name = "Honest Exchange"
-	desc = "Trade a bag of stolen goods to a nearby fence. I receive 60% of their appraised value, while the duchy treasury loses 40%. Only goods that once belonged to someone else count."
+	desc = "Trade a bag of goods to a nearby fence. I receive 55% of their appraised value, while the duchy treasury takes the loss. Only items worth more than 25 mammons count, and the haul must total at least 200."
 	click_to_activate = TRUE
 	self_cast_possible = FALSE
 	primary_resource_type = SPELL_COST_STAMINA
@@ -262,9 +262,9 @@
 	if(!fence)
 		return FALSE
 
-	var/appraised_value = round(ataman_appraise_loot(sack, H))
+	var/appraised_value = round(ataman_appraise_loot(sack))
 	if(appraised_value < ATAMAN_TRADE_MIN_VALUE)
-		to_chat(H, span_warning("There are not enough stolen goods in [sack] for a real exchange - [appraised_value] of the [ATAMAN_TRADE_MIN_VALUE] mammons a fence would bother with."))
+		to_chat(H, span_warning("There is not enough in [sack] for a real exchange - [appraised_value] of the [ATAMAN_TRADE_MIN_VALUE] mammons a fence would bother with. Trinkets worth [ATAMAN_TRADE_MIN_ITEM_VALUE] mammons or less do not count."))
 		return FALSE
 	var/payout_value = round(appraised_value * ATAMAN_TRADE_PAYOUT_MULTIPLIER)
 

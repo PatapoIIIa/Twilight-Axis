@@ -72,12 +72,6 @@
 
 		grant_ataman_spells(H)
 
-/datum/outfit/job/roguetown/wretch/ataman/post_equip(mob/living/carbon/human/H, visualsOnly = FALSE)
-	. = ..()
-	if(visualsOnly)
-		return
-	ataman_mark_own_gear(H)
-
 /datum/outfit/job/roguetown/wretch/ataman/proc/sword_shield_equip(mob/living/carbon/human/H)
 	r_hand = /obj/item/rogueweapon/sword/iron
 	backr = /obj/item/rogueweapon/shield/wood
