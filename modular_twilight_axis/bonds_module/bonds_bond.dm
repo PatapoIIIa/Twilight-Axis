@@ -60,8 +60,8 @@
 	var/new_weight = weight_committed
 	for(var/category as anything in active_events)
 		var/datum/bond_event/event = active_events[category]
-		new_warmth += event.warmth_transient
-		new_weight += event.weight_transient
+		new_warmth += event.warmth_transient * event.applied_scale
+		new_weight += event.weight_transient * event.applied_scale
 	warmth = clamp(new_warmth, BOND_WARMTH_MIN, BOND_WARMTH_MAX)
 	weight = clamp(new_weight, BOND_WEIGHT_MIN, BOND_WEIGHT_MAX)
 	stage = SSbonds.resolve_stage(src)
@@ -120,8 +120,8 @@
 		return 1
 	return 1 / (1 + (count * BOND_COMMIT_FALLOFF))
 
-/datum/social_bond/proc/commit(datum/bond_event/prototype)
-	var/scale = commit_scale(prototype.category)
+/datum/social_bond/proc/commit(datum/bond_event/prototype, applied_scale = 1)
+	var/scale = commit_scale(prototype.category) * applied_scale
 	warmth_committed = clamp(warmth_committed + (prototype.warmth_commit * scale), BOND_WARMTH_MIN, BOND_WARMTH_MAX)
 	weight_committed = clamp(weight_committed + (prototype.weight_commit * scale), BOND_WEIGHT_MIN, BOND_WEIGHT_MAX)
 	LAZYINITLIST(commit_times)
@@ -157,8 +157,8 @@
 		history -= oldest
 		qdel(oldest)
 
-/datum/social_bond/proc/attach_event(event_type)
-	if(!scored)
+/datum/social_bond/proc/attach_event(event_type, applied_scale = 1)
+	if(!scored || !applied_scale)
 		return null
 	var/datum/bond_event/prototype = SSbonds.get_event_prototype(event_type)
 	if(!prototype)
@@ -174,11 +174,12 @@
 			existing.bond = null
 			qdel(existing)
 		var/datum/bond_event/event = new event_type()
+		event.applied_scale = applied_scale
 		event.bond = src
 		active_events[category] = event
 		event.start()
 	if(can_commit(category))
-		scale = commit(prototype)
+		scale = commit(prototype, applied_scale)
 	if(prototype.tag_applied != BOND_TAG_NONE)
 		tags |= prototype.tag_applied
 	add_history(prototype, scale)

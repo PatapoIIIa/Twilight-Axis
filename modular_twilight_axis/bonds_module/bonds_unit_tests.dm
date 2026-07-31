@@ -235,6 +235,26 @@
 	BD_ASSERT_EQUAL(forward, backward, "clan stances must be order independent like faction ones")
 	BD_ASSERT_NOTNULL(SSbonds.get_stance(BOND_CLAN_ABYSS, BOND_CLAN_CRIMSON), "declared clan baselines must be present")
 
+/datum/unit_test/bonds/arena_is_a_sanctioned_ground/Run()
+	BD_ASSERT(SSbonds.zone_lenses.len > 0, "zone lenses must be built")
+	var/datum/bond_zone_lens/arena = SSbonds.zone_lenses[1]
+	BD_ASSERT_EQUAL(arena.type, /datum/bond_zone_lens/arena, "the arena must sort first by priority")
+	BD_ASSERT_EQUAL(arena.weight, 0, "duelling ground must not move faction politics")
+
+/datum/unit_test/bonds/masochist_takes_no_offence/Run()
+	BD_ASSERT(SSbonds.dispositions.len > 0, "dispositions must be built")
+	var/datum/bond_disposition/masochist = locate(/datum/bond_disposition/masochist) in SSbonds.dispositions
+	BD_ASSERT_NOTNULL(masochist, "the masochist disposition must load")
+	BD_ASSERT_EQUAL(masochist.category_scales[BOND_CATEGORY_VIOLENCE], 0, "being struck must not build a masochist a grudge")
+	BD_ASSERT_NULL(masochist.category_scales[BOND_CATEGORY_KINDNESS], "kindness is untouched by that flaw")
+
+/datum/unit_test/bonds/unscaled_event_never_lands/Run()
+	var/datum/mind/a = bd_make_mind()
+	var/datum/mind/b = bd_make_mind()
+	var/datum/social_bond/bond = SSbonds.get_or_create_bond(a, b)
+	BD_ASSERT_NULL(bond.attach_event(/datum/bond_event/struck_by, 0), "a zeroed disposition must drop the event entirely")
+	BD_ASSERT_EQUAL(bond.warmth, 0, "and leave the bond untouched")
+
 /datum/unit_test/bonds/ancestry_walk_is_directional/Run()
 	var/datum/mind/grandparent = bd_make_mind()
 	var/datum/mind/parent = bd_make_mind()

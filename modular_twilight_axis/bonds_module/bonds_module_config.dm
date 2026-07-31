@@ -25,10 +25,14 @@
 // bonds_origin_lore.dm      - inherited opinion between origins, mixed into faction impact
 // bonds_role_weight.dm      - how loudly a job's actions echo between factions
 // bonds_map_lens.dm         - per-map lens over faction impact (all weights 0 for now)
+// bonds_zone_lens.dm        - per-area lens: where it happened (weights 1, arena 0)
+// bonds_duel.dm             - sanctioned violence: duellist rings or duelling ground
+// bonds_disposition.dm      - recipient's flaws scale what an act does to their side
 // bonds_influence.dm        - per-character influence pool and mute, so brawls do not rewrite politics
 // bonds_impact.dm           - the ordered impact pipeline: role, map, storyteller, lore, influence
 // bonds_house_stance.dm     - house-to-house standing, accumulated from member incidents
-// bonds_faction_panel.dm    - /datum/bonds_faction_panel: faction and house standing
+// bonds_faction_map.dm      - whole inter-faction graph, not a view from one character
+// bonds_faction_panel.dm    - /datum/bonds_faction_panel: faction map, house and clan standing
 // bonds_tree_panel.dm       - /datum/bonds_tree_panel: radial bond tree with two-sided progress
 // bonds_prefs.dm            - /datum/preferences vars plus savefile load/save/sanitize
 // bonds_round_prefs.dm      - per-ckey round-locked snapshot of the seeding prefs
@@ -139,6 +143,8 @@
 // Absolute stance warmth above which two factions are considered entangled enough that
 // their members plausibly share a past - allies AND rivals both qualify.
 #define BOND_STANCE_AFFINITY_THRESHOLD 25
+// Below this weight an unremarkable faction pair is left off the map to keep it readable.
+#define BOND_MAP_MIN_WEIGHT 5
 // Fraction of a personal event's permanent commit that bleeds into the two houses involved.
 // House feuds are meant to be the accumulated residue of many incidents, never one fight.
 #define BOND_HOUSE_PROPAGATION 0.25
@@ -196,6 +202,9 @@
 #include "bonds_origin_lore.dm"
 #include "bonds_role_weight.dm"
 #include "bonds_map_lens.dm"
+#include "bonds_zone_lens.dm"
+#include "bonds_duel.dm"
+#include "bonds_disposition.dm"
 #include "bonds_influence.dm"
 #include "bonds_impact.dm"
 #include "bonds_house_stance.dm"
@@ -207,6 +216,7 @@
 #include "bonds_seeding.dm"
 #include "bonds_family_bridge.dm"
 #include "bonds_panel.dm"
+#include "bonds_faction_map.dm"
 #include "bonds_faction_panel.dm"
 #include "bonds_tree_panel.dm"
 #include "bonds_prefs_panel.dm"

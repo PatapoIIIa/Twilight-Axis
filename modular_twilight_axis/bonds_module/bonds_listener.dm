@@ -85,6 +85,13 @@
 	var/datum/mind/subject_mind = bonds_mind_of(subject)
 	if(!actor_mind || !subject_mind)
 		return
+	var/datum/bond_event/prototype = get_event_prototype(subject_event)
+	var/hostile = prototype && (prototype.category == BOND_CATEGORY_VIOLENCE || prototype.category == BOND_CATEGORY_DEATH)
+	// A sanctioned duel is not an assault. It must not sour either side, nor move factions.
+	if(hostile && is_sanctioned_duel(actor, subject))
+		return
+
+	var/subject_scale = disposition_scale(subject, subject_event)
 	record(actor_mind, subject_mind, actor_event, subject)
-	record(subject_mind, actor_mind, subject_event, actor)
-	social_impact(subject_mind, actor_mind, subject_event)
+	record(subject_mind, actor_mind, subject_event, actor, FALSE, subject_scale)
+	social_impact(subject_mind, actor_mind, subject_event, subject_scale)

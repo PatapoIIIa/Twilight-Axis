@@ -47,7 +47,7 @@
 	bond = new(subject_actor, object_actor)
 	return node.add_bond(bond)
 
-/datum/controller/subsystem/bonds/proc/record(subject, object, event_type, mob/living/carbon/human/object_mob, force = FALSE)
+/datum/controller/subsystem/bonds/proc/record(subject, object, event_type, mob/living/carbon/human/object_mob, force = FALSE, applied_scale = 1)
 	var/datum/bond_actor/subject_actor = resolve_actor(subject)
 	var/datum/bond_actor/object_actor = resolve_actor(object)
 	if(!subject_actor || !object_actor || subject_actor == object_actor)
@@ -64,7 +64,7 @@
 	if(!bond)
 		return null
 	bondlog("record [subject_actor.name_of()] -> [object_actor.name_of()] [event_type]")
-	return bond.attach_event(event_type)
+	return bond.attach_event(event_type, applied_scale)
 
 /datum/controller/subsystem/bonds/proc/get_bonds_for(participant)
 	var/datum/bond_node/node = get_node(participant)

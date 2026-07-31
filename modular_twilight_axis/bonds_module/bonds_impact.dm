@@ -10,7 +10,7 @@
 // what stops a twenty-person brawl from rewriting every relationship in town (see
 // bonds_influence.dm).
 
-/datum/controller/subsystem/bonds/proc/social_impact(subject, object, event_type)
+/datum/controller/subsystem/bonds/proc/social_impact(subject, object, event_type, applied_scale = 1)
 	var/datum/bond_event/prototype = get_event_prototype(event_type)
 	if(!prototype || !prototype.scored_propagation)
 		return FALSE
@@ -23,12 +23,18 @@
 	if(!ishuman(subject_body) || !ishuman(object_body))
 		return FALSE
 
+	if(!applied_scale)
+		return FALSE
+
 	// The actor is the one who spends influence; the victim never pays for being hit.
+	// Checked after the free rejections so a no-op act does not burn a point.
 	if(!spend_influence(object_actor))
 		return FALSE
 
-	var/scale = role_impact_weight(object_body) * role_impact_weight(subject_body)
+	var/scale = applied_scale
+	scale *= role_impact_weight(object_body) * role_impact_weight(subject_body)
 	scale *= map_weight()
+	scale *= zone_weight(object_body)
 	var/datum/origin_lore/lore = origin_lore_for(subject_actor, object_actor)
 	if(lore)
 		scale *= lore.weight_scale

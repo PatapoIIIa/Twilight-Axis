@@ -55,7 +55,7 @@
 
 /datum/bonds_faction_panel/ui_data(mob/user)
 	if(user != viewer)
-		return list("ownFaction" = null, "stances" = list(), "ownHouse" = null, "houses" = list(), "ownClan" = null, "clans" = list())
+		return list("ownFaction" = null, "map" = list("nodes" = list(), "edges" = list()), "ownHouse" = null, "houses" = list(), "ownClan" = null, "clans" = list())
 	return SSbonds.build_faction_panel(viewer)
 
 /datum/bonds_faction_panel/ui_close()
@@ -63,26 +63,9 @@
 
 /datum/controller/subsystem/bonds/proc/build_faction_panel(mob/living/carbon/human/person) as /list
 	var/datum/bond_faction/own = faction_for(person)
-	var/list/stances = list()
-	for(var/faction_id in faction_prototypes)
-		if(!own || faction_id == own.id)
-			continue
-		var/datum/bond_faction/other = faction_prototypes[faction_id]
-		if(istype(other, /datum/bond_faction/clan))
-			continue
-		var/warmth = stance_warmth(own.id, other.id)
-		var/datum/faction_stance/stance = get_stance(own.id, other.id)
-		stances += list(list(
-			"name" = other.name,
-			"accent" = other.accent,
-			"label" = bonds_stance_label(warmth),
-			"labelAccent" = bonds_stance_accent(warmth),
-			"intensity" = bonds_stance_intensity(stance ? stance.weight : 0),
-			"declared" = !isnull(stance),
-		))
 	return list(
 		"ownFaction" = own ? list("name" = own.name, "accent" = own.accent) : null,
-		"stances" = stances,
+		"map" = build_faction_map(person),
 		"ownHouse" = person.family_datum?.GetDisplayHouseTitle(),
 		"houses" = build_house_panel(person),
 		"ownClan" = clan_faction_for(person)?.name,

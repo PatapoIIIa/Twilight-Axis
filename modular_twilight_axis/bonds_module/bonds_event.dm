@@ -13,6 +13,8 @@
 	var/datum/social_bond/bond
 	var/timer_id
 	var/started_at = 0
+	/// Set per application: how strongly this landed on THIS recipient (see bonds_disposition.dm).
+	var/applied_scale = 1
 
 /datum/bond_event/Destroy(force)
 	if(timer_id)
