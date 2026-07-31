@@ -4,73 +4,20 @@
 // #include "modular_twilight_axis\bonds_module\bonds_module_config.dm"
 //
 // --- FILE MAP ---
-// bonds_identity.dm         - identity visibility gate and snapshot building
-// bonds_history.dm          - /datum/bond_history: one recorded moment on a bond
-// bonds_stage.dm            - /datum/bond_stage: label bands plus priority resolution
-// bonds_stages_defs.dm      - the stage table itself
-// bonds_bond.dm             - /datum/social_bond: axes, tags, active events, history
-// bonds_kin.dm              - /datum/social_bond/kin: structural kinship links plus the kin API
-// bonds_node.dm             - /datum/bond_node: one mind's outgoing bonds plus eviction
-// bonds_event.dm            - /datum/bond_event: transient contribution plus permanent commit
-// bonds_events_hostile.dm   - hostile event definitions
-// bonds_events_friendly.dm  - friendly event definitions
-// bonds_events_seed.dm      - roundstart backstory seeds, symmetric and asymmetric
-// bonds_faction.dm          - /datum/bond_faction plus the title->faction index
-// bonds_factions_defs.dm    - the faction table (data, one entry per GLOB.*_positions list)
-// bonds_faction_baselines.dm- declared starting stances between faction pairs
-// bonds_faction_stance.dm   - live faction-to-faction stance matrix plus nudge API
-// bonds_storyteller.dm      - storyteller lens over faction stances (all weights 1.0 for now)
-// bonds_storyteller_lenses.dm - one lens per storyteller, tuning table
-// bonds_origins.dm          - /datum/bond_origin: where a character is from, cached on the actor
-// bonds_origin_lore.dm      - inherited opinion between origins, mixed into faction impact
-// bonds_role_weight.dm      - how loudly a job's actions echo between factions
-// bonds_weights.dm          - declared template shares and the normalised blend
-// bonds_map_lens.dm         - per-map lens over faction impact (all weights 0 for now)
-// bonds_map_roster.dm       - which factions exist on which map
-// bonds_zone_lens.dm        - per-area lens: where it happened (weights 1, arena 0)
-// bonds_duel.dm             - sanctioned violence: duellist rings or duelling ground
-// bonds_disposition.dm      - recipient's flaws scale what an act does to their side
-// bonds_influence.dm        - per-character influence pool and mute, so brawls do not rewrite politics
-// bonds_impact.dm           - the ordered impact pipeline: role, map, storyteller, lore, influence
-// bonds_house_stance.dm     - house-to-house standing, accumulated from member incidents
-// bonds_hierarchy.dm        - rank table per faction plus member lookup
-// bonds_roster_panel.dm     - /datum/bonds_roster_panel: your faction by rank plus closest ally
-// bonds_faction_map.dm      - whole inter-faction graph, not a view from one character
-// bonds_faction_panel.dm    - /datum/bonds_faction_panel: faction map, house and clan standing
-// bonds_admin_panel.dm      - admin view/edit of live faction and house standings
-// bonds_tree_panel.dm       - /datum/bonds_tree_panel: radial bond tree with two-sided progress
-// bonds_prefs.dm            - /datum/preferences vars plus savefile load/save/sanitize
-// bonds_round_prefs.dm      - per-ckey round-locked snapshot of the seeding prefs
-// bonds_round_ledger.dm     - per-ckey ledger: granted seeds and already-paired ckeys
-// bonds_seeding.dm          - phase gate, weighted pairing, seed application
-// bonds_family_bridge.dm    - read-through adapter: kinship from SSfamilytree as a bond group
-// bonds_panel.dm            - /datum/bonds_panel tgui backend plus panel data building
-// bonds_prefs_panel.dm      - /datum/bonds_prefs_panel tgui backend for seeding prefs
-// bonds_subsystem_core.dm   - SUBSYSTEM_DEF(bonds): init, logging, prototypes, teardown
-// bonds_graph_api.dm        - SSbonds graph facade: nodes, bonds, record()
-// bonds_listener.dm         - centralized signal hookup, resolves actor/target pairs
-// bonds_mob_procs.dm        - player verbs
-// bonds_unit_tests.dm       - CI unit tests for the bond chains; runs under UNIT_TESTS
-//
-// --- MODEL ---
-// A bond is DIRECTED: it is holder's view of other. The reverse bond is a separate datum,
-// so one-sided relationships are representable without special cases.
-//
-// Each bond carries two axes:
-//   warmth  (-100..100) - cold to warm
-//   weight  (0..100)    - how much this person registers at all
-// A high-weight/low-warmth bond is an enemy; a low-weight bond is nobody, whatever the warmth.
-//
-// Every axis value is the sum of a PERMANENT part and the TRANSIENT parts of currently active
-// events. Events expire on their own timers (no global decay sweep), but each event commits a
-// small permanent residue when it lands, rate-limited per category by BOND_COMMIT_COOLDOWN.
-// One slight fades; repeated slights accumulate.
-//
-// Notes:
-// - Bonds are keyed by /datum/bond_actor: a player actor wraps their mind (so bonds survive
-//   body replacement), a phantom actor wraps a bodiless family_member.
-// - Any new #define here MUST be mirrored by a matching #undef in bonds_module_deinclude.dm.
-// - When adding a file, update this FILE MAP and the #include order below.
+// bonds_core.dm       - the graph itself: /datum/bond_actor identity, /datum/bond_node buckets,
+//                       /datum/social_bond axes and history, /datum/social_bond/kin kinship, graph API
+// bonds_events.dm     - identity gate, event definitions (hostile / friendly / roundstart seeds),
+//                       stage table, recipient dispositions, sanctioned duels, signal listener
+// bonds_factions.dm   - faction taxonomy and index, declared baselines, live stance matrix,
+//                       vampire clans as a second axis, house-to-house standing
+// bonds_context.dm    - everything that scales an incident: template shares and the normalised
+//                       blend, role weight, zone and map lenses, map rosters, storyteller lenses,
+//                       origins and their inherited lore, influence pool, the impact pipeline
+// bonds_round.dm      - SUBSYSTEM_DEF(bonds), rank hierarchy, character prefs and their savefile
+//                       hooks, per-ckey round prefs and ledger, roundstart seeding
+// bonds_panels.dm     - every tgui backend: bonds list, bond tree, faction map and standing,
+//                       faction roster, seeding prefs, admin editor, player verbs, family bridge
+// bonds_unit_tests.dm - CI unit tests for the bond chains; runs under UNIT_TESTS
 
 //#define BONDS_DEBUG_LOGGING //UNDEFINE IT FOR THE LOCAL TESTING
 
@@ -195,53 +142,10 @@
 #define BONDLOG_WARN "WARN"
 #define BONDLOG_ERROR "ERROR"
 
-#include "bonds_actor.dm"
-#include "bonds_identity.dm"
-#include "bonds_history.dm"
-#include "bonds_stage.dm"
-#include "bonds_stages_defs.dm"
-#include "bonds_bond.dm"
-#include "bonds_kin.dm"
-#include "bonds_node.dm"
-#include "bonds_event.dm"
-#include "bonds_events_hostile.dm"
-#include "bonds_events_friendly.dm"
-#include "bonds_events_seed.dm"
-#include "bonds_subsystem_core.dm"
-#include "bonds_graph_api.dm"
-#include "bonds_faction.dm"
-#include "bonds_factions_defs.dm"
-#include "bonds_clans.dm"
-#include "bonds_faction_baselines.dm"
-#include "bonds_clan_baselines.dm"
-#include "bonds_faction_stance.dm"
-#include "bonds_origins.dm"
-#include "bonds_origin_lore.dm"
-#include "bonds_role_weight.dm"
-#include "bonds_weights.dm"
-#include "bonds_map_lens.dm"
-#include "bonds_map_roster.dm"
-#include "bonds_zone_lens.dm"
-#include "bonds_duel.dm"
-#include "bonds_disposition.dm"
-#include "bonds_influence.dm"
-#include "bonds_impact.dm"
-#include "bonds_house_stance.dm"
-#include "bonds_storyteller.dm"
-#include "bonds_storyteller_lenses.dm"
-#include "bonds_prefs.dm"
-#include "bonds_round_prefs.dm"
-#include "bonds_round_ledger.dm"
-#include "bonds_seeding.dm"
-#include "bonds_family_bridge.dm"
-#include "bonds_panel.dm"
-#include "bonds_faction_map.dm"
-#include "bonds_hierarchy.dm"
-#include "bonds_roster_panel.dm"
-#include "bonds_faction_panel.dm"
-#include "bonds_admin_panel.dm"
-#include "bonds_tree_panel.dm"
-#include "bonds_prefs_panel.dm"
-#include "bonds_listener.dm"
-#include "bonds_mob_procs.dm"
+#include "bonds_core.dm"
+#include "bonds_events.dm"
+#include "bonds_factions.dm"
+#include "bonds_context.dm"
+#include "bonds_round.dm"
+#include "bonds_panels.dm"
 #include "bonds_unit_tests.dm"
