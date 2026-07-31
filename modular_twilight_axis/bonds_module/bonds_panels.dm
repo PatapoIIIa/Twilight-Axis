@@ -177,7 +177,7 @@
 
 /mob/living/carbon/human/verb/bonds_tree()
 	set name = "Bonds Tree"
-	set category = "Bonds"
+	set category = "IC.Bonds"
 
 	if(!mind)
 		to_chat(src, span_warning("Вам некого вспоминать."))
@@ -197,6 +197,7 @@
 			"id" = faction.id,
 			"name" = faction.name,
 			"accent" = faction.accent,
+			"icon" = faction.icon_glyph,
 			"own" = (faction.id == own_id),
 		))
 
@@ -286,7 +287,7 @@
 /datum/controller/subsystem/bonds/proc/build_faction_panel(mob/living/carbon/human/person) as /list
 	var/datum/bond_faction/own = faction_for(person)
 	return list(
-		"ownFaction" = own ? list("name" = own.name, "accent" = own.accent) : null,
+		"ownFaction" = own ? list("name" = own.name, "accent" = own.accent, "icon" = own.icon_glyph) : null,
 		"map" = build_faction_map(person),
 		"ownHouse" = person.family_datum?.GetDisplayHouseTitle(),
 		"houses" = build_house_panel(person),
@@ -314,7 +315,7 @@
 
 /mob/living/carbon/human/verb/bonds_factions()
 	set name = "Faction Standing"
-	set category = "Bonds"
+	set category = "IC.Bonds"
 
 	if(!SSbonds.faction_for(src) && !family_datum && !SSbonds.clan_faction_for(src))
 		to_chat(src, span_notice("Вы не представляете никого, кроме себя."))
@@ -402,6 +403,7 @@
 		"id" = faction.id,
 		"name" = faction.name,
 		"accent" = faction.accent,
+		"icon" = faction.icon_glyph,
 		"ranks" = ranks,
 		"total" = length(members),
 	)
@@ -419,7 +421,7 @@
 
 /mob/living/carbon/human/verb/bonds_roster()
 	set name = "Faction Roster"
-	set category = "Bonds"
+	set category = "IC.Bonds"
 
 	if(!SSbonds.faction_for(src))
 		to_chat(src, span_notice("Вы никому не подчиняетесь и никем не командуете."))
@@ -642,7 +644,7 @@
 
 /mob/living/carbon/human/verb/my_bonds()
 	set name = "My Bonds"
-	set category = "Bonds"
+	set category = "IC.Bonds"
 
 	if(!mind)
 		to_chat(src, span_warning("Вам некого вспоминать."))
@@ -651,7 +653,7 @@
 
 /mob/living/carbon/human/verb/bonds_settings()
 	set name = "Bond Settings"
-	set category = "Bonds"
+	set category = "IC.Bonds"
 
 	if(!client?.prefs)
 		return

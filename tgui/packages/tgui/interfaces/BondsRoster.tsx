@@ -1,4 +1,4 @@
-import { Box, NoticeBox, Section, Stack } from 'tgui-core/components';
+import { Box, Icon, NoticeBox, Section, Stack } from 'tgui-core/components';
 
 import { useBackend } from '../backend';
 import { Window } from '../layouts';
@@ -19,6 +19,7 @@ type Block = {
   id: string;
   name: string;
   accent: string;
+  icon: string;
   ranks: Rank[];
   total: number;
 };
@@ -36,6 +37,7 @@ function RosterBlock(props: { block: Block; subtitle?: string }) {
     <Section
       title={
         <Box inline color={block.accent} bold>
+          <Icon name={block.icon} mr={1} />
           {block.name}
         </Box>
       }

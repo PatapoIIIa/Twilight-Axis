@@ -4,6 +4,7 @@
 	var/name = ""
 	var/accent = "#8a8a8a"
 	var/positions_key = ""
+	var/icon_glyph = "users"
 	var/list/extra_positions
 
 /datum/bond_faction/proc/titles() as /list
@@ -58,84 +59,98 @@
 /datum/bond_faction/noble
 	id = BOND_FACTION_NOBLE
 	name = "Правящий дом"
+	icon_glyph = "crown"
 	accent = "#b08d3f"
 	positions_key = "noble_positions"
 
 /datum/bond_faction/court
 	id = BOND_FACTION_COURT
 	name = "Двор"
+	icon_glyph = "scroll"
 	accent = "#9a7fb0"
 	positions_key = "courtier_positions"
 
 /datum/bond_faction/retinue
 	id = BOND_FACTION_RETINUE
 	name = "Свита"
+	icon_glyph = "chess-knight"
 	accent = "#8a95b8"
 	positions_key = "retinue_positions"
 
 /datum/bond_faction/garrison
 	id = BOND_FACTION_GARRISON
 	name = "Гарнизон"
+	icon_glyph = "shield-halved"
 	accent = "#6f8fb0"
 	positions_key = "garrison_positions"
 
 /datum/bond_faction/citywatch
 	id = BOND_FACTION_CITYWATCH
 	name = "Городская стража"
+	icon_glyph = "tower-observation"
 	accent = "#5f7f9f"
 	positions_key = "citywatch_positions"
 
 /datum/bond_faction/vanguard
 	id = BOND_FACTION_VANGUARD
 	name = "Авангард"
+	icon_glyph = "flag"
 	accent = "#7a8f7a"
 	positions_key = "vanguard_positions"
 
 /datum/bond_faction/church
 	id = BOND_FACTION_CHURCH
 	name = "Церковь Десяти"
+	icon_glyph = "place-of-worship"
 	accent = "#c8b070"
 	positions_key = "church_positions"
 
 /datum/bond_faction/inquisition
 	id = BOND_FACTION_INQUISITION
 	name = "Инквизиция"
+	icon_glyph = "gavel"
 	accent = "#a05050"
 	positions_key = "inquisition_positions"
 
 /datum/bond_faction/burgher
 	id = BOND_FACTION_BURGHER
 	name = "Ремесленная Гильдия Азурии"
+	icon_glyph = "hammer"
 	accent = "#7fa06f"
 	positions_key = "burgher_positions"
 
 /datum/bond_faction/atc
 	id = BOND_FACTION_ATC
 	name = "Торговая Гильдия Астинии"
+	icon_glyph = "coins"
 	accent = "#6fa090"
 	positions_key = "atc_positions"
 
 /datum/bond_faction/peasant
 	id = BOND_FACTION_PEASANT
 	name = "Простолюдины"
+	icon_glyph = "wheat-awn"
 	accent = "#9a8f7a"
 	positions_key = "peasant_positions"
 
 /datum/bond_faction/sidefolk
 	id = BOND_FACTION_SIDEFOLK
 	name = "Вольные люди"
+	icon_glyph = "user-group"
 	accent = "#8f8f8f"
 	positions_key = "sidefolk_positions"
 
 /datum/bond_faction/wanderer
 	id = BOND_FACTION_WANDERER
 	name = "Странники"
+	icon_glyph = "route"
 	accent = "#8a7f6f"
 	positions_key = "wanderer_positions"
 
 /datum/bond_faction/outlaw
 	id = BOND_FACTION_OUTLAW
 	name = "Вне закона"
+	icon_glyph = "skull"
 	accent = "#8c3f3f"
 	positions_key = "antagonist_positions"
 
@@ -354,36 +369,42 @@
 /datum/bond_faction/clan/caitiff
 	id = BOND_CLAN_CAITIFF
 	name = "Каитифы"
+	icon_glyph = "user-slash"
 	accent = "#6e6e6e"
 	clan_type = /datum/clan
 
 /datum/bond_faction/clan/abyss
 	id = BOND_CLAN_ABYSS
 	name = "Бездна"
+	icon_glyph = "water"
 	accent = "#4a3f6b"
 	clan_type = /datum/clan/abyss
 
 /datum/bond_faction/clan/crimson_fang
 	id = BOND_CLAN_CRIMSON
 	name = "Багряный клык"
+	icon_glyph = "droplet"
 	accent = "#8c2f3f"
 	clan_type = /datum/clan/crimson_fang
 
 /datum/bond_faction/clan/eoran
 	id = BOND_CLAN_EORAN
 	name = "Эоране"
+	icon_glyph = "heart"
 	accent = "#b07f9a"
 	clan_type = /datum/clan/eoran
 
 /datum/bond_faction/clan/nosferatu
 	id = BOND_CLAN_NOSFERATU
 	name = "Носферату"
+	icon_glyph = "mask"
 	accent = "#5f6b4a"
 	clan_type = /datum/clan/nosferatu
 
 /datum/bond_faction/clan/thronleer
 	id = BOND_CLAN_THRONLEER
 	name = "Тронлиры"
+	icon_glyph = "chess-rook"
 	accent = "#8a7f4a"
 	clan_type = /datum/clan/thronleer
 

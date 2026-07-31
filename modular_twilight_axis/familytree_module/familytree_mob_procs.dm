@@ -187,7 +187,7 @@
 
 /mob/living/carbon/human/verb/known_families()
 	set name = "Known Families"
-	set category = "IC"
+	set category = "IC.Bonds"
 
 	if(!mind)
 		to_chat(src, span_warning("Я не знаю ни одной семьи."))
@@ -330,19 +330,19 @@
 
 /mob/living/carbon/human/verb/my_family()
 	set name = "My Family"
-	set category = "IC.Family"
+	set category = "IC.Bonds"
 
 	bonds_open_panel()
 
 /mob/living/carbon/human/verb/ReturnFamilyList()
 	set name = "Family Tree"
-	set category = "IC.Family"
+	set category = "IC.Bonds"
 
 	familytree_open_family_panel("Family Tree")
 
 /mob/living/carbon/human/verb/ToggleFamilyUI()
 	set name = "Family UI"
-	set category = "IC.Family"
+	set category = "IC.Bonds"
 	ShowFamilyUI(FALSE)
 
 /mob/living/carbon/human/proc/ShowFamilyUI(silent)

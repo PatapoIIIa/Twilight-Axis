@@ -1,5 +1,13 @@
 import { useState } from 'react';
-import { Box, Button, Dropdown, NoticeBox, Section, Stack } from 'tgui-core/components';
+import {
+  Box,
+  Button,
+  Dropdown,
+  Icon,
+  NoticeBox,
+  Section,
+  Stack,
+} from 'tgui-core/components';
 
 import { useBackend } from '../backend';
 import { Window } from '../layouts';
@@ -7,6 +15,7 @@ import { Window } from '../layouts';
 type FactionInfo = {
   name: string;
   accent: string;
+  icon: string;
 };
 
 type MapNode = {
@@ -37,6 +46,7 @@ type HouseEntry = {
 type StanceEntry = {
   name: string;
   accent: string;
+  icon: string;
   label: string;
   labelAccent: string;
   intensity: string;
@@ -109,98 +119,6 @@ export const BondsFactions = () => {
                   Между фракциями пока ничего не произошло.
                 </Box>
               )}
-              <svg
-                viewBox={`0 0 ${SIZE} ${SIZE}`}
-                style={{ width: '100%', height: 'auto' }}
-              >
-                {edges.map((edge, index) => {
-                  const from = placed[edge.a];
-                  const to = placed[edge.b];
-                  if (!from || !to) return null;
-                  const key = edgeKey(edge);
-                  const declared = !!edge.declared;
-                  if (!declared && !showNeutral) return null;
-                  const highlighted = isHighlighted(edge);
-                  const faded = hidden[key];
-                  const midX = (from.x + to.x) / 2;
-                  const midY = (from.y + to.y) / 2;
-                  const thickness = highlighted
-                    ? 5
-                    : 1 + Math.min(6, edge.weight / 15);
-                  const opacity = faded ? 0.07 : highlighted ? 1 : declared ? 0.65 : 0.18;
-                  return (
-                    <g
-                      key={index}
-                      onClick={() =>
-                        setHidden({ ...hidden, [key]: !hidden[key] })
-                      }
-                      style={{ cursor: 'pointer' }}
-                    >
-                      {!!highlighted && (
-                        <line
-                          x1={from.x}
-                          y1={from.y}
-                          x2={to.x}
-                          y2={to.y}
-                          stroke="#ffffff"
-                          strokeWidth={thickness + 4}
-                          opacity={0.25}
-                        />
-                      )}
-                      <line
-                        x1={from.x}
-                        y1={from.y}
-                        x2={to.x}
-                        y2={to.y}
-                        stroke={edge.accent}
-                        strokeWidth={thickness}
-                        opacity={opacity}
-                      />
-                      {!faded && (declared || highlighted) && (
-                        <text
-                          x={midX}
-                          y={midY - 3}
-                          textAnchor="middle"
-                          fill={edge.accent}
-                          fontSize={highlighted ? '12' : '10'}
-                          fontWeight={highlighted ? 'bold' : 'normal'}
-                          opacity={opacity}
-                          style={{ pointerEvents: 'none' }}
-                        >
-                          {edge.label}
-                        </text>
-                      )}
-                    </g>
-                  );
-                })}
-                {nodes.map((node) => {
-                  const spot = placed[node.id];
-                  if (!spot) return null;
-                  return (
-                    <g key={node.id}>
-                      <circle
-                        cx={spot.x}
-                        cy={spot.y}
-                        r={NODE_R}
-                        fill={node.own ? '#2a2418' : '#1b1b1b'}
-                        stroke={node.accent}
-                        strokeWidth={node.own ? 3 : 2}
-                      />
-                      <text
-                        x={spot.x}
-                        y={spot.y + 3}
-                        textAnchor="middle"
-                        fill="#e8e8e8"
-                        fontSize="9"
-                      >
-                        {node.name.length > 13
-                          ? `${node.name.slice(0, 12)}…`
-                          : node.name}
-                      </text>
-                    </g>
-                  );
-                })}
-              </svg>
               <Stack mt={1} align="center" wrap>
                 <Stack.Item>
                   <Dropdown
@@ -248,10 +166,115 @@ export const BondsFactions = () => {
               <Box mt={0.5} opacity={0.5}>
                 Клик по линии убирает её с карты.
               </Box>
+              <svg
+                viewBox={`0 0 ${SIZE} ${SIZE}`}
+                style={{ width: '100%', height: 'auto' }}
+              >
+                {edges.map((edge, index) => {
+                  const from = placed[edge.a];
+                  const to = placed[edge.b];
+                  if (!from || !to) return null;
+                  const key = edgeKey(edge);
+                  const declared = !!edge.declared;
+                  if (!declared && !showNeutral) return null;
+                  const highlighted = isHighlighted(edge);
+                  const faded = hidden[key];
+                  const meaningful = declared && Math.abs(edge.warmth) >= 5;
+                  const midX = (from.x + to.x) / 2;
+                  const midY = (from.y + to.y) / 2;
+                  const thickness = highlighted
+                    ? 5
+                    : 1 + Math.min(6, edge.weight / 15);
+                  const opacity = faded ? 0.04 : highlighted ? 1 : meaningful ? 0.7 : 0.14;
+                  return (
+                    <g
+                      key={index}
+                      onClick={() =>
+                        setHidden({ ...hidden, [key]: !hidden[key] })
+                      }
+                      style={{ cursor: 'pointer' }}
+                    >
+                      {!!highlighted && (
+                        <>
+                          <line
+                            x1={from.x}
+                            y1={from.y}
+                            x2={to.x}
+                            y2={to.y}
+                            stroke="#ffffff"
+                            strokeWidth={thickness + 6}
+                            opacity={0.2}
+                          />
+                          <line
+                            x1={midX - 34}
+                            y1={midY + 4}
+                            x2={midX + 34}
+                            y2={midY + 4}
+                            stroke={edge.accent}
+                            strokeWidth={2}
+                          />
+                        </>
+                      )}
+                      <line
+                        x1={from.x}
+                        y1={from.y}
+                        x2={to.x}
+                        y2={to.y}
+                        stroke={edge.accent}
+                        strokeWidth={thickness}
+                        opacity={opacity}
+                      />
+                      {!faded && (meaningful || highlighted) && (
+                        <text
+                          x={midX}
+                          y={midY - 3}
+                          textAnchor="middle"
+                          fill={edge.accent}
+                          fontSize={highlighted ? '12' : '10'}
+                          fontWeight={highlighted ? 'bold' : 'normal'}
+                          opacity={opacity}
+                          style={{ pointerEvents: 'none' }}
+                        >
+                          {edge.label}
+                        </text>
+                      )}
+                    </g>
+                  );
+                })}
+                {nodes.map((node) => {
+                  const spot = placed[node.id];
+                  if (!spot) return null;
+                  return (
+                    <g key={node.id}>
+                      <circle
+                        cx={spot.x}
+                        cy={spot.y}
+                        r={NODE_R}
+                        fill={node.own ? '#2a2418' : '#1b1b1b'}
+                        stroke={node.accent}
+                        strokeWidth={node.own ? 3 : 2}
+                      />
+                      <text
+                        x={spot.x}
+                        y={spot.y + 3}
+                        textAnchor="middle"
+                        fill="#e8e8e8"
+                        fontSize="9"
+                      >
+                        {node.name.length > 13
+                          ? `${node.name.slice(0, 12)}…`
+                          : node.name}
+                      </text>
+                    </g>
+                  );
+                })}
+              </svg>
+
               {!!ownFaction && (
                 <Box mt={1} opacity={0.7}>
                   Обведена ваша фракция:{' '}
                   <Box inline bold color={ownFaction.accent}>
+                    <Icon name={ownFaction.icon} mr={1} />
                     {ownFaction.name}
                   </Box>
                 </Box>
@@ -266,6 +289,7 @@ export const BondsFactions = () => {
                   {clans.map((clan, index) => (
                     <Stack.Item key={`c${index}`}>
                       <Box inline bold color={clan.accent}>
+                        <Icon name={clan.icon} mr={1} />
                         {clan.name}
                       </Box>
                       <Box inline ml={1} bold color={clan.labelAccent}>
