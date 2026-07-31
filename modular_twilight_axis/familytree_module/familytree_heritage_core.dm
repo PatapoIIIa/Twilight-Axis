@@ -220,8 +220,7 @@
 			person.family_member_datum = null
 		person.spouse_mob = null
 
-	member.phantom_parent_members.Cut()
-	member.phantom_child_members.Cut()
+	SSbonds.drop_actor(SSbonds.resolve_actor(member))
 	if(person)
 		SSfamilytree.graph_on_member_removed(person, src)
 	member.person = null

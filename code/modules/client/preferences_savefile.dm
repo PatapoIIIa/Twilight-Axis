@@ -947,6 +947,7 @@ SAVEFILE UPDATING/VERSIONING - 'Simplified', or rather, more coder-friendly ~Car
 
 	// TA EDIT START - load familytree settings from the active character slot.
 	familytree_module_load_character_from_savefile(S, slot, TRUE)
+	bonds_module_load_character_from_savefile(S, slot, TRUE)
 	// TA EDIT END
 	
 	return TRUE
@@ -1168,6 +1169,7 @@ SAVEFILE UPDATING/VERSIONING - 'Simplified', or rather, more coder-friendly ~Car
 
 	// TA EDIT START - save familytree settings with the active character slot.
 	familytree_module_save_character_to_savefile(S, default_slot)
+	bonds_module_save_character_to_savefile(S, default_slot)
 	// TA EDIT END
 
 	if(loaded_job_slots["[default_slot]"]) //TA EDIT

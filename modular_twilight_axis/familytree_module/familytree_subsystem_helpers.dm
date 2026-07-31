@@ -769,12 +769,16 @@ GLOBAL_LIST_INIT(familytree_title_prefixes, list(
 		if(!node.person)
 			continue
 
-		for(var/datum/family_node/child_node as anything in node.get_child_nodes())
-			if(child_node.person && !CanBeParentOf(person, child_node.person))
+		var/datum/family_member/member = node.person.family_member_datum
+		if(!member)
+			continue
+
+		for(var/datum/family_member/child as anything in member.get_child_members())
+			if(child.person && !CanBeParentOf(person, child.person))
 				return TRUE
 
-		for(var/datum/family_node/parent_node as anything in node.get_parent_nodes())
-			if(parent_node.person && !CanBeParentOf(parent_node.person, person))
+		for(var/datum/family_member/parent as anything in member.get_parent_members())
+			if(parent.person && !CanBeParentOf(parent.person, person))
 				return TRUE
 
 	return FALSE

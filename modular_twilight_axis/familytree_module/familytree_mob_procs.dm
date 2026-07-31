@@ -332,13 +332,13 @@
 	set name = "My Family"
 	set category = "IC.Family"
 
-	familytree_open_family_panel("My Family")
+	bonds_open_panel()
 
 /mob/living/carbon/human/verb/ReturnFamilyList()
-	set name = "List Family"
+	set name = "Family Tree"
 	set category = "IC.Family"
 
-	familytree_open_family_panel("List Family")
+	familytree_open_family_panel("Family Tree")
 
 /mob/living/carbon/human/verb/ToggleFamilyUI()
 	set name = "Family UI"
