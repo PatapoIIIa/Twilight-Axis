@@ -31,7 +31,7 @@
 /datum/bond_actor/proc/is_phantom()
 	return !isnull(phantom_member)
 
-/datum/controller/subsystem/bonds/proc/actor_for_mind(datum/mind/subject)
+/datum/controller/subsystem/bonds/proc/actor_for_mind(datum/mind/subject) as /datum/bond_actor
 	if(!subject)
 		return null
 	var/datum/bond_actor/actor = actors_by_mind[subject]
@@ -43,7 +43,7 @@
 	actors_by_mind[subject] = actor
 	return actor
 
-/datum/controller/subsystem/bonds/proc/actor_for_phantom(datum/family_member/member)
+/datum/controller/subsystem/bonds/proc/actor_for_phantom(datum/family_member/member) as /datum/bond_actor
 	if(!member)
 		return null
 	var/datum/bond_actor/actor = actors_by_phantom[member]
@@ -55,7 +55,7 @@
 	actors_by_phantom[member] = actor
 	return actor
 
-/datum/controller/subsystem/bonds/proc/resolve_actor(thing)
+/datum/controller/subsystem/bonds/proc/resolve_actor(thing) as /datum/bond_actor
 	if(!thing)
 		return null
 	if(istype(thing, /datum/bond_actor))
@@ -77,10 +77,21 @@
 /datum/controller/subsystem/bonds/proc/drop_actor(datum/bond_actor/actor)
 	if(!actor)
 		return FALSE
+	var/datum/bond_node/node = nodes[actor]
+	if(node)
+		for(var/datum/social_bond/kin/link as anything in node.kin.Copy())
+			var/datum/bond_node/other_node = nodes[link.other]
+			if(other_node)
+				other_node.remove_kin_to(actor, null)
+		for(var/datum/bond_actor/target as anything in node.bonds)
+			var/datum/bond_node/other_node = nodes[target]
+			if(other_node)
+				other_node.remove_bond(actor)
 	if(actor.mind)
 		actors_by_mind -= actor.mind
 	if(actor.phantom_member)
 		actors_by_phantom -= actor.phantom_member
+	influence_pools -= actor
 	drop_node(actor)
 	qdel(actor)
 	return TRUE
@@ -103,7 +114,7 @@
 	owner = null
 	return ..()
 
-/datum/bond_node/proc/get_bond(datum/bond_actor/target)
+/datum/bond_node/proc/get_bond(datum/bond_actor/target) as /datum/social_bond
 	if(!target || !bonds)
 		return null
 	return bonds[target]
@@ -123,7 +134,7 @@
 	qdel(bond)
 	return TRUE
 
-/datum/bond_node/proc/add_kin(datum/social_bond/kin/link)
+/datum/bond_node/proc/add_kin(datum/social_bond/kin/link) as /datum/social_bond/kin
 	if(!link?.other)
 		return null
 	kin += link
@@ -240,7 +251,7 @@
 /datum/social_bond/proc/stage_group()
 	return stage?.category || BOND_GROUP_KNOWN
 
-/datum/social_bond/proc/next_stage()
+/datum/social_bond/proc/next_stage() as /datum/bond_stage
 	var/current_priority = stage ? stage.priority : 0
 	var/datum/bond_stage/best
 	for(var/datum/bond_stage/candidate as anything in SSbonds.stage_prototypes)
@@ -307,7 +318,7 @@
 	commit_counts[prototype.category] = (commit_counts[prototype.category] || 0) + 1
 	return scale
 
-/datum/social_bond/proc/add_history(datum/bond_event/prototype, scale = 0)
+/datum/social_bond/proc/add_history(datum/bond_event/prototype, scale = 0) as /datum/bond_history
 	var/datum/bond_history/entry = new()
 	entry.label = prototype.history_label
 	entry.story = prototype.build_story(src)
@@ -334,7 +345,7 @@
 		history -= oldest
 		qdel(oldest)
 
-/datum/social_bond/proc/attach_event(event_type, applied_scale = 1)
+/datum/social_bond/proc/attach_event(event_type, applied_scale = 1) as /datum/bond_event
 	if(!scored || !applied_scale)
 		return null
 	var/datum/bond_event/prototype = SSbonds.get_event_prototype(event_type)
@@ -398,7 +409,7 @@
 /proc/bonds_kin_is_parental(kind)
 	return (kind == BOND_KIN_PARENT) || (kind == BOND_KIN_CHILD)
 
-/datum/controller/subsystem/bonds/proc/find_kin(subject, object, kind)
+/datum/controller/subsystem/bonds/proc/find_kin(subject, object, kind) as /datum/social_bond/kin
 	var/datum/bond_node/node = get_node(subject)
 	var/datum/bond_actor/target = resolve_actor(object)
 	if(!node || !target)
@@ -434,7 +445,7 @@
 		out += link
 	return out
 
-/datum/controller/subsystem/bonds/proc/add_kin_link(subject, object, kind, adopted = FALSE, datum/heritage/house)
+/datum/controller/subsystem/bonds/proc/add_kin_link(subject, object, kind, adopted = FALSE, datum/heritage/house) as /datum/social_bond/kin
 	var/datum/bond_actor/subject_actor = resolve_actor(subject)
 	var/datum/bond_actor/object_actor = resolve_actor(object)
 	if(!subject_actor || !object_actor || subject_actor == object_actor)
@@ -455,7 +466,7 @@
 	node.add_kin(link)
 	return link
 
-/datum/controller/subsystem/bonds/proc/add_kin(subject, object, kind, adopted = FALSE, datum/heritage/house)
+/datum/controller/subsystem/bonds/proc/add_kin(subject, object, kind, adopted = FALSE, datum/heritage/house) as /datum/social_bond/kin
 	if(!resolve_actor(subject) || !resolve_actor(object) || resolve_actor(subject) == resolve_actor(object))
 		return null
 	var/datum/social_bond/kin/forward = add_kin_link(subject, object, kind, adopted, house)
@@ -545,13 +556,13 @@
 		return TRUE
 	return kin_reaches(parent_actor, child_actor, BOND_KIN_PARENT)
 
-/datum/controller/subsystem/bonds/proc/get_node(participant)
+/datum/controller/subsystem/bonds/proc/get_node(participant) as /datum/bond_node
 	var/datum/bond_actor/actor = resolve_actor(participant)
 	if(!actor)
 		return null
 	return nodes[actor]
 
-/datum/controller/subsystem/bonds/proc/get_or_create_node(participant)
+/datum/controller/subsystem/bonds/proc/get_or_create_node(participant) as /datum/bond_node
 	var/datum/bond_actor/actor = resolve_actor(participant)
 	if(!actor)
 		return null
@@ -571,13 +582,13 @@
 	qdel(node)
 	return TRUE
 
-/datum/controller/subsystem/bonds/proc/get_bond(subject, object)
+/datum/controller/subsystem/bonds/proc/get_bond(subject, object) as /datum/social_bond
 	var/datum/bond_node/node = get_node(subject)
 	if(!node)
 		return null
 	return node.get_bond(resolve_actor(object))
 
-/datum/controller/subsystem/bonds/proc/get_or_create_bond(subject, object)
+/datum/controller/subsystem/bonds/proc/get_or_create_bond(subject, object) as /datum/social_bond
 	var/datum/bond_actor/subject_actor = resolve_actor(subject)
 	var/datum/bond_actor/object_actor = resolve_actor(object)
 	if(!subject_actor || !object_actor || subject_actor == object_actor)
@@ -591,7 +602,7 @@
 	bond = new(subject_actor, object_actor)
 	return node.add_bond(bond)
 
-/datum/controller/subsystem/bonds/proc/record(subject, object, event_type, mob/living/carbon/human/object_mob, force = FALSE, applied_scale = 1)
+/datum/controller/subsystem/bonds/proc/record(subject, object, event_type, mob/living/carbon/human/object_mob, force = FALSE, applied_scale = 1) as /datum/bond_event
 	var/datum/bond_actor/subject_actor = resolve_actor(subject)
 	var/datum/bond_actor/object_actor = resolve_actor(object)
 	if(!subject_actor || !object_actor || subject_actor == object_actor)

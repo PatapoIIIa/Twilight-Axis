@@ -521,11 +521,13 @@ GLOBAL_LIST_INIT(familytree_title_prefixes, list(
 		else
 			return 1
 
-/datum/controller/subsystem/familytree/proc/CanBeParentOf(mob/living/carbon/human/parent, mob/living/carbon/human/child)
+/datum/controller/subsystem/familytree/proc/CanBeParentOf(mob/living/carbon/human/parent, mob/living/carbon/human/child, adoptive = FALSE)
 	if(!parent || !child)
 		return FALSE
 	var/parent_age = parent.age
 	var/child_age = child.age
+	if(adoptive)
+		return TRUE
 	if(parent_age == AGE_ADULT)
 		return FALSE
 	if(parent_age == AGE_MIDDLEAGED && child_age == AGE_ADULT)
@@ -533,6 +535,14 @@ GLOBAL_LIST_INIT(familytree_title_prefixes, list(
 	if(parent_age == AGE_OLD && child_age != AGE_OLD)
 		return TRUE
 	return FALSE
+
+/datum/controller/subsystem/familytree/proc/CanBeAdoptiveParentOf(mob/living/carbon/human/parent, mob/living/carbon/human/child)
+	return CanBeParentOf(parent, child, TRUE)
+
+/datum/controller/subsystem/familytree/proc/parenthood_must_be_adoptive(mob/living/carbon/human/parent, mob/living/carbon/human/child)
+	if(!CanBeParentOf(parent, child, TRUE))
+		return FALSE
+	return !CanBeParentOf(parent, child, FALSE)
 
 /datum/controller/subsystem/familytree/proc/familytree_single_parent_species_compatible(mob/living/carbon/human/child, mob/living/carbon/human/parent, datum/heritage/house = null)
 	if(!child || !parent)
@@ -793,11 +803,11 @@ GLOBAL_LIST_INIT(familytree_title_prefixes, list(
 		var/mob/living/carbon/human/other = node.person
 		if(!other)
 			continue
-		if(!can_be_child && CanBeParentOf(other, person) && (adopted || familytree_biological_parent_allowed(other, person, house)))
+		if(!can_be_child && CanBeParentOf(other, person, adopted) && (adopted || familytree_biological_parent_allowed(other, person, house)))
 			can_be_child = TRUE
 		if(!can_be_sibling && CanBeSiblings(other.age, person.age))
 			can_be_sibling = TRUE
-		if(!can_be_parent && CanBeParentOf(person, other) && (adopted || familytree_biological_parent_allowed(person, other, house)))
+		if(!can_be_parent && CanBeParentOf(person, other, adopted) && (adopted || familytree_biological_parent_allowed(person, other, house)))
 			can_be_parent = TRUE
 		if(can_be_child && can_be_sibling && can_be_parent)
 			break

@@ -504,30 +504,25 @@
 		return FALSE
 
 	switch(action)
-		if("set_seed_count")
-			var/value = params["value"]
-			if(!isnum(value))
-				return FALSE
-			P.bonds_seed_count = clamp(round(value), 0, BOND_MAX_SEEDS)
-			P.bonds_module_sanitize_character()
-			return TRUE
-
-		if("toggle_bond_flavor")
-			var/flavor_key = params["key"]
-			if(!istext(flavor_key) || !(flavor_key in SSbonds.valid_seed_flavors()))
-				return FALSE
-			if(flavor_key in P.bonds_seed_flavors)
-				P.bonds_seed_flavors -= flavor_key
-			else
-				P.bonds_seed_flavors += flavor_key
-			return TRUE
-
 		if("save")
 			var/old_setspouse = null
 			var/mob/living/carbon/human/H = null
 			if(ishuman(user))
 				H = user
 				old_setspouse = SSfamilytree.familytree_get_target_name(H)
+
+			var/seed_count = params["seedCount"]
+			if(isnum(seed_count))
+				P.bonds_seed_count = clamp(round(seed_count), 0, BOND_MAX_SEEDS)
+			var/list/seed_flavors = params["seedFlavors"]
+			if(islist(seed_flavors))
+				var/list/valid = SSbonds.valid_seed_flavors()
+				var/list/accepted = list()
+				for(var/flavor_key in seed_flavors)
+					if(istext(flavor_key) && (flavor_key in valid))
+						accepted += flavor_key
+				P.bonds_seed_flavors = accepted
+			P.bonds_module_sanitize_character()
 
 			var/new_family = _ui_to_family(params["familyType"])
 

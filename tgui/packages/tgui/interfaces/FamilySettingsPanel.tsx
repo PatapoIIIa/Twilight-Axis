@@ -492,6 +492,14 @@ export const FamilySettingsPanel = () => {
   const [familyType, setFamilyType] = useState<FamilyType>(
     () => settings?.familyType ?? 'none',
   );
+  const [seedCount, setSeedCount] = useState<number>(
+    () => bondSettings.seedCount ?? 0,
+  );
+  const [seedFlavors, setSeedFlavors] = useState<string[]>(() =>
+    (bondSettings.flavors || [])
+      .filter((flavor) => !!flavor.enabled)
+      .map((flavor) => flavor.key),
+  );
   const [speciesPreferenceMode, setSpeciesPreferenceMode] = useState<SpeciesMode>(
     () => settings?.speciesPreferenceMode ?? 'ANY',
   );
@@ -726,12 +734,14 @@ export const FamilySettingsPanel = () => {
       motherSpecies,
       randomSiblings,
       randomChildren,
+      seedCount,
+      seedFlavors: [...seedFlavors],
     });
   };
 
   return (
     <Window
-      title="Настройки семьи"
+      title="Настройки связей"
       width={FAMILY_WINDOW_FULLSCREEN_SIZE}
       height={FAMILY_WINDOW_FULLSCREEN_SIZE}
     >
@@ -743,9 +753,9 @@ export const FamilySettingsPanel = () => {
                 <Icon name="house-chimney-user" />
               </div>
               <div className="FamilySettingsPanel__header-titles">
-                <h2 className="FamilySettingsPanel__title">Настройки семьи</h2>
+                <h2 className="FamilySettingsPanel__title">Настройки связей</h2>
                 <div className="FamilySettingsPanel__subtitle">
-                  Выберите тип семьи и настройки предпочтений
+                  Семья, родня и знакомства вашего персонажа
                 </div>
               </div>
             </div>
@@ -1117,47 +1127,71 @@ export const FamilySettingsPanel = () => {
                       вступят в силу со следующего раунда.
                     </div>
                   )}
-                  <div className="FamilySettingsPanel__field-label">
-                    Сколько знакомств на старте
+                  <div className="FamilySettingsPanel__field">
+                    <div className="FamilySettingsPanel__field-label">
+                      Сколько знакомств на старте
+                    </div>
+                    <div className="FamilySettingsPanel__cards">
+                      {Array.from(
+                        { length: (bondSettings.maxSeeds ?? 3) + 1 },
+                        (_, value) => (
+                          <button
+                            key={value}
+                            type="button"
+                            className={
+                              'FamilySettingsPanel__card' +
+                              (seedCount === value
+                                ? ' FamilySettingsPanel__card--active'
+                                : '')
+                            }
+                            onClick={() => setSeedCount(value)}>
+                            <span className="FamilySettingsPanel__card-title">
+                              {value}
+                            </span>
+                          </button>
+                        ),
+                      )}
+                    </div>
+                    <div className="FamilySettingsPanel__hint">
+                      Система подберёт столько уже знакомых людей, отдавая
+                      предпочтение близким по роду занятий.
+                    </div>
                   </div>
-                  <div className="FamilySettingsPanel__row">
-                    {Array.from(
-                      { length: (bondSettings.maxSeeds || 3) + 1 },
-                      (_, value) => (
-                        <button
-                          key={value}
-                          type="button"
-                          className={
-                            'FamilySettingsPanel__tab' +
-                            (bondSettings.seedCount === value
-                              ? ' FamilySettingsPanel__tab--active'
-                              : '')
-                          }
-                          onClick={() => act('set_seed_count', { value })}>
-                          {value}
-                        </button>
-                      ),
+                  <div className="FamilySettingsPanel__field">
+                    <div className="FamilySettingsPanel__field-label">
+                      Какие истории вам подходят
+                    </div>
+                    <div className="FamilySettingsPanel__cards">
+                      {(bondSettings.flavors || []).map((flavor) => {
+                        const on = seedFlavors.includes(flavor.key);
+                        return (
+                          <button
+                            key={flavor.key}
+                            type="button"
+                            className={
+                              'FamilySettingsPanel__card' +
+                              (on ? ' FamilySettingsPanel__card--active' : '')
+                            }
+                            onClick={() =>
+                              setSeedFlavors(
+                                on
+                                  ? seedFlavors.filter((k) => k !== flavor.key)
+                                  : [...seedFlavors, flavor.key],
+                              )
+                            }>
+                            <span className="FamilySettingsPanel__card-title">
+                              {flavor.label}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {!seedFlavors.length && (
+                      <div className="FamilySettingsPanel__hint">
+                        Ничего не выбрано — подойдёт любая история.
+                      </div>
                     )}
                   </div>
-                  <div className="FamilySettingsPanel__field-label">
-                    Какие истории вам подходят
-                  </div>
-                  {(bondSettings.flavors || []).map((flavor) => (
-                    <button
-                      key={flavor.key}
-                      type="button"
-                      className={
-                        'FamilySettingsPanel__tab' +
-                        (flavor.enabled
-                          ? ' FamilySettingsPanel__tab--active'
-                          : '')
-                      }
-                      onClick={() =>
-                        act('toggle_bond_flavor', { key: flavor.key })
-                      }>
-                      {flavor.label}
-                    </button>
-                  ))}
                 </div>
               )}
             </div>

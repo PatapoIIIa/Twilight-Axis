@@ -37,6 +37,22 @@
 	ft_test_houses = null
 	return ..()
 
+/datum/unit_test/familytree/adults_may_only_adopt/Run()
+	var/mob/living/carbon/human/older = ft_spawn_player()
+	var/mob/living/carbon/human/younger = ft_spawn_player()
+	FT_ASSERT_NOTNULL(older, "spawn failed")
+	FT_ASSERT_NOTNULL(younger, "spawn failed")
+
+	older.age = AGE_ADULT
+	younger.age = AGE_ADULT
+	FT_ASSERT(!SSfamilytree.CanBeParentOf(older, younger), "an adult must not become a blood parent")
+	FT_ASSERT(SSfamilytree.CanBeParentOf(older, younger, TRUE), "but an adult may still adopt")
+	FT_ASSERT(SSfamilytree.parenthood_must_be_adoptive(older, younger), "so that pairing is adoption-only")
+
+	older.age = AGE_OLD
+	FT_ASSERT(SSfamilytree.CanBeParentOf(older, younger), "an elder may still be a blood parent")
+	FT_ASSERT(!SSfamilytree.parenthood_must_be_adoptive(older, younger), "and is not forced into adoption")
+
 /datum/unit_test/familytree/pref_masks/Run()
 	FT_ASSERT_EQUAL(familytree_pref_mask(FAMILY_NONE), FAMILYTREE_MODE_DISABLED, "FAMILY_NONE must resolve to a disabled mask")
 	FT_ASSERT(!familytree_pref_enabled(FAMILY_NONE), "FAMILY_NONE must not be treated as enabled")

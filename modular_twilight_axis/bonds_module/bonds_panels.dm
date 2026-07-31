@@ -68,6 +68,7 @@
 	if(!ui)
 		ui = new(user, src, "Bonds")
 		ui.open()
+		ui.set_autoupdate(FALSE)
 	return TRUE
 
 /datum/bonds_panel/ui_data(mob/user)
@@ -142,6 +143,7 @@
 	if(!ui)
 		ui = new(user, src, "BondsTree")
 		ui.open()
+		ui.set_autoupdate(FALSE)
 	return TRUE
 
 /datum/bonds_tree_panel/ui_data(mob/user)
@@ -177,7 +179,7 @@
 
 /mob/living/carbon/human/verb/bonds_tree()
 	set name = "Bonds Tree"
-	set category = "IC.Bonds"
+	set category = "Bonds"
 
 	if(!mind)
 		to_chat(src, span_warning("Вам некого вспоминать."))
@@ -274,6 +276,7 @@
 	if(!ui)
 		ui = new(user, src, "BondsFactions")
 		ui.open()
+		ui.set_autoupdate(FALSE)
 	return TRUE
 
 /datum/bonds_faction_panel/ui_data(mob/user)
@@ -315,7 +318,7 @@
 
 /mob/living/carbon/human/verb/bonds_factions()
 	set name = "Faction Standing"
-	set category = "IC.Bonds"
+	set category = "Bonds"
 
 	if(!SSbonds.faction_for(src) && !family_datum && !SSbonds.clan_faction_for(src))
 		to_chat(src, span_notice("Вы не представляете никого, кроме себя."))
@@ -343,6 +346,7 @@
 	if(!ui)
 		ui = new(user, src, "BondsRoster")
 		ui.open()
+		ui.set_autoupdate(FALSE)
 	return TRUE
 
 /datum/bonds_roster_panel/ui_data(mob/user)
@@ -353,7 +357,7 @@
 /datum/bonds_roster_panel/ui_close()
 	QDEL_NULL(src)
 
-/datum/controller/subsystem/bonds/proc/build_roster_block(faction_id, mob/living/carbon/human/viewer, members_only_top = FALSE) as /list
+/datum/controller/subsystem/bonds/proc/build_roster_block(faction_id, mob/living/carbon/human/viewer, leaders_only = FALSE) as /list
 	var/datum/bond_faction/faction = get_faction(faction_id)
 	if(!faction)
 		return null
@@ -362,6 +366,8 @@
 	var/list/seen = list()
 
 	for(var/datum/bond_rank/rank as anything in hierarchy_by_faction[faction_id])
+		if(leaders_only && rank.level > 2)
+			continue
 		var/list/people = list()
 		for(var/mob/living/carbon/human/person as anything in members)
 			if(seen[person] || !(person.job in rank.titles))
@@ -372,17 +378,25 @@
 				"job" = person.job,
 				"self" = (person == viewer),
 			))
-		if(!length(people))
-			continue
+		var/list/vacant = list()
+		if(!leaders_only)
+			for(var/title in rank.titles)
+				var/taken = FALSE
+				for(var/list/entry as anything in people)
+					if(entry["job"] == title)
+						taken = TRUE
+						break
+				if(!taken)
+					vacant += title
 		ranks += list(list(
 			"label" = rank.label,
 			"level" = rank.level,
+			"leader" = (rank.level == 1),
 			"people" = people,
+			"vacant" = vacant,
 		))
-		if(members_only_top && length(ranks) >= 2)
-			break
 
-	if(!members_only_top)
+	if(!leaders_only)
 		var/list/unranked = list()
 		for(var/mob/living/carbon/human/person as anything in members)
 			if(seen[person])
@@ -396,7 +410,9 @@
 			ranks += list(list(
 				"label" = "Прочие",
 				"level" = 99,
+				"leader" = FALSE,
 				"people" = unranked,
+				"vacant" = list(),
 			))
 
 	return list(
@@ -421,7 +437,7 @@
 
 /mob/living/carbon/human/verb/bonds_roster()
 	set name = "Faction Roster"
-	set category = "IC.Bonds"
+	set category = "Bonds"
 
 	if(!SSbonds.faction_for(src))
 		to_chat(src, span_notice("Вы никому не подчиняетесь и никем не командуете."))
@@ -449,6 +465,7 @@
 	if(!ui)
 		ui = new(user, src, "BondsPrefs")
 		ui.open()
+		ui.set_autoupdate(FALSE)
 	return TRUE
 
 /datum/bonds_prefs_panel/ui_data(mob/user)
@@ -644,7 +661,7 @@
 
 /mob/living/carbon/human/verb/my_bonds()
 	set name = "My Bonds"
-	set category = "IC.Bonds"
+	set category = "Bonds"
 
 	if(!mind)
 		to_chat(src, span_warning("Вам некого вспоминать."))
@@ -653,7 +670,7 @@
 
 /mob/living/carbon/human/verb/bonds_settings()
 	set name = "Bond Settings"
-	set category = "IC.Bonds"
+	set category = "Bonds"
 
 	if(!client?.prefs)
 		return

@@ -154,7 +154,7 @@
 /proc/cmp_bond_zone_priority(datum/bond_zone_lens/a, datum/bond_zone_lens/b)
 	return b.priority - a.priority
 
-/datum/controller/subsystem/bonds/proc/zone_lens_for(atom/where)
+/datum/controller/subsystem/bonds/proc/zone_lens_for(atom/where) as /datum/bond_zone_lens
 	var/area/spot = get_area(where)
 	if(!spot)
 		return null
@@ -237,7 +237,7 @@
 		map_rosters[roster.map_name] = roster
 	bondlog("map rosters built: [map_rosters.len]", BONDLOG_INFO)
 
-/datum/controller/subsystem/bonds/proc/current_map_roster()
+/datum/controller/subsystem/bonds/proc/current_map_roster() as /datum/bond_map_roster
 	var/current = SSmapping?.config?.map_name
 	if(!current)
 		return null
@@ -293,7 +293,7 @@
 		storyteller_lenses[lens.storyteller_type] = lens
 	bondlog("storyteller lenses built: [storyteller_lenses.len]", BONDLOG_INFO)
 
-/datum/controller/subsystem/bonds/proc/active_storyteller()
+/datum/controller/subsystem/bonds/proc/active_storyteller() as /datum/storyteller
 	if(!SSgamemode)
 		return null
 	if(SSgamemode.current_storyteller)
@@ -459,7 +459,7 @@
 			origin_index[origin.virtue_type] = origin
 	bondlog("origin index built: [origin_prototypes.len] origins", BONDLOG_INFO)
 
-/datum/controller/subsystem/bonds/proc/origin_for(participant)
+/datum/controller/subsystem/bonds/proc/origin_for(participant) as /datum/bond_origin
 	var/datum/bond_actor/actor = resolve_actor(participant)
 	if(!actor)
 		return null
@@ -540,13 +540,13 @@
 		origin_lore[key] = lore
 	bondlog("origin lore built: [origin_lore.len] pairs", BONDLOG_INFO)
 
-/datum/controller/subsystem/bonds/proc/origin_lore_for(participant_a, participant_b)
+/datum/controller/subsystem/bonds/proc/origin_lore_for(participant_a, participant_b) as /datum/origin_lore
 	var/key = bonds_origin_key(origin_id_for(participant_a), origin_id_for(participant_b))
 	if(!key)
 		return null
 	return origin_lore[key]
 
-/datum/controller/subsystem/bonds/proc/influence_state(datum/bond_actor/actor)
+/datum/controller/subsystem/bonds/proc/influence_state(datum/bond_actor/actor) as /list
 	if(!actor)
 		return null
 	var/list/state = influence_pools[actor]

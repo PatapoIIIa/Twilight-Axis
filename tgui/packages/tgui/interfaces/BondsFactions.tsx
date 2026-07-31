@@ -225,18 +225,27 @@ export const BondsFactions = () => {
                         opacity={opacity}
                       />
                       {!faded && (meaningful || highlighted) && (
-                        <text
-                          x={midX}
-                          y={midY - 3}
-                          textAnchor="middle"
-                          fill={edge.accent}
-                          fontSize={highlighted ? '12' : '10'}
-                          fontWeight={highlighted ? 'bold' : 'normal'}
-                          opacity={opacity}
-                          style={{ pointerEvents: 'none' }}
-                        >
-                          {edge.label}
-                        </text>
+                        <g style={{ pointerEvents: 'none' }} opacity={opacity}>
+                          <rect
+                            x={midX - edge.label.length * 3.4 - 4}
+                            y={midY - 13}
+                            width={edge.label.length * 6.8 + 8}
+                            height={14}
+                            rx={3}
+                            fill="#0b0b0b"
+                            opacity={0.85}
+                          />
+                          <text
+                            x={midX}
+                            y={midY - 3}
+                            textAnchor="middle"
+                            fill={edge.accent}
+                            fontSize={highlighted ? '12' : '11'}
+                            fontWeight="bold"
+                          >
+                            {edge.label}
+                          </text>
+                        </g>
                       )}
                     </g>
                   );

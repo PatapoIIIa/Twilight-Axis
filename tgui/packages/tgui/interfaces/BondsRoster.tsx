@@ -12,7 +12,9 @@ type Person = {
 type Rank = {
   label: string;
   level: number;
+  leader: number | boolean;
   people: Person[];
+  vacant: string[];
 };
 
 type Block = {
@@ -29,6 +31,48 @@ type Data = {
   ally: Block | null;
   allyWarmth: number;
 };
+
+function RankRow(props: { rank: Rank; accent: string }) {
+  const { rank, accent } = props;
+  const leader = !!rank.leader;
+
+  return (
+    <Box
+      mb={1}
+      p={1}
+      style={{
+        borderLeft: `3px solid ${leader ? accent : '#3a3a3a'}`,
+        background: leader ? '#1c1a14' : '#141414',
+      }}
+    >
+      <Box bold color={leader ? accent : undefined}>
+        {leader && <Icon name="chess-king" mr={1} />}
+        {rank.label}
+      </Box>
+      {rank.people.map((person, index) => (
+        <Box key={index} ml={1} mt={0.5}>
+          <Box inline bold={!!person.self} color={person.self ? accent : undefined}>
+            {person.name}
+          </Box>
+          <Box inline ml={1} opacity={0.55}>
+            {person.job}
+          </Box>
+          {!!person.self && (
+            <Box inline ml={1} color={accent} bold>
+              — вы здесь
+            </Box>
+          )}
+        </Box>
+      ))}
+      {rank.vacant.map((title, index) => (
+        <Box key={`v${index}`} ml={1} mt={0.5} opacity={0.35} italic>
+          <Icon name="user-slash" mr={1} />
+          {title} — место свободно
+        </Box>
+      ))}
+    </Box>
+  );
+}
 
 function RosterBlock(props: { block: Block; subtitle?: string }) {
   const { block, subtitle } = props;
@@ -48,32 +92,11 @@ function RosterBlock(props: { block: Block; subtitle?: string }) {
         </Box>
       )}
       {!block.ranks.length && (
-        <Box opacity={0.6}>Сейчас никого нет на месте.</Box>
+        <Box opacity={0.6}>Об этой фракции ничего не известно.</Box>
       )}
-      <Stack vertical>
-        {block.ranks.map((rank, index) => (
-          <Stack.Item key={index}>
-            <Box bold opacity={0.75}>
-              {rank.label}
-            </Box>
-            {rank.people.map((person, personIndex) => (
-              <Box key={personIndex} ml={1}>
-                <Box inline bold={!!person.self}>
-                  {person.name}
-                </Box>
-                <Box inline ml={1} opacity={0.55}>
-                  {person.job}
-                </Box>
-                {!!person.self && (
-                  <Box inline ml={1} color={block.accent}>
-                    — это вы
-                  </Box>
-                )}
-              </Box>
-            ))}
-          </Stack.Item>
-        ))}
-      </Stack>
+      {block.ranks.map((rank, index) => (
+        <RankRow key={index} rank={rank} accent={block.accent} />
+      ))}
     </Section>
   );
 }
@@ -83,7 +106,7 @@ export const BondsRoster = () => {
   const { own, ally, allyWarmth = 0 } = data;
 
   return (
-    <Window title="Лист фракции" width={560} height={680}>
+    <Window title="Лист фракции" width={620} height={720}>
       <Window.Content scrollable style={{ backgroundImage: 'none' }}>
         {!own && <NoticeBox>Вы ни к кому не приписаны.</NoticeBox>}
         <Stack vertical fill>
@@ -91,7 +114,7 @@ export const BondsRoster = () => {
             <Stack.Item>
               <RosterBlock
                 block={own}
-                subtitle={`Всего на месте: ${own.total}`}
+                subtitle={`На месте сейчас: ${own.total}`}
               />
             </Stack.Item>
           )}
@@ -99,7 +122,7 @@ export const BondsRoster = () => {
             <Stack.Item>
               <RosterBlock
                 block={ally}
-                subtitle={`Ближайшие союзники · расположение ${allyWarmth}`}
+                subtitle={`Союзники · расположение ${allyWarmth}`}
               />
             </Stack.Item>
           )}

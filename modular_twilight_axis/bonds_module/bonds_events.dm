@@ -285,7 +285,7 @@
 /proc/cmp_bond_stage_priority(datum/bond_stage/a, datum/bond_stage/b)
 	return b.priority - a.priority
 
-/datum/controller/subsystem/bonds/proc/resolve_stage(datum/social_bond/bond)
+/datum/controller/subsystem/bonds/proc/resolve_stage(datum/social_bond/bond) as /datum/bond_stage
 	if(!bond)
 		return null
 	for(var/datum/bond_stage/stage as anything in stage_prototypes)

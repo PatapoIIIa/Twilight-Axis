@@ -1,7 +1,3 @@
-// Undef point for bonds module macros.
-// Intended include target after the module's compile section:
-// #include "modular_twilight_axis\bonds_module\bonds_module_deinclude.dm"
-
 #undef BOND_WARMTH_MIN
 #undef BOND_WARMTH_MAX
 #undef BOND_WEIGHT_MIN

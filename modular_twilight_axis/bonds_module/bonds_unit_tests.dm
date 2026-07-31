@@ -20,10 +20,6 @@
 
 /datum/unit_test/bonds/Destroy()
 	for(var/datum/mind/tracked as anything in bd_test_minds)
-		var/datum/bond_node/node = SSbonds.get_node(tracked)
-		if(node)
-			for(var/datum/social_bond/kin/link as anything in node.kin.Copy())
-				SSbonds.remove_kin(tracked, link.other, link.kind)
 		SSbonds.drop_actor(SSbonds.resolve_actor(tracked))
 	bd_test_minds = null
 	return ..()
@@ -196,6 +192,22 @@
 	SSbonds.add_kin(child, parent, BOND_KIN_PARENT, FALSE, null)
 	BD_ASSERT(SSbonds.kin_would_cycle(grandparent, child), "making a descendant into an ancestor must be refused")
 	BD_ASSERT(!SSbonds.kin_would_cycle(child, grandparent), "an ordinary ancestor link is fine")
+
+/datum/unit_test/bonds/dropping_an_actor_leaves_nothing_behind/Run()
+	var/datum/mind/a = bd_make_mind()
+	var/datum/mind/b = bd_make_mind()
+	SSbonds.add_kin(a, b, BOND_KIN_PARENT, FALSE, null)
+	var/datum/social_bond/feeling = SSbonds.get_or_create_bond(b, a)
+	feeling.attach_event(/datum/bond_event/struck_by)
+	var/datum/bond_actor/actor_a = SSbonds.resolve_actor(a)
+	SSbonds.spend_influence(actor_a)
+	BD_ASSERT_NOTNULL(SSbonds.influence_pools[actor_a], "the pool entry must exist before the drop")
+
+	SSbonds.drop_actor(actor_a)
+
+	BD_ASSERT_NULL(SSbonds.influence_pools[actor_a], "a dropped actor must not stay a key in the influence pool")
+	BD_ASSERT_NULL(SSbonds.find_kin(b, actor_a, BOND_KIN_CHILD), "the reciprocal kin link must go with it")
+	BD_ASSERT_NULL(SSbonds.get_bond(b, actor_a), "and so must anyone's sentiment toward it")
 
 /datum/unit_test/bonds/actor_identity_is_stable/Run()
 	var/datum/mind/subject = bd_make_mind()

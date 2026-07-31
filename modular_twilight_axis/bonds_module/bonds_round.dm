@@ -81,7 +81,7 @@ SUBSYSTEM_DEF(bonds)
 			continue
 		event_prototypes[event_type] = new event_type()
 
-/datum/controller/subsystem/bonds/proc/get_event_prototype(event_type)
+/datum/controller/subsystem/bonds/proc/get_event_prototype(event_type) as /datum/bond_event
 	return event_prototypes[event_type]
 
 /datum/controller/subsystem/bonds/proc/bondlog_state(tag = "SNAPSHOT")
@@ -284,7 +284,7 @@ SUBSYSTEM_DEF(bonds)
 /proc/cmp_bond_rank_level(datum/bond_rank/a, datum/bond_rank/b)
 	return a.level - b.level
 
-/datum/controller/subsystem/bonds/proc/rank_for_title(title)
+/datum/controller/subsystem/bonds/proc/rank_for_title(title) as /datum/bond_rank
 	if(!title)
 		return null
 	return rank_by_title[title]

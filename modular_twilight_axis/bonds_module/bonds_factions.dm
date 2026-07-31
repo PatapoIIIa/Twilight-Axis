@@ -37,17 +37,17 @@
 		bondlog("faction index collisions: [collisions.Join("; ")]", BONDLOG_WARN)
 	bondlog("faction index built: [faction_prototypes.len] factions, [faction_index.len] titles", BONDLOG_INFO)
 
-/datum/controller/subsystem/bonds/proc/get_faction(faction_id)
+/datum/controller/subsystem/bonds/proc/get_faction(faction_id) as /datum/bond_faction
 	if(!faction_id)
 		return null
 	return faction_prototypes[faction_id]
 
-/datum/controller/subsystem/bonds/proc/faction_for_title(title)
+/datum/controller/subsystem/bonds/proc/faction_for_title(title) as /datum/bond_faction
 	if(!title)
 		return null
 	return faction_index[title]
 
-/datum/controller/subsystem/bonds/proc/faction_for(mob/living/carbon/human/person)
+/datum/controller/subsystem/bonds/proc/faction_for(mob/living/carbon/human/person) as /datum/bond_faction
 	if(!ishuman(person))
 		return null
 	return faction_for_title(person.job)
@@ -276,13 +276,13 @@
 		return null
 	return (id_a < id_b) ? "[id_a]|[id_b]" : "[id_b]|[id_a]"
 
-/datum/controller/subsystem/bonds/proc/get_stance(id_a, id_b)
+/datum/controller/subsystem/bonds/proc/get_stance(id_a, id_b) as /datum/faction_stance
 	var/key = bonds_stance_key(id_a, id_b)
 	if(!key)
 		return null
 	return faction_stances[key]
 
-/datum/controller/subsystem/bonds/proc/get_or_create_stance(id_a, id_b)
+/datum/controller/subsystem/bonds/proc/get_or_create_stance(id_a, id_b) as /datum/faction_stance
 	var/key = bonds_stance_key(id_a, id_b)
 	if(!key || id_a == id_b)
 		return null
@@ -301,7 +301,7 @@
 	var/datum/faction_stance/stance = get_stance(id_a, id_b)
 	return stance ? stance.warmth : 0
 
-/datum/controller/subsystem/bonds/proc/nudge_stance(id_a, id_b, warmth_delta = 0, weight_delta = 0, reason = "")
+/datum/controller/subsystem/bonds/proc/nudge_stance(id_a, id_b, warmth_delta = 0, weight_delta = 0, reason = "") as /datum/faction_stance
 	var/datum/faction_stance/stance = get_or_create_stance(id_a, id_b)
 	if(!stance)
 		return null
@@ -417,7 +417,7 @@
 		clan_index[faction.clan_type] = faction
 	bondlog("clan index built: [clan_index.len] clans", BONDLOG_INFO)
 
-/datum/controller/subsystem/bonds/proc/clan_faction_for(mob/living/carbon/human/person)
+/datum/controller/subsystem/bonds/proc/clan_faction_for(mob/living/carbon/human/person) as /datum/bond_faction/clan
 	if(!ishuman(person) || !person.clan)
 		return null
 	var/datum/bond_faction/clan/exact = clan_index[person.clan.type]
@@ -546,13 +546,13 @@
 	var/ref_b = REF(second)
 	return (ref_a < ref_b) ? "[ref_a]|[ref_b]" : "[ref_b]|[ref_a]"
 
-/datum/controller/subsystem/bonds/proc/get_house_stance(datum/heritage/first, datum/heritage/second)
+/datum/controller/subsystem/bonds/proc/get_house_stance(datum/heritage/first, datum/heritage/second) as /datum/house_stance
 	var/key = bonds_house_key(first, second)
 	if(!key)
 		return null
 	return house_stances[key]
 
-/datum/controller/subsystem/bonds/proc/get_or_create_house_stance(datum/heritage/first, datum/heritage/second)
+/datum/controller/subsystem/bonds/proc/get_or_create_house_stance(datum/heritage/first, datum/heritage/second) as /datum/house_stance
 	var/key = bonds_house_key(first, second)
 	if(!key)
 		return null
@@ -563,7 +563,7 @@
 	house_stances[key] = stance
 	return stance
 
-/datum/controller/subsystem/bonds/proc/nudge_house_stance(datum/heritage/first, datum/heritage/second, warmth_delta = 0, weight_delta = 0, reason = "")
+/datum/controller/subsystem/bonds/proc/nudge_house_stance(datum/heritage/first, datum/heritage/second, warmth_delta = 0, weight_delta = 0, reason = "") as /datum/house_stance
 	var/datum/house_stance/stance = get_or_create_house_stance(first, second)
 	if(!stance)
 		return null
@@ -585,7 +585,7 @@
 			qdel(oldest)
 	return stance
 
-/datum/controller/subsystem/bonds/proc/house_of_mind(participant)
+/datum/controller/subsystem/bonds/proc/house_of_mind(participant) as /datum/heritage
 	var/datum/bond_actor/actor = resolve_actor(participant)
 	var/mob/living/carbon/human/body = actor?.current_body()
 	if(!ishuman(body))
@@ -626,7 +626,7 @@
 		out += stance
 	return out
 
-/datum/controller/subsystem/bonds/proc/other_house_in(datum/house_stance/stance, datum/heritage/house)
+/datum/controller/subsystem/bonds/proc/other_house_in(datum/house_stance/stance, datum/heritage/house) as /datum/heritage
 	if(!stance)
 		return null
 	return (stance.house_a == house) ? stance.house_b : stance.house_a
