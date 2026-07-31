@@ -1,20 +1,6 @@
-// What an act means to the person on the receiving end.
-//
-// The same blow is not the same experience for everyone. A masochist being struck is not being
-// wronged, and building them a grudge out of it is simply wrong: their flaw says they want this.
-// The same logic runs the other way - a lonely character values a kind word more than someone
-// who is never short of company.
-//
-// So the recipient's disposition scales what the event does to THEIR side of the bond only.
-// The aggressor's own side is untouched: how you feel about hitting someone is your business,
-// not theirs.
-//
-// Scales are per category. A missing entry means 1.0.
-
 /datum/bond_disposition
 	abstract_type = /datum/bond_disposition
 	var/flaw_type
-	/// Assoc of BOND_CATEGORY_* -> multiplier applied to the recipient's side.
 	var/list/category_scales
 
 /datum/bond_disposition/proc/applies_to(mob/living/carbon/human/person)
@@ -55,8 +41,6 @@
 		dispositions += new disposition_type()
 	bondlog("dispositions built: [dispositions.len]", BONDLOG_INFO)
 
-/// Multiplier for what `event_type` does to `recipient`'s side of the bond.
-/// Several dispositions stack multiplicatively; any zero wins outright.
 /datum/controller/subsystem/bonds/proc/disposition_scale(mob/living/carbon/human/recipient, event_type)
 	if(!ishuman(recipient))
 		return 1

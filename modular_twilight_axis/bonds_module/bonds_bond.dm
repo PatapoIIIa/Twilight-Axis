@@ -1,7 +1,5 @@
 /datum/social_bond
-	/// FALSE for structural links that must never be dropped by the node cap.
 	var/evictable = TRUE
-	/// FALSE for links that carry no sentiment: axes and stages do not apply.
 	var/scored = TRUE
 	var/datum/bond_actor/holder
 	var/datum/bond_actor/other
@@ -16,6 +14,8 @@
 	var/list/history
 	var/list/snapshot
 	var/datum/bond_stage/stage
+	var/swing_used = 0
+	var/swing_reset = 0
 	var/created_at = 0
 	var/updated_at = 0
 
@@ -73,8 +73,6 @@
 /datum/social_bond/proc/stage_group()
 	return stage?.category || BOND_GROUP_KNOWN
 
-// The cheapest stage strictly above the current one that lies in the same emotional direction.
-// Null means this bond is already as far as it goes on its current course.
 /datum/social_bond/proc/next_stage()
 	var/current_priority = stage ? stage.priority : 0
 	var/datum/bond_stage/best
@@ -89,7 +87,6 @@
 			best = candidate
 	return best
 
-/// 0..1 progress toward next_stage(), gated by whichever requirement is furthest away.
 /datum/social_bond/proc/progress_to_next()
 	var/datum/bond_stage/upcoming = next_stage()
 	if(!upcoming)
@@ -120,8 +117,21 @@
 		return 1
 	return 1 / (1 + (count * BOND_COMMIT_FALLOFF))
 
+/datum/social_bond/proc/swing_allowance()
+	if(world.time >= swing_reset)
+		swing_used = 0
+		swing_reset = world.time + BOND_SWING_WINDOW
+	return max(0, BOND_MAX_SWING - swing_used)
+
 /datum/social_bond/proc/commit(datum/bond_event/prototype, applied_scale = 1)
+	var/allowance = swing_allowance()
+	if(!allowance)
+		return 0
 	var/scale = commit_scale(prototype.category) * applied_scale
+	var/requested = abs(prototype.warmth_commit * scale)
+	if(requested > allowance)
+		scale *= allowance / requested
+	swing_used += abs(prototype.warmth_commit * scale)
 	warmth_committed = clamp(warmth_committed + (prototype.warmth_commit * scale), BOND_WARMTH_MIN, BOND_WARMTH_MAX)
 	weight_committed = clamp(weight_committed + (prototype.weight_commit * scale), BOND_WEIGHT_MIN, BOND_WEIGHT_MAX)
 	LAZYINITLIST(commit_times)

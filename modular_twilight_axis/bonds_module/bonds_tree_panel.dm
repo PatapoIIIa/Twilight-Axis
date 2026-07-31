@@ -53,7 +53,7 @@
 
 /mob/living/carbon/human/verb/bonds_tree()
 	set name = "Bonds Tree"
-	set category = "IC"
+	set category = "Bonds"
 
 	if(!mind)
 		to_chat(src, span_warning("Вам некого вспоминать."))

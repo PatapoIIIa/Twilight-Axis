@@ -5,7 +5,7 @@
 
 /mob/living/carbon/human/verb/my_bonds()
 	set name = "My Bonds"
-	set category = "IC"
+	set category = "Bonds"
 
 	if(!mind)
 		to_chat(src, span_warning("Вам некого вспоминать."))
@@ -14,7 +14,7 @@
 
 /mob/living/carbon/human/verb/bonds_settings()
 	set name = "Bond Settings"
-	set category = "Preferences"
+	set category = "Bonds"
 
 	if(!client?.prefs)
 		return

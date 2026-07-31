@@ -1,14 +1,3 @@
-// Influence pool.
-//
-// Without this, a single tavern brawl lets twenty people each shove every faction pair around
-// and the whole political map turns to mush in one minute. So each character carries a small
-// pool: every act that would move a faction, house or clan standing spends one point, and when
-// the pool empties they simply stop counting for a while - they can keep fighting, it just
-// stops being politics. The pool refills on its own.
-//
-// Personal bonds are deliberately NOT gated by this: your own opinion of someone who keeps
-// hitting you should keep changing even when the wider world has stopped caring.
-
 /datum/controller/subsystem/bonds/proc/influence_state(datum/bond_actor/actor)
 	if(!actor)
 		return null

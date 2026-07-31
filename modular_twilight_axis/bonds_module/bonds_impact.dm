@@ -1,15 +1,3 @@
-// The faction-impact pipeline.
-//
-// One incident between two people can move three different standings: their factions, their
-// houses and (if both are kindred) their clans. Everything that scales that movement lives
-// here, in one ordered chain, so there is exactly one place to look when a number surprises you:
-//
-//   base commit -> role weight -> map lens -> storyteller lens -> origin lore -> influence gate
-//
-// The influence gate is last on purpose: it decides whether the act counts at all, and it is
-// what stops a twenty-person brawl from rewriting every relationship in town (see
-// bonds_influence.dm).
-
 /datum/controller/subsystem/bonds/proc/social_impact(subject, object, event_type, applied_scale = 1)
 	var/datum/bond_event/prototype = get_event_prototype(event_type)
 	if(!prototype || !prototype.scored_propagation)
@@ -25,19 +13,23 @@
 
 	if(!applied_scale)
 		return FALSE
+	var/hostile = (prototype.category == BOND_CATEGORY_VIOLENCE) || (prototype.category == BOND_CATEGORY_DEATH)
+	if(hostile && !is_public_zone(object_body))
+		return FALSE
 
-	// The actor is the one who spends influence; the victim never pays for being hit.
-	// Checked after the free rejections so a no-op act does not burn a point.
 	if(!spend_influence(object_actor))
 		return FALSE
 
-	var/scale = applied_scale
-	scale *= role_impact_weight(object_body) * role_impact_weight(subject_body)
-	scale *= map_weight()
-	scale *= zone_weight(object_body)
 	var/datum/origin_lore/lore = origin_lore_for(subject_actor, object_actor)
-	if(lore)
-		scale *= lore.weight_scale
+	var/id_a = faction_id_for(subject_body)
+	var/id_b = faction_id_for(object_body)
+	var/scale = applied_scale * blend_weights(list(
+		BOND_SHARE_ROLE = role_impact_weight(object_body) * role_impact_weight(subject_body),
+		BOND_SHARE_LORE = lore ? lore.weight_scale : 1,
+		BOND_SHARE_STORYTELLER = storyteller_weight(id_a, id_b),
+		BOND_SHARE_ZONE = zone_weight(object_body),
+		BOND_SHARE_MAP = map_weight(),
+	))
 	var/bias = lore ? lore.bias : 0
 
 	var/warmth_delta = (prototype.warmth_commit * scale) + bias
@@ -56,7 +48,6 @@
 	var/id_b = faction_id_for(object_body)
 	if(!id_a || !id_b || id_a == id_b)
 		return FALSE
-	// nudge_stance applies the storyteller lens itself.
 	nudge_stance(id_a, id_b, warmth_delta, weight_delta, reason)
 	bondlog("faction impact [id_a] <-> [id_b] warmth [warmth_delta]", BONDLOG_INFO)
 	return TRUE

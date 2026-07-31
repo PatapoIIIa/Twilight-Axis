@@ -38,8 +38,8 @@
 /datum/faction_baseline/church_inquisition
 	faction_a = BOND_FACTION_CHURCH
 	faction_b = BOND_FACTION_INQUISITION
-	warmth = -25
-	weight = 65
+	warmth = -30
+	weight = 70
 
 /datum/faction_baseline/burgher_atc
 	faction_a = BOND_FACTION_BURGHER

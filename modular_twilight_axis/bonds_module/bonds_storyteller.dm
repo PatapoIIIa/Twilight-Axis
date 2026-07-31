@@ -1,17 +1,6 @@
-// Storyteller influence on faction stances.
-//
-// DESIGN STAGE: every weight here is deliberately 1.0. The plumbing is what is being built;
-// the numbers are a separate tuning pass on live rounds. A 1.0 weight means "this storyteller
-// does not bend this pair", so the system is a no-op until someone starts moving values.
-//
-// A weight scales BOTH the declared baseline at round start and every later nudge, so a
-// storyteller who cares about a pair makes that relationship move faster in either direction
-// rather than simply starting it hotter.
-
 /datum/bond_storyteller_lens
 	abstract_type = /datum/bond_storyteller_lens
 	var/storyteller_type
-	/// Assoc of bonds_stance_key(a, b) -> multiplier. Missing pairs use default_weight.
 	var/list/pair_weights
 	var/default_weight = 1
 

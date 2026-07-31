@@ -278,6 +278,8 @@
 
 /datum/unit_test/bonds/role_weight_scales_by_office/Run()
 	BD_ASSERT_EQUAL(SSbonds.role_weights["Bishop"], 2.5, "high office weight drifted")
+	BD_ASSERT(SSbonds.role_weights["Hand"] > SSbonds.role_weights["Marshal"], "the Hand outranks the Marshal: they command every noble")
+	BD_ASSERT(SSbonds.role_weights["Grand Duke"] > SSbonds.role_weights["Hand"], "the Duke still has absolute priority")
 	BD_ASSERT_EQUAL(SSbonds.role_weights["Knight"], 1.8, "notable weight drifted")
 	BD_ASSERT_NULL(SSbonds.role_weights["Towner"], "ordinary jobs carry no declared weight")
 
@@ -285,12 +287,87 @@
 	BD_ASSERT(SSbonds.map_lenses.len > 0, "map lenses must be built")
 	BD_ASSERT_EQUAL(SSbonds.map_weight(), 1, "a zero-weight lens must fall back to neutral")
 
+/datum/unit_test/bonds/origins_never_enter_the_live_matrix/Run()
+	for(var/key in SSbonds.faction_stances)
+		var/datum/faction_stance/stance = SSbonds.faction_stances[key]
+		BD_ASSERT_NULL(SSbonds.origin_prototypes[stance.faction_a], "country standing is static lore and must never become a live stance")
+		BD_ASSERT_NULL(SSbonds.origin_prototypes[stance.faction_b], "country standing is static lore and must never become a live stance")
+	BD_ASSERT(SSbonds.origin_lore.len > 0, "origin lore itself must still be loaded as a read-only modifier table")
+
 /datum/unit_test/bonds/origin_lore_is_symmetric/Run()
 	BD_ASSERT_EQUAL(bonds_origin_key("zybantu", "grenzelhoft"), bonds_origin_key("grenzelhoft", "zybantu"), "origin keys must not depend on order")
 	var/datum/origin_lore/lore = SSbonds.origin_lore[bonds_origin_key("zybantu", "grenzelhoft")]
 	BD_ASSERT_NOTNULL(lore, "the declared Zybantu/Grenzelhoft grudge must load")
-	BD_ASSERT(lore.bias < 0, "that pair starts sour")
+	BD_ASSERT(lore.bias < 0, "the losers of the Twilight War and its victors start sour")
 	BD_ASSERT(lore.weight_scale > 1, "and incidents between them land harder")
+
+	var/datum/origin_lore/friendly = SSbonds.origin_lore[bonds_origin_key("azuria", "grenzelhoft")]
+	BD_ASSERT_NOTNULL(friendly, "Azuria and Grenzelhoft have a declared position too")
+	BD_ASSERT(friendly.bias > 0, "wartime neutrality and dynastic kinship make them friendly, not hostile")
+	BD_ASSERT(friendly.weight_scale < 1, "so their incidents matter less, not more")
+
+/datum/unit_test/bonds/weight_shares_sum_to_one/Run()
+	var/total = 0
+	for(var/share_id in SSbonds.weight_shares)
+		var/datum/bond_weight_share/entry = SSbonds.weight_shares[share_id]
+		total += entry.share
+	BD_ASSERT(total > 0.999 && total < 1.001, "template shares must sum to exactly 1, got [total]")
+
+/datum/unit_test/bonds/blend_is_neutral_at_rest/Run()
+	var/neutral = SSbonds.blend_weights(list(
+		BOND_SHARE_ROLE = 1,
+		BOND_SHARE_LORE = 1,
+		BOND_SHARE_STORYTELLER = 1,
+		BOND_SHARE_ZONE = 1,
+		BOND_SHARE_MAP = 1,
+	))
+	BD_ASSERT(neutral > 0.999 && neutral < 1.001, "an all-neutral incident must blend to 1, got [neutral]")
+	var/partial = SSbonds.blend_weights(list(BOND_SHARE_ROLE = 1))
+	BD_ASSERT(partial > 0.999 && partial < 1.001, "an unmentioned template must default to neutral, got [partial]")
+
+/datum/unit_test/bonds/blend_bounds_a_stacked_incident/Run()
+	var/stacked = SSbonds.blend_weights(list(
+		BOND_SHARE_ROLE = 4.5,
+		BOND_SHARE_LORE = 1.8,
+		BOND_SHARE_STORYTELLER = 1.8,
+		BOND_SHARE_ZONE = 1,
+		BOND_SHARE_MAP = 1,
+	))
+	BD_ASSERT(stacked < 3, "the blend must bound a stacked incident well below the 14x a raw product would give, got [stacked]")
+	BD_ASSERT(stacked > 1, "but it must still amplify it")
+
+/datum/unit_test/bonds/map_roster_hides_absent_factions/Run()
+	BD_ASSERT(SSbonds.map_rosters.len > 0, "map rosters must be built")
+	var/datum/bond_map_roster/desert = SSbonds.map_rosters["Desert Town"]
+	BD_ASSERT_NOTNULL(desert, "Desert Town must declare a roster")
+	BD_ASSERT(BOND_FACTION_INQUISITION in desert.absent_factions, "there is no Otavan mission in the desert")
+	BD_ASSERT(!(BOND_FACTION_NOBLE in desert.absent_factions), "the ruling house exists there, it is simply a Sultan")
+
+/datum/unit_test/bonds/hierarchy_has_one_leader_per_faction/Run()
+	BD_ASSERT(SSbonds.hierarchy_by_faction.len > 0, "hierarchy must be built at init")
+	for(var/faction_id in SSbonds.hierarchy_by_faction)
+		var/list/ranks = SSbonds.hierarchy_by_faction[faction_id]
+		var/datum/bond_rank/first = ranks[1]
+		BD_ASSERT_EQUAL(first.level, 1, "[faction_id] must start at level 1 after sorting")
+		var/last_level = 0
+		for(var/datum/bond_rank/rank as anything in ranks)
+			BD_ASSERT(rank.level >= last_level, "[faction_id] ranks must be sorted by level")
+			last_level = rank.level
+
+/datum/unit_test/bonds/rank_titles_do_not_collide/Run()
+	var/list/seen = list()
+	for(var/faction_id in SSbonds.hierarchy_by_faction)
+		for(var/datum/bond_rank/rank as anything in SSbonds.hierarchy_by_faction[faction_id])
+			for(var/title in rank.titles)
+				BD_ASSERT(!seen[title], "title [title] is claimed by two ranks: [seen[title]] and [rank.label]")
+				seen[title] = rank.label
+
+/datum/unit_test/bonds/inquisitor_leads_the_mission/Run()
+	var/datum/bond_rank/rank = SSbonds.rank_for_title("Inquisitor")
+	BD_ASSERT_NOTNULL(rank, "the Inquisitor must have a rank")
+	BD_ASSERT_EQUAL(rank.level, 1, "everyone in the Otavan mission answers to the Inquisitor without exception")
+	var/datum/bond_rank/deputy = SSbonds.rank_for_title("Absolver")
+	BD_ASSERT_EQUAL(deputy.level, 2, "the Absolver stands in when the Inquisitor falls")
 
 /datum/unit_test/bonds/faction_index_has_no_collisions/Run()
 	var/list/seen = list()

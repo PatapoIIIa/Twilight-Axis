@@ -24,15 +24,20 @@
 // bonds_origins.dm          - /datum/bond_origin: where a character is from, cached on the actor
 // bonds_origin_lore.dm      - inherited opinion between origins, mixed into faction impact
 // bonds_role_weight.dm      - how loudly a job's actions echo between factions
+// bonds_weights.dm          - declared template shares and the normalised blend
 // bonds_map_lens.dm         - per-map lens over faction impact (all weights 0 for now)
+// bonds_map_roster.dm       - which factions exist on which map
 // bonds_zone_lens.dm        - per-area lens: where it happened (weights 1, arena 0)
 // bonds_duel.dm             - sanctioned violence: duellist rings or duelling ground
 // bonds_disposition.dm      - recipient's flaws scale what an act does to their side
 // bonds_influence.dm        - per-character influence pool and mute, so brawls do not rewrite politics
 // bonds_impact.dm           - the ordered impact pipeline: role, map, storyteller, lore, influence
 // bonds_house_stance.dm     - house-to-house standing, accumulated from member incidents
+// bonds_hierarchy.dm        - rank table per faction plus member lookup
+// bonds_roster_panel.dm     - /datum/bonds_roster_panel: your faction by rank plus closest ally
 // bonds_faction_map.dm      - whole inter-faction graph, not a view from one character
 // bonds_faction_panel.dm    - /datum/bonds_faction_panel: faction map, house and clan standing
+// bonds_admin_panel.dm      - admin view/edit of live faction and house standings
 // bonds_tree_panel.dm       - /datum/bonds_tree_panel: radial bond tree with two-sided progress
 // bonds_prefs.dm            - /datum/preferences vars plus savefile load/save/sanitize
 // bonds_round_prefs.dm      - per-ckey round-locked snapshot of the seeding prefs
@@ -145,6 +150,18 @@
 #define BOND_STANCE_AFFINITY_THRESHOLD 25
 // Below this weight an unremarkable faction pair is left off the map to keep it readable.
 #define BOND_MAP_MIN_WEIGHT 5
+// Template shares for the impact blend. They MUST sum to 1: at rest every modifier is 1.0 and
+// the blend returns 1.0, so a neutral incident is unchanged. Multiplying them instead would
+// let a knight striking a bishop in a public square stack to a tenfold swing.
+#define BOND_SHARE_ROLE "role"
+#define BOND_SHARE_LORE "lore"
+#define BOND_SHARE_STORYTELLER "storyteller"
+#define BOND_SHARE_ZONE "zone"
+#define BOND_SHARE_MAP "map"
+// Cap on how far one pair's permanent warmth may travel inside one window, so a bad first
+// minute cannot land two characters at maximum hatred before they have said a word.
+#define BOND_MAX_SWING 25
+#define BOND_SWING_WINDOW (10 MINUTES)
 // Fraction of a personal event's permanent commit that bleeds into the two houses involved.
 // House feuds are meant to be the accumulated residue of many incidents, never one fight.
 #define BOND_HOUSE_PROPAGATION 0.25
@@ -201,7 +218,9 @@
 #include "bonds_origins.dm"
 #include "bonds_origin_lore.dm"
 #include "bonds_role_weight.dm"
+#include "bonds_weights.dm"
 #include "bonds_map_lens.dm"
+#include "bonds_map_roster.dm"
 #include "bonds_zone_lens.dm"
 #include "bonds_duel.dm"
 #include "bonds_disposition.dm"
@@ -217,7 +236,10 @@
 #include "bonds_family_bridge.dm"
 #include "bonds_panel.dm"
 #include "bonds_faction_map.dm"
+#include "bonds_hierarchy.dm"
+#include "bonds_roster_panel.dm"
 #include "bonds_faction_panel.dm"
+#include "bonds_admin_panel.dm"
 #include "bonds_tree_panel.dm"
 #include "bonds_prefs_panel.dm"
 #include "bonds_listener.dm"

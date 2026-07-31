@@ -1,24 +1,14 @@
-// Where something happened changes what it means.
-//
-// A blow struck in the middle of the market square is a public scandal between two factions;
-// the same blow in an empty cellar is a private matter nobody has to answer for. This table is
-// the "where" multiplier on faction impact.
-//
-// DESIGN STAGE: every declared weight is 1.0 by request - the table exists so tuning later is
-// editing numbers here. The one deliberate exception is the duelling ground, which is 0: see
-// bonds_duel.dm for why sanctioned fights must not poison politics.
-
 /datum/bond_zone_lens
 	abstract_type = /datum/bond_zone_lens
 	var/area_type
 	var/weight = 1
-	/// Higher wins when several lenses match; subtypes of an area both match, so the most
-	/// specific declaration must outrank the general one.
+	var/public_zone = FALSE
 	var/priority = 0
 
 /datum/bond_zone_lens/town_outdoors
 	area_type = /area/rogue/outdoors/town
 	weight = 1
+	public_zone = TRUE
 	priority = 10
 
 /datum/bond_zone_lens/indoors
@@ -62,6 +52,19 @@
 
 /proc/cmp_bond_zone_priority(datum/bond_zone_lens/a, datum/bond_zone_lens/b)
 	return b.priority - a.priority
+
+/datum/controller/subsystem/bonds/proc/zone_lens_for(atom/where)
+	var/area/spot = get_area(where)
+	if(!spot)
+		return null
+	for(var/datum/bond_zone_lens/lens as anything in zone_lenses)
+		if(istype(spot, lens.area_type))
+			return lens
+	return null
+
+/datum/controller/subsystem/bonds/proc/is_public_zone(atom/where)
+	var/datum/bond_zone_lens/lens = zone_lens_for(where)
+	return lens ? lens.public_zone : FALSE
 
 /datum/controller/subsystem/bonds/proc/zone_weight(atom/where)
 	var/area/spot = get_area(where)

@@ -1,9 +1,3 @@
-// How loudly a person's actions echo between factions.
-//
-// A serf shoving a serf is a scuffle. A knight striking a bishop is an incident between the
-// retinue and the Church, and it should land far harder even though the blow is identical.
-// Both sides multiply: importance of the actor times importance of the target.
-
 /datum/bond_role_tier
 	abstract_type = /datum/bond_role_tier
 	var/weight = 1
@@ -13,9 +7,13 @@
 	weight = 3
 	titles = list("Grand Duke", "Sultan", "Consort", "Prince", "Harem Favorite")
 
+/datum/bond_role_tier/regent
+	weight = 2.8
+	titles = list("Hand", "Vizier")
+
 /datum/bond_role_tier/high_office
 	weight = 2.5
-	titles = list("Hand", "Steward", "Seneschal", "Councillor", "Bishop", "Marshal", "Inquisitor", "Mayor", "Vizier")
+	titles = list("Steward", "Seneschal", "Councillor", "Bishop", "Marshal", "Inquisitor", "Mayor")
 
 /datum/bond_role_tier/notable
 	weight = 1.8

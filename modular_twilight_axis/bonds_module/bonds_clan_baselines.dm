@@ -1,10 +1,3 @@
-// Declared starting positions between vampire clans.
-//
-// All neutral at this stage on purpose: the pairs exist so the matrix, the panel and the
-// nudge path are exercised, and so tuning later means editing numbers here rather than
-// adding plumbing. Weight is small but nonzero - clans know of each other, they just have
-// not taken a side yet.
-
 /datum/faction_baseline/clan
 	abstract_type = /datum/faction_baseline/clan
 	warmth = 0

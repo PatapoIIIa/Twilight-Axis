@@ -7,13 +7,11 @@
 	var/weight_commit = 0
 	var/timeout = 0
 	var/tag_applied = BOND_TAG_NONE
-	/// FALSE for events that must not bleed into house standing: backstory is not an incident.
 	var/scored_propagation = TRUE
 	var/history_label = "Событие"
 	var/datum/social_bond/bond
 	var/timer_id
 	var/started_at = 0
-	/// Set per application: how strongly this landed on THIS recipient (see bonds_disposition.dm).
 	var/applied_scale = 1
 
 /datum/bond_event/Destroy(force)

@@ -1,8 +1,6 @@
 /datum/bond_node
 	var/datum/bond_actor/owner
-	/// Sentiment: exactly one bond per other mind.
 	var/list/bonds
-	/// Kinship: several structural links to the same person are legal.
 	var/list/kin
 
 /datum/bond_node/New(datum/bond_actor/new_owner)

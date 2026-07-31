@@ -4,8 +4,6 @@
 	var/kind = BOND_KIN_PARENT
 	var/adopted = FALSE
 	var/datum/heritage/house
-	/// Only used by BOND_KIN_PRESERVED: the kinship term this side keeps calling the other,
-	/// after the member who connected them left the house.
 	var/preserved_label
 
 /datum/social_bond/kin/Destroy(force)
@@ -132,10 +130,6 @@
 		dropped = TRUE
 	return dropped
 
-// spouse_mob predates the kin graph and is still read in ~30 places, but DM has no property
-// getters, so it cannot simply become a proc. Instead the kin SPOUSE link is authoritative and
-// spouse_mob is an explicit cache refreshed from it. Anything that changes a marriage should
-// call this rather than assigning the var, so the two can no longer disagree.
 /mob/living/carbon/human/proc/bonds_refresh_spouse_cache()
 	if(!mind)
 		return null
@@ -147,10 +141,6 @@
 	spouse_mob = first.current_body()
 	return spouse_mob
 
-/// Breadth-first walk from `start` following one kin kind, looking for `target`.
-/// Every ancestry question in the codebase is this walk with a different kind:
-/// descendant-of is PARENT, ancestor-of is CHILD, and a parent cycle is "would the
-/// candidate parent's ancestry already reach the child".
 /datum/controller/subsystem/bonds/proc/kin_reaches(start, target, kind)
 	var/datum/bond_actor/start_actor = resolve_actor(start)
 	var/datum/bond_actor/target_actor = resolve_actor(target)

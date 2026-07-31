@@ -87,7 +87,6 @@
 		return
 	var/datum/bond_event/prototype = get_event_prototype(subject_event)
 	var/hostile = prototype && (prototype.category == BOND_CATEGORY_VIOLENCE || prototype.category == BOND_CATEGORY_DEATH)
-	// A sanctioned duel is not an assault. It must not sour either side, nor move factions.
 	if(hostile && is_sanctioned_duel(actor, subject))
 		return
 

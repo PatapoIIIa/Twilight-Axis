@@ -48,13 +48,13 @@
 
 /datum/bond_faction/burgher
 	id = BOND_FACTION_BURGHER
-	name = "Бюргеры"
+	name = "Ремесленная Гильдия Азурии"
 	accent = "#7fa06f"
 	positions_key = "burgher_positions"
 
 /datum/bond_faction/atc
 	id = BOND_FACTION_ATC
-	name = "Азурская компания"
+	name = "Торговая Гильдия Астинии"
 	accent = "#6fa090"
 	positions_key = "atc_positions"
 
@@ -66,7 +66,7 @@
 
 /datum/bond_faction/sidefolk
 	id = BOND_FACTION_SIDEFOLK
-	name = "Отребье"
+	name = "Вольные люди"
 	accent = "#8f8f8f"
 	positions_key = "sidefolk_positions"
 

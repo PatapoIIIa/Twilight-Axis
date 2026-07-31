@@ -1,10 +1,3 @@
-// Map lens over faction impact.
-//
-// DESIGN STAGE: every weight here is 0 by request, which means "this map does not bend faction
-// politics at all" - `map_weight()` falls back to 1 whenever a lens declares 0, so the system
-// is inert until someone starts filling numbers in. The point of this file existing now is
-// that the hook is in the chain and tuning later is editing this table, not adding plumbing.
-
 /datum/bond_map_lens
 	abstract_type = /datum/bond_map_lens
 	var/map_name = ""

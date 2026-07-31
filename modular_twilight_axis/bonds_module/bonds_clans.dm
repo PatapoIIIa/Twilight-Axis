@@ -1,13 +1,3 @@
-// Vampire clans as a second faction axis.
-//
-// A vampire has BOTH a job faction and a clan, and they answer different questions: the job
-// says where they stand in the town, the clan says where they stand in the night. So clans get
-// their own index rather than competing for the title-keyed one, while sharing the same
-// stance matrix - a clan id is just another faction id as far as bonds_faction_stance.dm cares.
-//
-// DESIGN STAGE: every declared clan pair below sits at neutral, exactly like the storyteller
-// weights sit at 1.0. The wiring is the deliverable; the politics are a later tuning pass.
-
 /datum/bond_faction/clan
 	abstract_type = /datum/bond_faction/clan
 	var/clan_type

@@ -1,6 +1,3 @@
-// Every public entry point takes a "participant": an actor, a mind, a human, or a family_member.
-// resolve_actor() normalises it, so callers never have to know how identity is stored.
-
 /datum/controller/subsystem/bonds/proc/get_node(participant)
 	var/datum/bond_actor/actor = resolve_actor(participant)
 	if(!actor)
@@ -52,7 +49,7 @@
 	var/datum/bond_actor/object_actor = resolve_actor(object)
 	if(!subject_actor || !object_actor || subject_actor == object_actor)
 		return null
-	if(!force && !bonds_identity_visible(object_mob))
+	if(!force && !bonds_identity_visible(object_mob) && !get_bond(subject_actor, object_actor))
 		return null
 	var/datum/bond_event/prototype = get_event_prototype(event_type)
 	if(!prototype)

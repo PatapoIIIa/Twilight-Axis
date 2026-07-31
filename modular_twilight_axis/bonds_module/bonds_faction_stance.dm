@@ -52,9 +52,6 @@
 	var/datum/faction_stance/stance = get_or_create_stance(id_a, id_b)
 	if(!stance)
 		return null
-	var/lens = storyteller_weight(id_a, id_b)
-	warmth_delta *= lens
-	weight_delta *= lens
 	stance.warmth = clamp(stance.warmth + warmth_delta, BOND_WARMTH_MIN, BOND_WARMTH_MAX)
 	stance.weight = clamp(stance.weight + weight_delta, BOND_WEIGHT_MIN, BOND_WEIGHT_MAX)
 	stance.updated_at = world.time
@@ -91,8 +88,6 @@
 		qdel(baseline)
 	bondlog("faction stances seeded: [faction_stances.len] pairs", BONDLOG_INFO)
 
-// Baselines are laid down at Initialize, but the storyteller is only known once the round
-// starts, so the lens is applied separately on the first post-roundstart pass.
 /datum/controller/subsystem/bonds/proc/apply_storyteller_lens()
 	if(storyteller_lens_applied)
 		return FALSE

@@ -1,11 +1,3 @@
-// House-to-house standing.
-//
-// Unlike faction stances, nothing here is declared up front: two houses start at nothing and
-// only acquire a standing because their members did things to each other. Every scored bond
-// event between members of two different houses bleeds a fraction of its permanent commit
-// into the house pair, so a feud is the accumulated residue of individual grudges rather than
-// a switch somebody flipped.
-
 /datum/house_stance
 	var/datum/heritage/house_a
 	var/datum/heritage/house_b

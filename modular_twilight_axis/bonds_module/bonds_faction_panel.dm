@@ -92,7 +92,7 @@
 
 /mob/living/carbon/human/verb/bonds_factions()
 	set name = "Faction Standing"
-	set category = "IC"
+	set category = "Bonds"
 
 	if(!SSbonds.faction_for(src) && !family_datum && !SSbonds.clan_faction_for(src))
 		to_chat(src, span_notice("Вы не представляете никого, кроме себя."))

@@ -1,14 +1,3 @@
-// A bond participant.
-//
-// The graph used to key on /datum/mind, which silently excluded every phantom relative -
-// those are built as `new /datum/family_member(null, house)` and have no body and no mind, so
-// they could never appear in it. That cap is what stopped the rest of the kinship logic from
-// moving out of familytree.
-//
-// An actor is a thin identity token that both kinds of participant can have: a player's actor
-// wraps their mind (and therefore survives body replacement), a phantom's actor wraps the
-// family_member itself. Everything downstream just holds actors and stops caring which is which.
-
 /datum/bond_actor
 	var/datum/mind/mind
 	var/datum/family_member/phantom_member
@@ -66,9 +55,6 @@
 	actors_by_phantom[member] = actor
 	return actor
 
-/// Accepts an actor, a mind, a human, or a family_member and returns the actor for it.
-/// Phantom and cosmetic members deliberately resolve to phantom actors even though some of
-/// them own a dummy body: they must never share identity with a real player's mind.
 /datum/controller/subsystem/bonds/proc/resolve_actor(thing)
 	if(!thing)
 		return null
