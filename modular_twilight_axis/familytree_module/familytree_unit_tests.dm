@@ -300,6 +300,40 @@
 	FT_ASSERT_EQUAL(SSbonds.resolve_actor(leaver.mind), leaver_actor, "a player who leaves a house keeps their graph identity; retiring it strands every bond that pointed at them")
 	FT_ASSERT_NOTNULL(SSbonds.get_bond(leader.mind, leaver.mind), "sentiment is not kinship - leaving a house must not erase what other people feel about you")
 
+/datum/unit_test/familytree/jobs_resolve_from_title_strings/Run()
+	var/mob/living/carbon/human/worker = ft_spawn_player()
+	FT_ASSERT_NOTNULL(worker, "spawn failed")
+	var/datum/job/guildmaster = SSjob.GetJobType(/datum/job/roguetown/guildmaster)
+	FT_ASSERT_NOTNULL(guildmaster, "the guildmaster job must be an occupation")
+
+	worker.mind.assigned_role = guildmaster.title
+	FT_ASSERT_EQUAL(SSbonds.job_type_of(worker), /datum/job/roguetown/guildmaster, "SSjob.AssignRole stores mind.assigned_role as a TITLE STRING even though the var is declared /datum/job, so anything reading .type off it resolves to nothing and every faction lookup silently fails")
+	FT_ASSERT_NOTNULL(SSbonds.faction_for(worker), "a guildmaster must belong to a faction")
+
+	worker.mind.assigned_role = guildmaster
+	FT_ASSERT_EQUAL(SSbonds.job_type_of(worker), /datum/job/roguetown/guildmaster, "the datum form must keep working for the call sites that do assign a job datum")
+
+	worker.mind.assigned_role = null
+	worker.job = guildmaster.title
+	FT_ASSERT_EQUAL(SSbonds.job_type_of(worker), /datum/job/roguetown/guildmaster, "and mob.job must still serve as the last resort")
+
+/datum/unit_test/familytree/finishing_blows_read_as_attempted_murder/Run()
+	var/mob/living/carbon/human/victim = ft_spawn_player()
+	FT_ASSERT_NOTNULL(victim, "spawn failed")
+
+	FT_ASSERT(!SSbonds.mark_critical(victim), "hitting someone on their feet is an ordinary strike")
+
+	victim.health = victim.crit_threshold - 10
+	victim.stat = UNCONSCIOUS
+	FT_ASSERT(victim.InCritical(), "test setup must actually put the target into critical")
+	FT_ASSERT(!SSbonds.mark_critical(victim), "the blow that puts someone down is still the blow that put them down")
+	FT_ASSERT(SSbonds.mark_critical(victim), "every hit after that inside the window is finishing them off")
+
+	victim.bonds_crit_at = world.time - BOND_MURDER_WINDOW - 1
+	victim.health = 100
+	victim.stat = CONSCIOUS
+	FT_ASSERT(!SSbonds.mark_critical(victim), "once the window lapses and they are back up it is an ordinary strike again")
+
 #undef FT_SOURCE
 #undef FT_ASSERT
 #undef FT_ASSERT_EQUAL

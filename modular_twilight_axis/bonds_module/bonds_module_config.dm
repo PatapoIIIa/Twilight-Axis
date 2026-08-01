@@ -23,11 +23,17 @@
 // bonds_dreams.dm     - role archetypes, the 20 baseline memories, echo application and the
 //                       sleep hook: one sleep rolls at most one memory, gated on what both
 //                       sides plausibly are; the sleeper gets it whole, the other side at half
-// bonds_dreams_gods.dm - CONTENT: five memories per storyteller, keyed on their domains
+// bonds_dreams_gods.dm - CONTENT: five memories per god storyteller, keyed on their domains.
+//                        Gated on SSgamemode.ruling_god - the deity holding the town's patrons,
+//                        re-crowned hourly - NOT on current_storyteller, which is the gamemode
+//                        antagonist preset and is never a god
 // bonds_dreams_maps.dm - CONTENT: six memories per map, keyed on /datum/map_adjustment type,
 //                        so mountain passes stay out of the sands and the sands out of Enigma
 // bonds_panels.dm     - every tgui backend: bonds list, bond tree, faction map and standing,
 //                       faction roster, seeding prefs, admin editor, player verbs, family bridge
+// bonds_debug.dm      - admin load bench: synthetic population, event storm, dream and panel
+//                       passes, simulated time skip, and a wave-by-wave degradation run.
+//                       Phases measure without CHECK_TICK on purpose, so they block. Admin only
 // bonds_unit_tests.dm - CI unit tests for the bond chains; runs under UNIT_TESTS
 
 //#define BONDS_DEBUG_LOGGING //UNDEFINE IT FOR THE LOCAL TESTING
@@ -73,6 +79,11 @@
 #define BOND_CATEGORY_DEATH "death"
 #define BOND_CATEGORY_SEED "seed"
 #define BOND_CATEGORY_DREAM "dream"
+
+// Once a blow puts someone into critical, every further hit on them inside this window is
+// read as finishing them off rather than as an ordinary strike. The window refreshes on each
+// hit, so a sustained beating stays an attempt for as long as it lasts.
+#define BOND_MURDER_WINDOW (1 MINUTES)
 
 // Dreams. Every sleep that opens the dream menu rolls ONE memory at most: the four chances
 // below are summed into a single gate, and only if that gate passes is one bucket drawn,
@@ -207,4 +218,5 @@
 #include "bonds_dreams_gods.dm"
 #include "bonds_dreams_maps.dm"
 #include "bonds_panels.dm"
+#include "bonds_debug.dm"
 #include "bonds_unit_tests.dm"

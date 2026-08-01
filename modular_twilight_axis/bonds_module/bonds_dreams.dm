@@ -1,6 +1,7 @@
 /datum/controller/subsystem/bonds
 	var/list/archetype_index
 	var/list/dream_prototypes
+	var/list/dream_buckets
 
 /datum/bond_archetype
 	abstract_type = /datum/bond_archetype
@@ -364,7 +365,8 @@
 		return 1
 	return (valence == BOND_DREAM_NEGATIVE) ? lens.dream_negative_bias : lens.dream_positive_bias
 
-/datum/controller/subsystem/bonds/proc/dream_candidates(mob/living/carbon/human/dreamer, scope) as /list
+/datum/controller/subsystem/bonds/proc/dream_candidates(mob/living/carbon/human/dreamer, scope)
+	RETURN_TYPE(/list)
 	var/list/found = list()
 	var/datum/bond_faction/own = faction_for(dreamer)
 	for(var/mob/living/carbon/human/person in GLOB.player_list)
@@ -387,28 +389,45 @@
 
 /datum/controller/subsystem/bonds/proc/build_dream_index()
 	dream_prototypes = list()
+	dream_buckets = list("[BOND_DREAM_POSITIVE]" = list(), "[BOND_DREAM_NEGATIVE]" = list())
 	for(var/event_type in event_prototypes)
 		var/datum/bond_event/dream/prototype = event_prototypes[event_type]
 		if(!istype(prototype))
 			continue
 		dream_prototypes += event_type
+		var/list/bucket = dream_buckets["[prototype.valence]"]
+		if(bucket)
+			bucket += event_type
 	bondlog("dream index built: [dream_prototypes.len] memories", BONDLOG_INFO)
+
+/datum/controller/subsystem/bonds/proc/round_dream_pool(valence, scope)
+	RETURN_TYPE(/list)
+	var/list/bucket = dream_buckets?["[valence]"]
+	if(!length(bucket))
+		return list()
+	var/map_type = current_map_type()
+	var/teller_type = ruling_god_type()
+	var/list/pool = list()
+	for(var/event_type in bucket)
+		var/datum/bond_event/dream/prototype = event_prototypes[event_type]
+		if(!(prototype.scopes & scope))
+			continue
+		if(!prototype.fits_round(map_type, teller_type))
+			continue
+		pool += event_type
+	return pool
 
 /datum/controller/subsystem/bonds/proc/current_map_type()
 	return SSmapping?.map_adjustment?.type
 
-/datum/controller/subsystem/bonds/proc/dream_pool(valence, scope, dreamer_arch, other_arch, mob/living/carbon/human/dreamer, mob/living/carbon/human/other) as /list
+/datum/controller/subsystem/bonds/proc/dream_pool(valence, scope, dreamer_arch, other_arch, mob/living/carbon/human/dreamer, mob/living/carbon/human/other, list/round_pool)
+	RETURN_TYPE(/list)
+	if(isnull(round_pool))
+		round_pool = round_dream_pool(valence, scope)
 	var/list/pool = list()
-	var/map_type = current_map_type()
-	var/datum/storyteller/teller = active_storyteller()
-	var/teller_type = teller?.type
-	for(var/event_type in dream_prototypes)
+	for(var/event_type in round_pool)
 		var/datum/bond_event/dream/prototype = event_prototypes[event_type]
-		if(prototype.valence != valence)
-			continue
 		if(!prototype.fits(dreamer_arch, other_arch, scope))
-			continue
-		if(!prototype.fits_round(map_type, teller_type))
 			continue
 		if(prototype.vampire_rule != BOND_DREAM_VAMPIRE_NONE)
 			if(!dreamer || !other)
@@ -433,12 +452,15 @@
 	return pool[pool.len]
 
 /datum/controller/subsystem/bonds/proc/fire_dream(mob/living/carbon/human/dreamer, valence, scope)
+	var/list/round_pool = round_dream_pool(valence, scope)
+	if(!length(round_pool))
+		return FALSE
 	var/list/candidates = dream_candidates(dreamer, scope)
 	if(!length(candidates))
 		return FALSE
 	var/dreamer_arch = archetypes_for(dreamer)
 	for(var/mob/living/carbon/human/other as anything in shuffle(candidates))
-		var/list/pool = dream_pool(valence, scope, dreamer_arch, archetypes_for(other), dreamer, other)
+		var/list/pool = dream_pool(valence, scope, dreamer_arch, archetypes_for(other), dreamer, other, round_pool)
 		if(!length(pool))
 			continue
 		var/event_type = pick_dream(pool)
@@ -461,7 +483,8 @@
 		return
 	to_chat(dreamer, span_notice("<b>Сон уводит меня назад.</b> [latest.story]"))
 
-/datum/controller/subsystem/bonds/proc/apply_echo(subject, object, event_type) as /datum/bond_history
+/datum/controller/subsystem/bonds/proc/apply_echo(subject, object, event_type)
+	RETURN_TYPE(/datum/bond_history)
 	var/datum/bond_event/dream/prototype = event_prototypes[event_type]
 	if(!istype(prototype))
 		return null

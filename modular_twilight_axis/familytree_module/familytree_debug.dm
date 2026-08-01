@@ -822,6 +822,14 @@ GLOBAL_LIST_INIT(ftdebug_age_pool, list(
 
 #endif
 
+/// Adds this module's debug verbs to the admin R_DEBUG set. Kept here so the module owns its own
+/// tooling: admin_verbs.dm stays untouched upstream and nothing collides if another module does the same.
+/datum/controller/subsystem/familytree/proc/register_debug_verbs()
+	GLOB.admin_verbs_debug |= list(
+		/client/proc/familytree_debug_panel,
+		/client/proc/familytree_toggle_verbose_logging,
+	)
+
 /client/proc/familytree_debug_panel()
 	set name = "FamilyTree Debug"
 	set category = "Debug"

@@ -544,13 +544,34 @@
 	BD_ASSERT(water.fits_round(/datum/map_adjustment/template/deserttown, null), "a waterskin between wells belongs to the sands")
 	BD_ASSERT(!water.fits_round(/datum/map_adjustment/template/rockhill, null), "and has no business on an island under siege")
 
-/datum/unit_test/bonds/storyteller_memories_need_their_god/Run()
+/datum/unit_test/bonds/divine_memories_follow_the_ruling_god/Run()
 	var/datum/bond_event/dream/prayer = SSbonds.get_event_prototype(/datum/bond_event/dream/astrata/shared_prayer)
 	BD_ASSERT_NOTNULL(prayer, "the dawn prayer memory must exist")
-	BD_ASSERT(prayer.fits_round(null, /datum/storyteller/astrata), "it must be drawable while Astrata tells the round")
+	BD_ASSERT_EQUAL(prayer.storyteller_type, /datum/storyteller/astrata, "divine memories key on the round's god")
+	BD_ASSERT(prayer.fits_round(null, /datum/storyteller/astrata), "it must be drawable while Astrata reigns")
 	BD_ASSERT(!prayer.fits_round(null, /datum/storyteller/graggar), "and never while another god does")
+	BD_ASSERT(!prayer.fits_round(null, /datum/storyteller/gamemode/no_antag), "a gamemode preset is not a deity and must never unlock divine memories")
+
 	var/datum/bond_event/dream/wall = SSbonds.get_event_prototype(/datum/bond_event/dream/shield_wall)
-	BD_ASSERT(wall.fits_round(null, /datum/storyteller/graggar), "the baseline memories belong to no god and stay available")
+	BD_ASSERT(wall.fits_round(null, null), "the baseline memories belong to no god and stay available to everyone")
+
+	var/list/gods = list()
+	for(var/event_type in SSbonds.dream_prototypes)
+		var/datum/bond_event/dream/prototype = SSbonds.event_prototypes[event_type]
+		if(!prototype.storyteller_type)
+			continue
+		BD_ASSERT(ispath(prototype.storyteller_type, /datum/storyteller), "[event_type] is gated on something that is not a storyteller path")
+		BD_ASSERT(!ispath(prototype.storyteller_type, /datum/storyteller/gamemode), "[event_type] is gated on a gamemode preset, which update_ruling_god explicitly never crowns, so it could never fire")
+		gods[prototype.storyteller_type] = TRUE
+	BD_ASSERT_EQUAL(length(gods), 15, "every god in the pantheon must own a set of memories, or that god's round has none")
+
+/datum/unit_test/bonds/storyteller_reads_the_ruling_god/Run()
+	BD_ASSERT_EQUAL(SSbonds.ruling_god_type(), SSgamemode?.ruling_god, "the module must read the crowned deity, not the gamemode preset: current_storyteller holds the antagonist intensity and never matches a god lens")
+	var/teller_type = SSbonds.ruling_god_type()
+	if(!teller_type)
+		return
+	BD_ASSERT(!ispath(teller_type, /datum/storyteller/gamemode), "update_ruling_god never crowns a gamemode preset")
+	BD_ASSERT_NOTNULL(SSbonds.active_storyteller(), "a crowned deity must resolve to its storyteller datum")
 
 /datum/unit_test/bonds/blood_memory_needs_a_vampire/Run()
 	var/datum/bond_event/dream/blood = SSbonds.get_event_prototype(/datum/bond_event/dream/rockhill/shared_blood)
@@ -568,6 +589,24 @@
 	for(var/i in 1 to 4)
 		var/list/pool = SSbonds.dream_pool(valences[i], scopes[i], every_archetype, every_archetype)
 		BD_ASSERT(length(pool) > 0, "bucket [i] can never draw a dream, so its share of the roll is silently wasted")
+
+/datum/unit_test/bonds/seed_flavor_scan_is_cached/Run()
+	var/list/first = SSbonds.valid_seed_flavors()
+	var/list/second = SSbonds.valid_seed_flavors()
+	BD_ASSERT(length(first) > 0, "there must be flavours to hand out")
+	BD_ASSERT_EQUAL(first, second, "the flavour scan walks every event prototype and seeding calls it per pair, so it must be cached rather than rebuilt")
+
+/datum/unit_test/bonds/dream_buckets_partition_the_table/Run()
+	var/list/positive = SSbonds.dream_buckets["[BOND_DREAM_POSITIVE]"]
+	var/list/negative = SSbonds.dream_buckets["[BOND_DREAM_NEGATIVE]"]
+	BD_ASSERT(length(positive) > 0, "the positive bucket must be built at init")
+	BD_ASSERT(length(negative) > 0, "the negative bucket must be built at init")
+	BD_ASSERT_EQUAL(length(positive) + length(negative), length(SSbonds.dream_prototypes), "every memory must land in exactly one valence bucket, or the per-candidate scan silently skips it")
+
+	var/list/round_pool = SSbonds.round_dream_pool(BOND_DREAM_POSITIVE, BOND_DREAM_SCOPE_OWN)
+	BD_ASSERT(length(round_pool) <= length(positive), "round filtering must only ever narrow the bucket")
+	for(var/event_type in round_pool)
+		BD_ASSERT(event_type in positive, "the round pool must never leak a memory of the wrong valence")
 
 #undef BD_SOURCE
 #undef BD_ASSERT

@@ -29,6 +29,9 @@ SUBSYSTEM_DEF(bonds)
 	var/list/house_stances = list()
 	var/list/storyteller_lenses = list()
 	var/storyteller_lens_applied = FALSE
+	var/list/seed_flavor_cache
+	var/list/zone_lens_cache = list()
+	var/map_weight_cache
 	var/seeding_idle = FALSE
 	var/bonds_log_file
 	var/bondlog_counter = 0
@@ -58,6 +61,7 @@ SUBSYSTEM_DEF(bonds)
 	build_map_rosters()
 	build_storyteller_lenses()
 	build_faction_stances()
+	register_debug_verbs()
 	RegisterSignal(SSdcs, COMSIG_GLOB_MOB_CREATED, PROC_REF(on_mob_created))
 	schedule_seeding()
 	bondlog("Initialize() DONE, events=[event_prototypes.len] stages=[stage_prototypes.len]", BONDLOG_INFO)
@@ -84,7 +88,8 @@ SUBSYSTEM_DEF(bonds)
 			continue
 		event_prototypes[event_type] = new event_type()
 
-/datum/controller/subsystem/bonds/proc/get_event_prototype(event_type) as /datum/bond_event
+/datum/controller/subsystem/bonds/proc/get_event_prototype(event_type)
+	RETURN_TYPE(/datum/bond_event)
 	return event_prototypes[event_type]
 
 /datum/controller/subsystem/bonds/proc/bondlog_state(tag = "SNAPSHOT")
@@ -287,12 +292,14 @@ SUBSYSTEM_DEF(bonds)
 /proc/cmp_bond_rank_level(datum/bond_rank/a, datum/bond_rank/b)
 	return a.level - b.level
 
-/datum/controller/subsystem/bonds/proc/rank_for_title(title) as /datum/bond_rank
+/datum/controller/subsystem/bonds/proc/rank_for_title(title)
+	RETURN_TYPE(/datum/bond_rank)
 	if(!title)
 		return null
 	return rank_by_title[title]
 
-/datum/controller/subsystem/bonds/proc/faction_members(faction_id) as /list
+/datum/controller/subsystem/bonds/proc/faction_members(faction_id)
+	RETURN_TYPE(/list)
 	var/list/out = list()
 	if(!faction_id)
 		return out
@@ -328,7 +335,8 @@ SUBSYSTEM_DEF(bonds)
 	var/tmp/bonds_module_loaded_slot
 	var/tmp/bonds_module_loaded_path
 
-/datum/preferences/proc/bonds_module_save_key_map() as /list
+/datum/preferences/proc/bonds_module_save_key_map()
+	RETURN_TYPE(/list)
 	var/static/list/key_map
 	if(!key_map)
 		key_map = list(
@@ -466,7 +474,10 @@ SUBSYSTEM_DEF(bonds)
 	entry_a.seeds_granted++
 	entry_b.seeds_granted++
 
-/datum/controller/subsystem/bonds/proc/valid_seed_flavors() as /list
+/datum/controller/subsystem/bonds/proc/valid_seed_flavors()
+	RETURN_TYPE(/list)
+	if(seed_flavor_cache)
+		return seed_flavor_cache
 	var/list/flavors = list()
 	for(var/event_type in event_prototypes)
 		var/datum/bond_event/seed/prototype = event_prototypes[event_type]
@@ -474,9 +485,11 @@ SUBSYSTEM_DEF(bonds)
 			continue
 		if(!(prototype.flavor_key in flavors))
 			flavors += prototype.flavor_key
+	seed_flavor_cache = flavors
 	return flavors
 
-/datum/controller/subsystem/bonds/proc/seed_flavor_labels() as /list
+/datum/controller/subsystem/bonds/proc/seed_flavor_labels()
+	RETURN_TYPE(/list)
 	var/list/labels = list()
 	for(var/event_type in event_prototypes)
 		var/datum/bond_event/seed/prototype = event_prototypes[event_type]
@@ -539,7 +552,8 @@ SUBSYSTEM_DEF(bonds)
 	else
 		stop_seeding("every declared seed has been placed")
 
-/datum/controller/subsystem/bonds/proc/collect_seed_pool() as /list
+/datum/controller/subsystem/bonds/proc/collect_seed_pool()
+	RETURN_TYPE(/list)
 	var/list/pool = list()
 	for(var/mob/living/carbon/human/person in GLOB.player_list)
 		if(!person.client || !person.mind || !person.ckey)
@@ -553,7 +567,8 @@ SUBSYSTEM_DEF(bonds)
 		pool += person
 	return pool
 
-/datum/controller/subsystem/bonds/proc/seed_candidates(mob/living/carbon/human/seeker, list/pool) as /list
+/datum/controller/subsystem/bonds/proc/seed_candidates(mob/living/carbon/human/seeker, list/pool)
+	RETURN_TYPE(/list)
 	var/list/weighted = list()
 	var/datum/bond_faction/seeker_faction = faction_for(seeker)
 	for(var/mob/living/carbon/human/candidate as anything in pool)
@@ -577,7 +592,8 @@ SUBSYSTEM_DEF(bonds)
 			weighted += candidate
 	return weighted
 
-/datum/controller/subsystem/bonds/proc/shared_seed_flavors(ckey_a, ckey_b) as /list
+/datum/controller/subsystem/bonds/proc/shared_seed_flavors(ckey_a, ckey_b)
+	RETURN_TYPE(/list)
 	var/datum/bonds_round_prefs/prefs_a = get_round_prefs(ckey_a)
 	var/datum/bonds_round_prefs/prefs_b = get_round_prefs(ckey_b)
 	if(!prefs_a || !prefs_b)

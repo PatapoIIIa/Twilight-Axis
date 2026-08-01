@@ -1,4 +1,5 @@
-/datum/controller/subsystem/bonds/proc/build_family_entries(mob/living/carbon/human/viewer) as /list
+/datum/controller/subsystem/bonds/proc/build_family_entries(mob/living/carbon/human/viewer)
+	RETURN_TYPE(/list)
 	var/list/entries = list()
 	var/datum/heritage/house = viewer?.family_datum
 	var/datum/family_member/checker = viewer?.family_member_datum
@@ -15,7 +16,8 @@
 		entries += list(build_family_entry(viewer, house, member, relation))
 	return entries
 
-/datum/controller/subsystem/bonds/proc/build_family_entry(mob/living/carbon/human/viewer, datum/heritage/house, datum/family_member/member, relation) as /list
+/datum/controller/subsystem/bonds/proc/build_family_entry(mob/living/carbon/human/viewer, datum/heritage/house, datum/family_member/member, relation)
+	RETURN_TYPE(/list)
 	var/list/history = list()
 	var/sentiment = ""
 	var/datum/social_bond/bond = get_bond(viewer.mind, member.person?.mind)
@@ -36,7 +38,8 @@
 		"history" = history,
 	)
 
-/datum/controller/subsystem/bonds/proc/family_mind_set(mob/living/carbon/human/viewer) as /list
+/datum/controller/subsystem/bonds/proc/family_mind_set(mob/living/carbon/human/viewer)
+	RETURN_TYPE(/list)
 	var/list/actors = list()
 	var/datum/heritage/house = viewer?.family_datum
 	if(!house)
@@ -79,7 +82,8 @@
 /datum/bonds_panel/ui_close()
 	QDEL_NULL(src)
 
-/datum/controller/subsystem/bonds/proc/build_panel_groups(mob/living/carbon/human/viewer) as /list
+/datum/controller/subsystem/bonds/proc/build_panel_groups(mob/living/carbon/human/viewer)
+	RETURN_TYPE(/list)
 	var/list/groups = list()
 	var/list/family_entries = build_family_entries(viewer)
 	var/list/kin = family_mind_set(viewer)
@@ -106,7 +110,8 @@
 		))
 	return groups
 
-/datum/controller/subsystem/bonds/proc/build_panel_entry(datum/social_bond/bond) as /list
+/datum/controller/subsystem/bonds/proc/build_panel_entry(datum/social_bond/bond)
+	RETURN_TYPE(/list)
 	var/list/history = list()
 	for(var/datum/bond_history/entry as anything in bond.history)
 		history += list(list(
@@ -154,7 +159,8 @@
 /datum/bonds_tree_panel/ui_close()
 	QDEL_NULL(src)
 
-/datum/controller/subsystem/bonds/proc/build_bonds_tree(mob/living/carbon/human/person) as /list
+/datum/controller/subsystem/bonds/proc/build_bonds_tree(mob/living/carbon/human/person)
+	RETURN_TYPE(/list)
 	var/list/edges = list()
 	for(var/datum/social_bond/bond as anything in get_bonds_for(person.mind))
 		if(bond.weight < BOND_VISIBLE_WEIGHT)
@@ -187,7 +193,8 @@
 	var/datum/bonds_tree_panel/panel = new(src)
 	panel.ui_interact(src)
 
-/datum/controller/subsystem/bonds/proc/build_faction_map(mob/living/carbon/human/viewer) as /list
+/datum/controller/subsystem/bonds/proc/build_faction_map(mob/living/carbon/human/viewer)
+	RETURN_TYPE(/list)
 	var/own_id = faction_id_for(viewer)
 	var/list/nodes = list()
 	var/list/ordered = list()
@@ -287,7 +294,8 @@
 /datum/bonds_faction_panel/ui_close()
 	QDEL_NULL(src)
 
-/datum/controller/subsystem/bonds/proc/build_faction_panel(mob/living/carbon/human/person) as /list
+/datum/controller/subsystem/bonds/proc/build_faction_panel(mob/living/carbon/human/person)
+	RETURN_TYPE(/list)
 	var/datum/bond_faction/own = faction_for(person)
 	return list(
 		"ownFaction" = own ? list("name" = own.name, "accent" = own.accent, "icon" = own.icon_glyph) : null,
@@ -298,7 +306,8 @@
 		"clans" = build_clan_panel(person),
 	)
 
-/datum/controller/subsystem/bonds/proc/build_house_panel(mob/living/carbon/human/person) as /list
+/datum/controller/subsystem/bonds/proc/build_house_panel(mob/living/carbon/human/person)
+	RETURN_TYPE(/list)
 	var/list/out = list()
 	var/datum/heritage/own = person?.family_datum
 	if(!own)
@@ -357,7 +366,8 @@
 /datum/bonds_roster_panel/ui_close()
 	QDEL_NULL(src)
 
-/datum/controller/subsystem/bonds/proc/build_roster_block(faction_id, mob/living/carbon/human/viewer, leaders_only = FALSE) as /list
+/datum/controller/subsystem/bonds/proc/build_roster_block(faction_id, mob/living/carbon/human/viewer, leaders_only = FALSE)
+	RETURN_TYPE(/list)
 	var/datum/bond_faction/faction = get_faction(faction_id)
 	if(!faction)
 		return null
@@ -424,7 +434,8 @@
 		"total" = length(members),
 	)
 
-/datum/controller/subsystem/bonds/proc/build_roster_data(mob/living/carbon/human/viewer) as /list
+/datum/controller/subsystem/bonds/proc/build_roster_data(mob/living/carbon/human/viewer)
+	RETURN_TYPE(/list)
 	var/own_id = faction_id_for(viewer)
 	if(!own_id)
 		return list("own" = null, "ally" = null)
@@ -588,7 +599,8 @@
 /datum/bonds_admin_panel/ui_close()
 	QDEL_NULL(src)
 
-/datum/controller/subsystem/bonds/proc/build_admin_data() as /list
+/datum/controller/subsystem/bonds/proc/build_admin_data()
+	RETURN_TYPE(/list)
 	var/list/factions = list()
 	for(var/faction_id in faction_prototypes)
 		var/datum/bond_faction/faction = faction_prototypes[faction_id]

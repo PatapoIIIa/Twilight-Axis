@@ -139,27 +139,31 @@
 /proc/cmp_bond_zone_priority(datum/bond_zone_lens/a, datum/bond_zone_lens/b)
 	return b.priority - a.priority
 
-/datum/controller/subsystem/bonds/proc/zone_lens_for(atom/where) as /datum/bond_zone_lens
+/datum/controller/subsystem/bonds/proc/zone_lens_for(atom/where)
+	RETURN_TYPE(/datum/bond_zone_lens)
 	var/area/spot = get_area(where)
 	if(!spot)
 		return null
+	var/cached = zone_lens_cache[spot.type]
+	if(cached)
+		return cached
+	if(!isnull(cached))
+		return null
+	var/datum/bond_zone_lens/found = null
 	for(var/datum/bond_zone_lens/lens as anything in zone_lenses)
 		if(istype(spot, lens.area_type))
-			return lens
-	return null
+			found = lens
+			break
+	zone_lens_cache[spot.type] = found || FALSE
+	return found
 
 /datum/controller/subsystem/bonds/proc/is_public_zone(atom/where)
 	var/datum/bond_zone_lens/lens = zone_lens_for(where)
 	return lens ? lens.public_zone : FALSE
 
 /datum/controller/subsystem/bonds/proc/zone_weight(atom/where)
-	var/area/spot = get_area(where)
-	if(!spot)
-		return 1
-	for(var/datum/bond_zone_lens/lens as anything in zone_lenses)
-		if(istype(spot, lens.area_type))
-			return lens.weight
-	return 1
+	var/datum/bond_zone_lens/lens = zone_lens_for(where)
+	return lens ? lens.weight : 1
 
 /datum/bond_map_lens
 	abstract_type = /datum/bond_map_lens
@@ -179,13 +183,14 @@
 	bondlog("map lenses built: [map_lenses.len]", BONDLOG_INFO)
 
 /datum/controller/subsystem/bonds/proc/map_weight()
+	if(!isnull(map_weight_cache))
+		return map_weight_cache
 	var/current = SSmapping?.config?.map_name
 	if(!current)
 		return 1
 	var/datum/bond_map_lens/lens = map_lenses[current]
-	if(!lens || !lens.weight)
-		return 1
-	return lens.weight
+	map_weight_cache = (lens && lens.weight) ? lens.weight : 1
+	return map_weight_cache
 
 /datum/bond_map_roster
 	abstract_type = /datum/bond_map_roster
@@ -205,13 +210,15 @@
 		map_rosters[roster.map_name] = roster
 	bondlog("map rosters built: [map_rosters.len]", BONDLOG_INFO)
 
-/datum/controller/subsystem/bonds/proc/current_map_roster() as /datum/bond_map_roster
+/datum/controller/subsystem/bonds/proc/current_map_roster()
+	RETURN_TYPE(/datum/bond_map_roster)
 	var/current = SSmapping?.config?.map_name
 	if(!current)
 		return null
 	return map_rosters[current]
 
-/datum/controller/subsystem/bonds/proc/map_blacklist() as /list
+/datum/controller/subsystem/bonds/proc/map_blacklist()
+	RETURN_TYPE(/list)
 	var/datum/map_adjustment/adjustment = SSmapping?.map_adjustment
 	if(!adjustment || !islist(adjustment.blacklist))
 		return list()
@@ -236,7 +243,8 @@
 			return TRUE
 	return !found_any
 
-/datum/controller/subsystem/bonds/proc/present_faction_ids() as /list
+/datum/controller/subsystem/bonds/proc/present_faction_ids()
+	RETURN_TYPE(/list)
 	var/list/out = list()
 	for(var/faction_id in faction_prototypes)
 		var/datum/bond_faction/faction = faction_prototypes[faction_id]
@@ -267,16 +275,15 @@
 		storyteller_lenses[lens.storyteller_type] = lens
 	bondlog("storyteller lenses built: [storyteller_lenses.len]", BONDLOG_INFO)
 
-/datum/controller/subsystem/bonds/proc/active_storyteller() as /datum/storyteller
-	if(!SSgamemode)
+/datum/controller/subsystem/bonds/proc/active_storyteller()
+	RETURN_TYPE(/datum/storyteller)
+	var/god_type = ruling_god_type()
+	if(!god_type)
 		return null
-	if(SSgamemode.current_storyteller)
-		return SSgamemode.current_storyteller
-	if(SSgamemode.roundstart_storyteller)
-		return SSgamemode.storytellers?[SSgamemode.roundstart_storyteller]
-	if(SSgamemode.selected_storyteller)
-		return SSgamemode.storytellers?[SSgamemode.selected_storyteller]
-	return null
+	return SSgamemode.storytellers?[god_type]
+
+/datum/controller/subsystem/bonds/proc/ruling_god_type()
+	return SSgamemode?.ruling_god
 
 /datum/controller/subsystem/bonds/proc/storyteller_weight(id_a, id_b)
 	var/datum/storyteller/teller = active_storyteller()
@@ -374,7 +381,8 @@
 			origin_index[origin.virtue_type] = origin
 	bondlog("origin index built: [origin_prototypes.len] origins", BONDLOG_INFO)
 
-/datum/controller/subsystem/bonds/proc/origin_for(participant) as /datum/bond_origin
+/datum/controller/subsystem/bonds/proc/origin_for(participant)
+	RETURN_TYPE(/datum/bond_origin)
 	var/datum/bond_actor/actor = resolve_actor(participant)
 	if(!actor)
 		return null
@@ -455,13 +463,15 @@
 		origin_lore[key] = lore
 	bondlog("origin lore built: [origin_lore.len] pairs", BONDLOG_INFO)
 
-/datum/controller/subsystem/bonds/proc/origin_lore_for(participant_a, participant_b) as /datum/origin_lore
+/datum/controller/subsystem/bonds/proc/origin_lore_for(participant_a, participant_b)
+	RETURN_TYPE(/datum/origin_lore)
 	var/key = bonds_origin_key(origin_id_for(participant_a), origin_id_for(participant_b))
 	if(!key)
 		return null
 	return origin_lore[key]
 
-/datum/controller/subsystem/bonds/proc/influence_state(datum/bond_actor/actor) as /list
+/datum/controller/subsystem/bonds/proc/influence_state(datum/bond_actor/actor)
+	RETURN_TYPE(/list)
 	if(!actor)
 		return null
 	var/list/state = influence_pools[actor]
@@ -518,8 +528,9 @@
 
 	if(!applied_scale)
 		return FALSE
+	var/datum/bond_zone_lens/zone = zone_lens_for(object_body)
 	var/hostile = (prototype.category == BOND_CATEGORY_VIOLENCE) || (prototype.category == BOND_CATEGORY_DEATH)
-	if(hostile && !is_public_zone(object_body))
+	if(hostile && !zone?.public_zone)
 		return FALSE
 
 	if(!spend_influence(object_actor))
@@ -532,7 +543,7 @@
 		BOND_SHARE_ROLE = role_impact_weight(object_body) * role_impact_weight(subject_body),
 		BOND_SHARE_LORE = lore ? lore.weight_scale : 1,
 		BOND_SHARE_STORYTELLER = storyteller_weight(id_a, id_b),
-		BOND_SHARE_ZONE = zone_weight(object_body),
+		BOND_SHARE_ZONE = zone ? zone.weight : 1,
 		BOND_SHARE_MAP = map_weight(),
 	))
 	var/bias = lore ? lore.bias : 0
@@ -543,18 +554,17 @@
 		return FALSE
 
 	var/reason = "[subject_actor.name_of()] и [object_actor.name_of()]: [lowertext(prototype.history_label)]"
-	apply_faction_impact(subject_body, object_body, warmth_delta, weight_delta, reason)
+	apply_faction_impact(id_a, id_b, warmth_delta, weight_delta, reason)
 	apply_house_impact(subject_body, object_body, warmth_delta, weight_delta, reason)
 	apply_clan_impact(subject_body, object_body, warmth_delta, weight_delta, reason)
 	return TRUE
 
-/datum/controller/subsystem/bonds/proc/apply_faction_impact(mob/living/carbon/human/subject_body, mob/living/carbon/human/object_body, warmth_delta, weight_delta, reason)
-	var/id_a = faction_id_for(subject_body)
-	var/id_b = faction_id_for(object_body)
+/datum/controller/subsystem/bonds/proc/apply_faction_impact(id_a, id_b, warmth_delta, weight_delta, reason)
 	if(!id_a || !id_b || id_a == id_b)
 		return FALSE
 	nudge_stance(id_a, id_b, warmth_delta, weight_delta, reason)
-	bondlog("faction impact [id_a] <-> [id_b] warmth [warmth_delta]", BONDLOG_INFO)
+	if(verbose_logging)
+		bondlog("faction impact [id_a] <-> [id_b] warmth [warmth_delta]")
 	return TRUE
 
 /datum/controller/subsystem/bonds/proc/apply_house_impact(mob/living/carbon/human/subject_body, mob/living/carbon/human/object_body, warmth_delta, weight_delta, reason)

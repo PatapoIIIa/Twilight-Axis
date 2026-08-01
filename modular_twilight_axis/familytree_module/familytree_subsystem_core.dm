@@ -126,6 +126,7 @@ SUBSYSTEM_DEF(familytree)
 		register_human(H)
 		registered_count++
 	ftlog("registered [registered_count] humans from GLOB.mob_list")
+	register_debug_verbs()
 	addtimer(CALLBACK(src, PROC_REF(scan_and_grant_holy_spells)), 30 SECONDS)
 	ftlog("Initialize() DONE, holy spell scan scheduled in 30s")
 	ftlog_state("POST_INIT")

@@ -8,7 +8,7 @@
 /proc/bonds_build_snapshot(mob/living/carbon/human/person)
 	if(!ishuman(person))
 		return null
-	var/datum/job/role = person.mind?.assigned_role
+	var/datum/job/role = bonds_job_datum_of(person)
 	return list(
 		"name" = person.real_name,
 		"vcolor" = person.voice_color,
@@ -183,6 +183,31 @@
 /datum/bond_event/embraced_them/build_story(datum/social_bond/context)
 	return "Я обнял [context.display_name()]."
 
+/datum/bond_event/murder_attempt_by
+	category = BOND_CATEGORY_DEATH
+	warmth_transient = -45
+	weight_transient = 55
+	warmth_commit = -28
+	weight_commit = 40
+	timeout = 20 MINUTES
+	tag_applied = BOND_TAG_SHED_BLOOD
+	history_label = "Покушение"
+
+/datum/bond_event/murder_attempt_by/build_story(datum/social_bond/context)
+	return "[context.display_name()] добивал меня, когда я уже не стоял на ногах."
+
+/datum/bond_event/murder_attempt_them
+	category = BOND_CATEGORY_DEATH
+	warmth_transient = -8
+	weight_transient = 30
+	warmth_commit = -6
+	weight_commit = 25
+	timeout = 20 MINUTES
+	history_label = "Покушение"
+
+/datum/bond_event/murder_attempt_them/build_story(datum/social_bond/context)
+	return "Я добивал [context.display_name()], когда он уже не стоял на ногах."
+
 /datum/bond_event/seed
 	abstract_type = /datum/bond_event/seed
 	category = BOND_CATEGORY_SEED
@@ -285,7 +310,8 @@
 /proc/cmp_bond_stage_priority(datum/bond_stage/a, datum/bond_stage/b)
 	return b.priority - a.priority
 
-/datum/controller/subsystem/bonds/proc/resolve_stage(datum/social_bond/bond) as /datum/bond_stage
+/datum/controller/subsystem/bonds/proc/resolve_stage(datum/social_bond/bond)
+	RETURN_TYPE(/datum/bond_stage)
 	if(!bond)
 		return null
 	for(var/datum/bond_stage/stage as anything in stage_prototypes)
@@ -423,6 +449,7 @@
 	var/tmp/bonds_signals_bound = FALSE
 	var/tmp/datum/mind/bonds_last_aggressor
 	var/tmp/bonds_last_aggression_time = 0
+	var/tmp/bonds_crit_at = 0
 
 /datum/controller/subsystem/bonds/proc/on_mob_created(datum/source, mob/new_mob)
 	SIGNAL_HANDLER
@@ -464,13 +491,37 @@
 
 /datum/controller/subsystem/bonds/proc/on_item_attack(datum/source, mob/living/target, mob/living/attacker, obj/item/weapon)
 	SIGNAL_HANDLER
-	record_pair(attacker, target, /datum/bond_event/struck_them, /datum/bond_event/struck_by)
-	mark_aggressor(attacker, target)
+	handle_attack(attacker, target, weapon, /datum/bond_event/struck_them, /datum/bond_event/struck_by)
 
 /datum/controller/subsystem/bonds/proc/on_attacked_by_hand(datum/source, mob/living/attacker, mob/living/target)
 	SIGNAL_HANDLER
-	record_pair(attacker, target, /datum/bond_event/beat_them, /datum/bond_event/beaten_by)
+	handle_attack(attacker, target, null, /datum/bond_event/beat_them, /datum/bond_event/beaten_by)
+
+/datum/controller/subsystem/bonds/proc/handle_attack(mob/living/attacker, mob/living/target, obj/item/weapon, subject_event, object_event)
+	var/finishing = mark_critical(target)
+	if(finishing)
+		record_pair(attacker, target, /datum/bond_event/murder_attempt_them, /datum/bond_event/murder_attempt_by)
+	else
+		record_pair(attacker, target, subject_event, object_event)
 	mark_aggressor(attacker, target)
+	if(finishing)
+		log_finishing_blow(attacker, target, weapon)
+
+/datum/controller/subsystem/bonds/proc/mark_critical(mob/living/target)
+	var/mob/living/carbon/human/victim = target
+	if(!ishuman(victim))
+		return FALSE
+	var/marked = victim.bonds_crit_at && ((world.time - victim.bonds_crit_at) <= BOND_MURDER_WINDOW)
+	if(victim.InCritical())
+		victim.bonds_crit_at = world.time
+		return marked
+	return marked
+
+/datum/controller/subsystem/bonds/proc/log_finishing_blow(mob/living/attacker, mob/living/target, obj/item/weapon)
+	if(!attacker || !target)
+		return
+	var/tool = weapon ? "[weapon.name] ([weapon.type])" : "bare hands"
+	bondlog("attempted murder: [key_name(attacker)] -> [key_name(target)] with [tool], target was already down", BONDLOG_INFO)
 
 /datum/controller/subsystem/bonds/proc/on_hugged(datum/source, mob/living/target)
 	SIGNAL_HANDLER
