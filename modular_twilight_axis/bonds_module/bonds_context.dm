@@ -63,23 +63,7 @@
 /datum/bond_role_tier
 	abstract_type = /datum/bond_role_tier
 	var/weight = 1
-	var/list/titles
-
-/datum/bond_role_tier/crown
-	weight = 3
-	titles = list("Grand Duke", "Sultan", "Consort", "Prince", "Harem Favorite")
-
-/datum/bond_role_tier/regent
-	weight = 2.8
-	titles = list("Hand", "Vizier")
-
-/datum/bond_role_tier/high_office
-	weight = 2.5
-	titles = list("Steward", "Seneschal", "Councillor", "Bishop", "Marshal", "Inquisitor", "Mayor")
-
-/datum/bond_role_tier/notable
-	weight = 1.8
-	titles = list("Knight", "Royal Knight", "Cataphract", "Templar", "Martyr", "Absolver", "Orthodoxist", "Guildmaster", "Merchant", "Sergeant", "Royal Guard Sergeant", "Town Sheriff", "Overseer", "Court Magician", "Archivist", "Head Physician")
+	var/list/jobs
 
 /datum/controller/subsystem/bonds/proc/build_role_weights()
 	role_weights = list()
@@ -87,16 +71,17 @@
 		if(IS_ABSTRACT(tier_type))
 			continue
 		var/datum/bond_role_tier/tier = new tier_type()
-		for(var/title in tier.titles)
-			if(isnull(role_weights[title]) || role_weights[title] < tier.weight)
-				role_weights[title] = tier.weight
+		for(var/job_type in tier.jobs)
+			if(isnull(role_weights[job_type]) || role_weights[job_type] < tier.weight)
+				role_weights[job_type] = tier.weight
 		qdel(tier)
-	bondlog("role weights built: [role_weights.len] titles", BONDLOG_INFO)
+	bondlog("role weights built: [role_weights.len] job types", BONDLOG_INFO)
 
 /datum/controller/subsystem/bonds/proc/role_impact_weight(mob/living/carbon/human/person)
-	if(!ishuman(person) || !person.job)
+	var/job_type = job_type_of(person)
+	if(!job_type)
 		return 1
-	var/weight = role_weights[person.job]
+	var/weight = role_weights[job_type]
 	return isnull(weight) ? 1 : weight
 
 /datum/bond_zone_lens
@@ -181,15 +166,6 @@
 	var/map_name = ""
 	var/weight = 0
 
-/datum/bond_map_lens/rockhill
-	map_name = "Rockhill"
-
-/datum/bond_map_lens/dun_world
-	map_name = "Dun World"
-
-/datum/bond_map_lens/deserttown
-	map_name = "Desert Town"
-
 /datum/controller/subsystem/bonds/proc/build_map_lenses()
 	map_lenses = list()
 	for(var/datum/bond_map_lens/lens_type as anything in typesof(/datum/bond_map_lens))
@@ -217,14 +193,6 @@
 	var/list/absent_factions
 	var/list/extra_factions
 
-/datum/bond_map_roster/rockhill
-	map_name = "Rockhill"
-	absent_factions = list(BOND_FACTION_VANGUARD)
-
-/datum/bond_map_roster/deserttown
-	map_name = "Desert Town"
-	absent_factions = list(BOND_FACTION_CITYWATCH, BOND_FACTION_VANGUARD, BOND_FACTION_INQUISITION)
-
 /datum/controller/subsystem/bonds/proc/build_map_rosters()
 	map_rosters = list()
 	for(var/datum/bond_map_roster/roster_type as anything in typesof(/datum/bond_map_roster))
@@ -243,17 +211,30 @@
 		return null
 	return map_rosters[current]
 
+/datum/controller/subsystem/bonds/proc/map_blacklist() as /list
+	var/datum/map_adjustment/adjustment = SSmapping?.map_adjustment
+	if(!adjustment || !islist(adjustment.blacklist))
+		return list()
+	return adjustment.blacklist
+
 /datum/controller/subsystem/bonds/proc/faction_present(faction_id)
 	if(!faction_id)
 		return FALSE
-	var/datum/bond_map_roster/roster = current_map_roster()
-	if(!roster)
-		return TRUE
-	if(length(roster.extra_factions) && (faction_id in roster.extra_factions))
-		return TRUE
-	if(length(roster.absent_factions) && (faction_id in roster.absent_factions))
+	var/datum/bond_faction/faction = faction_prototypes[faction_id]
+	if(!faction)
 		return FALSE
-	return TRUE
+	var/datum/bond_map_roster/roster = current_map_roster()
+	if(roster && length(roster.extra_factions) && (faction_id in roster.extra_factions))
+		return TRUE
+	var/list/blacklist = map_blacklist()
+	var/found_any = FALSE
+	for(var/job_type in faction_index)
+		if(faction_index[job_type] != faction)
+			continue
+		found_any = TRUE
+		if(!(job_type in blacklist))
+			return TRUE
+	return !found_any
 
 /datum/controller/subsystem/bonds/proc/present_faction_ids() as /list
 	var/list/out = list()
@@ -271,15 +252,6 @@
 	var/storyteller_type
 	var/list/pair_weights
 	var/default_weight = 1
-
-/datum/bond_storyteller_lens/proc/weight_for(id_a, id_b)
-	if(!length(pair_weights))
-		return default_weight
-	var/key = bonds_stance_key(id_a, id_b)
-	if(!key)
-		return default_weight
-	var/weight = pair_weights[key]
-	return isnull(weight) ? default_weight : weight
 
 /datum/controller/subsystem/bonds/proc/build_storyteller_lenses()
 	storyteller_lenses = list()
@@ -312,65 +284,6 @@
 	if(!lens)
 		return 1
 	return lens.weight_for(id_a, id_b)
-
-/datum/bond_storyteller_lens/psydon
-	storyteller_type = /datum/storyteller/psydon
-	default_weight = 1
-	pair_weights = list(
-		"church|inquisition" = 1.8,
-		"church|noble" = 1.3,
-	)
-
-/datum/bond_storyteller_lens/astrata
-	storyteller_type = /datum/storyteller/astrata
-	default_weight = 0.8
-	pair_weights = list(
-		"garrison|outlaw" = 1.4,
-		"citywatch|outlaw" = 1.4,
-	)
-
-/datum/bond_storyteller_lens/noc
-	storyteller_type = /datum/storyteller/noc
-	default_weight = 0.9
-
-/datum/bond_storyteller_lens/ravox
-	storyteller_type = /datum/storyteller/ravox
-	default_weight = 1.2
-	pair_weights = list(
-		"garrison|retinue" = 0.6,
-		"citywatch|garrison" = 0.6,
-	)
-
-/datum/bond_storyteller_lens/abyssor
-	storyteller_type = /datum/storyteller/abyssor
-	default_weight = 1
-
-/datum/bond_storyteller_lens/xylix
-	storyteller_type = /datum/storyteller/xylix
-	default_weight = 1.4
-
-/datum/bond_storyteller_lens/necra
-	storyteller_type = /datum/storyteller/necra
-	default_weight = 1.1
-
-/datum/bond_storyteller_lens/pestra
-	storyteller_type = /datum/storyteller/pestra
-	default_weight = 0.8
-
-/datum/bond_storyteller_lens/malum
-	storyteller_type = /datum/storyteller/malum
-	default_weight = 1
-	pair_weights = list(
-		"atc|burgher" = 1.5,
-	)
-
-/datum/bond_storyteller_lens/eora
-	storyteller_type = /datum/storyteller/eora
-	default_weight = 0.6
-
-/datum/bond_storyteller_lens/dendor
-	storyteller_type = /datum/storyteller/dendor
-	default_weight = 1.1
 
 /datum/bond_origin
 	abstract_type = /datum/bond_origin

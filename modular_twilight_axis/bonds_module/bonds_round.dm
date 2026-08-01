@@ -29,6 +29,7 @@ SUBSYSTEM_DEF(bonds)
 	var/list/house_stances = list()
 	var/list/storyteller_lenses = list()
 	var/storyteller_lens_applied = FALSE
+	var/seeding_idle = FALSE
 	var/bonds_log_file
 	var/bondlog_counter = 0
 	var/bondlog_error_count = 0
@@ -488,7 +489,24 @@ SUBSYSTEM_DEF(bonds)
 	return (world.time - SSticker.round_start_time) >= BOND_SEED_DELAY
 
 /datum/controller/subsystem/bonds/proc/schedule_seeding(delay = BOND_SEED_DELAY)
+	seeding_idle = FALSE
 	addtimer(CALLBACK(src, PROC_REF(run_seeding)), delay, TIMER_UNIQUE|TIMER_OVERRIDE)
+
+/datum/controller/subsystem/bonds/proc/stop_seeding(reason)
+	seeding_idle = TRUE
+	bondlog("seeding idle: [reason]", BONDLOG_INFO)
+
+/datum/controller/subsystem/bonds/proc/wake_seeding()
+	if(!seeding_idle)
+		return FALSE
+	schedule_seeding(BOND_SEED_RETRY)
+	return TRUE
+
+/datum/controller/subsystem/bonds/proc/anyone_still_wants_seeds()
+	for(var/target_ckey in round_prefs_by_ckey)
+		if(remaining_seeds(target_ckey) > 0)
+			return TRUE
+	return FALSE
 
 /datum/controller/subsystem/bonds/proc/run_seeding()
 	if(!bonds_seed_phase_open())
@@ -497,7 +515,10 @@ SUBSYSTEM_DEF(bonds)
 	apply_storyteller_lens()
 	var/list/pool = collect_seed_pool()
 	if(length(pool) < 2)
-		schedule_seeding(BOND_SEED_RETRY)
+		if(anyone_still_wants_seeds())
+			schedule_seeding(BOND_SEED_RETRY)
+		else
+			stop_seeding("nobody is waiting for a starting acquaintance")
 		return
 	pool = shuffle(pool)
 	var/paired = 0
@@ -511,7 +532,10 @@ SUBSYSTEM_DEF(bonds)
 		if(apply_seed(seeker, partner))
 			paired++
 	bondlog("run_seeding paired=[paired] pool=[pool.len]", BONDLOG_INFO)
-	schedule_seeding(BOND_SEED_RETRY)
+	if(anyone_still_wants_seeds())
+		schedule_seeding(BOND_SEED_RETRY)
+	else
+		stop_seeding("every declared seed has been placed")
 
 /datum/controller/subsystem/bonds/proc/collect_seed_pool() as /list
 	var/list/pool = list()

@@ -304,11 +304,11 @@
 	SSbonds.influence_pools -= actor
 
 /datum/unit_test/bonds/role_weight_scales_by_office/Run()
-	BD_ASSERT_EQUAL(SSbonds.role_weights["Bishop"], 2.5, "high office weight drifted")
-	BD_ASSERT(SSbonds.role_weights["Hand"] > SSbonds.role_weights["Marshal"], "the Hand outranks the Marshal: they command every noble")
-	BD_ASSERT(SSbonds.role_weights["Grand Duke"] > SSbonds.role_weights["Hand"], "the Duke still has absolute priority")
-	BD_ASSERT_EQUAL(SSbonds.role_weights["Knight"], 1.8, "notable weight drifted")
-	BD_ASSERT_NULL(SSbonds.role_weights["Towner"], "ordinary jobs carry no declared weight")
+	BD_ASSERT_EQUAL(SSbonds.role_weights[/datum/job/roguetown/priest], 2.5, "high office weight drifted")
+	BD_ASSERT(SSbonds.role_weights[/datum/job/roguetown/hand] > SSbonds.role_weights[/datum/job/roguetown/marshal], "the Hand outranks the Marshal: they command every noble")
+	BD_ASSERT(SSbonds.role_weights[/datum/job/roguetown/lord] > SSbonds.role_weights[/datum/job/roguetown/hand], "the ruler still has absolute priority")
+	BD_ASSERT_EQUAL(SSbonds.role_weights[/datum/job/roguetown/knight], 1.8, "notable weight drifted")
+	BD_ASSERT_NULL(SSbonds.role_weights[/datum/job/roguetown/villager], "ordinary jobs carry no declared weight")
 
 /datum/unit_test/bonds/map_lens_is_inert_at_zero/Run()
 	BD_ASSERT(SSbonds.map_lenses.len > 0, "map lenses must be built")
@@ -332,6 +332,15 @@
 	BD_ASSERT_NOTNULL(friendly, "Azuria and Grenzelhoft have a declared position too")
 	BD_ASSERT(friendly.bias > 0, "wartime neutrality and dynastic kinship make them friendly, not hostile")
 	BD_ASSERT(friendly.weight_scale < 1, "so their incidents matter less, not more")
+
+/datum/unit_test/bonds/seeding_goes_idle_when_nobody_waits/Run()
+	BD_ASSERT(!SSbonds.anyone_still_wants_seeds(), "no synthetic ckey declares seeds, so nothing should be pending")
+	SSbonds.stop_seeding("unit test")
+	BD_ASSERT(SSbonds.seeding_idle, "with nothing pending the loop must park itself")
+	BD_ASSERT(SSbonds.wake_seeding(), "a newcomer must be able to wake it")
+	BD_ASSERT(!SSbonds.seeding_idle, "and waking clears the idle flag")
+	BD_ASSERT(!SSbonds.wake_seeding(), "waking an already-running loop must be a no-op")
+	SSbonds.stop_seeding("unit test cleanup")
 
 /datum/unit_test/bonds/weight_shares_sum_to_one/Run()
 	var/total = 0
@@ -363,12 +372,22 @@
 	BD_ASSERT(stacked < 3, "the blend must bound a stacked incident well below the 14x a raw product would give, got [stacked]")
 	BD_ASSERT(stacked > 1, "but it must still amplify it")
 
-/datum/unit_test/bonds/map_roster_hides_absent_factions/Run()
-	BD_ASSERT(SSbonds.map_rosters.len > 0, "map rosters must be built")
-	var/datum/bond_map_roster/desert = SSbonds.map_rosters["Desert Town"]
-	BD_ASSERT_NOTNULL(desert, "Desert Town must declare a roster")
-	BD_ASSERT(BOND_FACTION_INQUISITION in desert.absent_factions, "there is no Otavan mission in the desert")
-	BD_ASSERT(!(BOND_FACTION_NOBLE in desert.absent_factions), "the ruling house exists there, it is simply a Sultan")
+/datum/unit_test/bonds/faction_presence_follows_the_map_blacklist/Run()
+	var/list/present = SSbonds.present_faction_ids()
+	BD_ASSERT(length(present) > 0, "some factions must exist on any map")
+	var/list/blacklist = SSbonds.map_blacklist()
+	for(var/faction_id in present)
+		var/datum/bond_faction/faction = SSbonds.get_faction(faction_id)
+		var/any_live = FALSE
+		var/any_job = FALSE
+		for(var/job_type in SSbonds.faction_index)
+			if(SSbonds.faction_index[job_type] != faction)
+				continue
+			any_job = TRUE
+			if(!(job_type in blacklist))
+				any_live = TRUE
+				break
+		BD_ASSERT(any_live || !any_job, "[faction_id] is listed as present but every one of its jobs is blacklisted on this map")
 
 /datum/unit_test/bonds/hierarchy_has_one_leader_per_faction/Run()
 	BD_ASSERT(SSbonds.hierarchy_by_faction.len > 0, "hierarchy must be built at init")
@@ -405,11 +424,9 @@
 			seen[title] = faction_id
 
 /datum/unit_test/bonds/venue_titles_resolve_to_class_factions/Run()
-	BD_ASSERT_EQUAL(SSbonds.faction_for_title("Bathmaster")?.id, BOND_FACTION_BURGHER, "venue owners belong to the burghers")
-	BD_ASSERT_EQUAL(SSbonds.faction_for_title("Innkeeper")?.id, BOND_FACTION_BURGHER, "venue owners belong to the burghers")
-	BD_ASSERT_EQUAL(SSbonds.faction_for_title("Bathhouse Attendant")?.id, BOND_FACTION_PEASANT, "venue staff are commoners")
-	BD_ASSERT_EQUAL(SSbonds.faction_for_title("Tapster")?.id, BOND_FACTION_PEASANT, "venue staff are commoners")
-	BD_ASSERT_EQUAL(SSbonds.faction_for_title("Cook")?.id, BOND_FACTION_PEASANT, "venue staff are commoners")
+	BD_ASSERT_EQUAL(SSbonds.faction_for_job(/datum/job/roguetown/bathmaster)?.id, BOND_FACTION_BURGHER, "venue owners belong to the burghers")
+	BD_ASSERT_EQUAL(SSbonds.faction_for_job(/datum/job/roguetown/innkeeper)?.id, BOND_FACTION_BURGHER, "venue owners belong to the burghers")
+	BD_ASSERT_EQUAL(SSbonds.faction_for_job(/datum/job/roguetown/servant)?.id, BOND_FACTION_PEASANT, "venue staff are commoners")
 
 /datum/unit_test/bonds/stance_key_is_symmetric/Run()
 	BD_ASSERT_EQUAL(bonds_stance_key(BOND_FACTION_CHURCH, BOND_FACTION_NOBLE), bonds_stance_key(BOND_FACTION_NOBLE, BOND_FACTION_CHURCH), "stance keys must not depend on argument order")

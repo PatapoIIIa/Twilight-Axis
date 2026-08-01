@@ -20,6 +20,7 @@
 /datum/controller/subsystem/bonds/proc/build_faction_index()
 	faction_prototypes = list()
 	faction_index = list()
+	var/list/title_to_faction = list()
 	var/list/collisions = list()
 	for(var/datum/bond_faction/faction_type as anything in typesof(/datum/bond_faction))
 		if(IS_ABSTRACT(faction_type))
@@ -29,28 +30,40 @@
 		for(var/title in faction.titles())
 			if(!istext(title))
 				continue
-			if(faction_index[title])
-				collisions += "[title] (already [faction_index[title]:id], now [faction.id])"
+			if(title_to_faction[title])
+				collisions += "[title] ([title_to_faction[title]] / [faction.id])"
 				continue
-			faction_index[title] = faction
+			title_to_faction[title] = faction.id
+	for(var/datum/job/job as anything in SSjob.occupations)
+		var/faction_id = title_to_faction[job.title]
+		if(!faction_id)
+			continue
+		faction_index[job.type] = faction_prototypes[faction_id]
 	if(length(collisions))
-		bondlog("faction index collisions: [collisions.Join("; ")]", BONDLOG_WARN)
-	bondlog("faction index built: [faction_prototypes.len] factions, [faction_index.len] titles", BONDLOG_INFO)
+		bondlog("faction title collisions: [collisions.Join("; ")]", BONDLOG_WARN)
+	bondlog("faction index built: [faction_prototypes.len] factions, [faction_index.len] job types", BONDLOG_INFO)
 
 /datum/controller/subsystem/bonds/proc/get_faction(faction_id) as /datum/bond_faction
 	if(!faction_id)
 		return null
 	return faction_prototypes[faction_id]
 
-/datum/controller/subsystem/bonds/proc/faction_for_title(title) as /datum/bond_faction
-	if(!title)
-		return null
-	return faction_index[title]
-
-/datum/controller/subsystem/bonds/proc/faction_for(mob/living/carbon/human/person) as /datum/bond_faction
+/datum/controller/subsystem/bonds/proc/job_type_of(mob/living/carbon/human/person)
 	if(!ishuman(person))
 		return null
-	return faction_for_title(person.job)
+	var/datum/job/role = person.mind?.assigned_role
+	if(role)
+		return role.type
+	var/datum/job/fallback = SSjob.GetJob(person.job)
+	return fallback?.type
+
+/datum/controller/subsystem/bonds/proc/faction_for_job(job_type) as /datum/bond_faction
+	if(!job_type)
+		return null
+	return faction_index[job_type]
+
+/datum/controller/subsystem/bonds/proc/faction_for(mob/living/carbon/human/person) as /datum/bond_faction
+	return faction_for_job(job_type_of(person))
 
 /datum/controller/subsystem/bonds/proc/faction_id_for(mob/living/carbon/human/person)
 	var/datum/bond_faction/faction = faction_for(person)

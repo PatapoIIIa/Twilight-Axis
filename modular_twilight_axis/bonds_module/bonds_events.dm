@@ -384,36 +384,6 @@
 	var/flaw_type
 	var/list/category_scales
 
-/datum/bond_disposition/proc/applies_to(mob/living/carbon/human/person)
-	if(!flaw_type || !ishuman(person))
-		return FALSE
-	return person.has_flaw(flaw_type)
-
-/datum/bond_disposition/masochist
-	flaw_type = /datum/charflaw/addiction/masochist
-	category_scales = list(
-		BOND_CATEGORY_VIOLENCE = 0,
-	)
-
-/datum/bond_disposition/paranoid
-	flaw_type = /datum/charflaw/paranoid
-	category_scales = list(
-		BOND_CATEGORY_VIOLENCE = 1.5,
-		BOND_CATEGORY_KINDNESS = 0.5,
-	)
-
-/datum/bond_disposition/lonely
-	flaw_type = /datum/charflaw/lonely
-	category_scales = list(
-		BOND_CATEGORY_KINDNESS = 1.5,
-	)
-
-/datum/bond_disposition/clingy
-	flaw_type = /datum/charflaw/clingy
-	category_scales = list(
-		BOND_CATEGORY_KINDNESS = 1.5,
-	)
-
 /datum/controller/subsystem/bonds/proc/build_dispositions()
 	dispositions = list()
 	for(var/datum/bond_disposition/disposition_type as anything in typesof(/datum/bond_disposition))
@@ -466,6 +436,7 @@
 	if(!person || person.bonds_signals_bound)
 		return FALSE
 	person.bonds_signals_bound = TRUE
+	wake_seeding()
 	RegisterSignal(person, COMSIG_MOB_ITEM_ATTACK, PROC_REF(on_item_attack), override = TRUE)
 	RegisterSignal(person, COMSIG_MOB_ATTACKED_BY_HAND, PROC_REF(on_attacked_by_hand), override = TRUE)
 	RegisterSignal(person, COMSIG_MOB_HUGGED, PROC_REF(on_hugged), override = TRUE)

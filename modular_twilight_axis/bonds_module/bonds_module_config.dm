@@ -4,6 +4,10 @@
 // #include "modular_twilight_axis\bonds_module\bonds_module_config.dm"
 //
 // --- FILE MAP ---
+// bonds_config_maps.dm  - TUNING: per-map lens over faction impact
+// bonds_config_roles.dm - TUNING: how loudly each job echoes between factions
+// bonds_config_gods.dm  - TUNING: storyteller gods bending faction relations
+// bonds_config_vices.dm - TUNING: how a recipient's vices reshape what was done to them
 // bonds_core.dm       - the graph itself: /datum/bond_actor identity, /datum/bond_node buckets,
 //                       /datum/social_bond axes and history, /datum/social_bond/kin kinship, graph API
 // bonds_events.dm     - identity gate, event definitions (hostile / friendly / roundstart seeds),
@@ -142,6 +146,10 @@
 #define BONDLOG_WARN "WARN"
 #define BONDLOG_ERROR "ERROR"
 
+#include "bonds_config_maps.dm"
+#include "bonds_config_roles.dm"
+#include "bonds_config_gods.dm"
+#include "bonds_config_vices.dm"
 #include "bonds_core.dm"
 #include "bonds_events.dm"
 #include "bonds_factions.dm"
