@@ -31,6 +31,10 @@
 //                        so mountain passes stay out of the sands and the sands out of Enigma
 // bonds_panels.dm     - every tgui backend: bonds list, bond tree, faction map and standing,
 //                       faction roster, seeding prefs, admin editor, player verbs, family bridge
+// bonds_admin.dm      - the one admin inspector: faction stances, a person's whole node (bonds,
+//                       kin, archetypes, influence), arbitrary bond and kin editing between any
+//                       two people, and the family graph caches with dirty/drop controls.
+//                       Backs the BondsAdmin tgui; every mutation goes through log_admin
 // bonds_debug.dm      - admin load bench: synthetic population, event storm, dream and panel
 //                       passes, simulated time skip, and a wave-by-wave degradation run.
 //                       Phases measure without CHECK_TICK on purpose, so they block. Admin only
@@ -218,5 +222,6 @@
 #include "bonds_dreams_gods.dm"
 #include "bonds_dreams_maps.dm"
 #include "bonds_panels.dm"
+#include "bonds_admin.dm"
 #include "bonds_debug.dm"
 #include "bonds_unit_tests.dm"

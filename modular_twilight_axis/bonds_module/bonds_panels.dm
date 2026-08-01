@@ -549,11 +549,12 @@
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
 		ui = new(user, src, "BondsAdmin")
+		ui.set_autoupdate(FALSE)
 		ui.open()
 	return TRUE
 
 /datum/bonds_admin_panel/ui_data(mob/user)
-	return SSbonds.build_admin_data()
+	return SSbonds.build_admin_payload(src)
 
 /datum/bonds_admin_panel/ui_act(action, list/params, datum/tgui/ui, datum/ui_state/state)
 	. = ..()
@@ -594,7 +595,7 @@
 			log_admin("[key_name(ui.user)] cleared bond stance [id_a]/[id_b]")
 			return TRUE
 
-	return FALSE
+	return handle_admin_act(action, params, ui.user)
 
 /datum/bonds_admin_panel/ui_close()
 	QDEL_NULL(src)
