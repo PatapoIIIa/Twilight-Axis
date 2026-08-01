@@ -109,10 +109,23 @@
 		bond.recalculate()
 	BD_ASSERT(length(node.bonds) <= BOND_MAX_PER_MIND, "the node cap must bound outgoing bonds")
 
+/datum/unit_test/bonds/a_full_node_still_accepts_newcomers/Run()
+	var/datum/mind/owner = bd_make_mind()
+	for(var/i in 1 to BOND_MAX_PER_MIND + 2)
+		var/datum/mind/filler = bd_make_mind()
+		var/datum/social_bond/bond = SSbonds.get_or_create_bond(owner, filler)
+		BD_ASSERT_NOTNULL(bond, "creating a bond must return it")
+		bond.weight_committed = 50
+		bond.recalculate()
+
+	var/datum/mind/newcomer = bd_make_mind()
+	var/datum/social_bond/fresh = SSbonds.get_or_create_bond(owner, newcomer)
+	BD_ASSERT_NOTNULL(SSbonds.get_bond(owner, newcomer), "a full node must still make room for someone new")
+	BD_ASSERT_EQUAL(fresh, SSbonds.get_bond(owner, newcomer), "and must not hand back a bond it already dropped")
+
 /datum/unit_test/bonds/tagged_bonds_survive_eviction/Run()
 	var/datum/mind/owner = bd_make_mind()
 	var/datum/mind/protected = bd_make_mind()
-	var/datum/bond_node/node = SSbonds.get_or_create_node(owner)
 	var/datum/social_bond/tagged = SSbonds.get_or_create_bond(owner, protected)
 	tagged.tags |= BOND_TAG_KILLED_ME
 	for(var/i in 1 to BOND_MAX_PER_MIND + 5)
@@ -120,7 +133,9 @@
 		var/datum/social_bond/bond = SSbonds.get_or_create_bond(owner, target)
 		bond.weight_committed = 50
 		bond.recalculate()
-	BD_ASSERT_NOTNULL(node.get_bond(protected), "a tagged bond must never be evicted by the cap")
+	BD_ASSERT_NOTNULL(SSbonds.get_bond(owner, protected), "a tagged bond must never be evicted by the cap")
+	var/datum/bond_node/node = SSbonds.get_node(owner)
+	BD_ASSERT(length(node.bonds) <= BOND_MAX_PER_MIND, "the cap must still hold while protecting it")
 
 /datum/unit_test/bonds/seed_flavors_are_pickable_only/Run()
 	var/list/flavors = SSbonds.valid_seed_flavors()

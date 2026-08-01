@@ -77,16 +77,14 @@
 /datum/controller/subsystem/bonds/proc/drop_actor(datum/bond_actor/actor)
 	if(!actor)
 		return FALSE
-	var/datum/bond_node/node = nodes[actor]
-	if(node)
-		for(var/datum/social_bond/kin/link as anything in node.kin.Copy())
-			var/datum/bond_node/other_node = nodes[link.other]
-			if(other_node)
-				other_node.remove_kin_to(actor, null)
-		for(var/datum/bond_actor/target as anything in node.bonds)
-			var/datum/bond_node/other_node = nodes[target]
-			if(other_node)
-				other_node.remove_bond(actor)
+	for(var/datum/bond_actor/other as anything in nodes)
+		if(other == actor)
+			continue
+		var/datum/bond_node/other_node = nodes[other]
+		if(!other_node)
+			continue
+		other_node.remove_kin_to(actor, null)
+		other_node.remove_bond(actor)
 	if(actor.mind)
 		actors_by_mind -= actor.mind
 	if(actor.phantom_member)
@@ -123,7 +121,7 @@
 	if(!bond?.other)
 		return null
 	bonds[bond.other] = bond
-	enforce_cap()
+	enforce_cap(bond.other)
 	return bond
 
 /datum/bond_node/proc/remove_bond(datum/bond_actor/target)
@@ -154,12 +152,14 @@
 		removed = TRUE
 	return removed
 
-/datum/bond_node/proc/enforce_cap()
+/datum/bond_node/proc/enforce_cap(datum/bond_actor/newcomer)
 	if(length(bonds) <= BOND_MAX_PER_MIND)
 		return
 	var/datum/bond_actor/weakest
 	var/weakest_weight = BOND_WEIGHT_MAX + 1
 	for(var/datum/bond_actor/target as anything in bonds)
+		if(target == newcomer)
+			continue
 		var/datum/social_bond/bond = bonds[target]
 		if(!bond.evictable || bond.tags != BOND_TAG_NONE)
 			continue
