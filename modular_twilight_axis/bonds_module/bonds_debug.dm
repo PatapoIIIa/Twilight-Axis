@@ -7,7 +7,18 @@ GLOBAL_LIST_EMPTY(bonds_debug_rows)
 		/client/proc/bonds_debug_timeskip,
 		/client/proc/bonds_debug_degrade,
 		/client/proc/bonds_debug_purge,
+		/client/proc/bonds_toggle_verbose_logging,
 	)
+
+/client/proc/bonds_toggle_verbose_logging()
+	set name = "Bonds: Verbose Log"
+	set category = "Debug"
+
+	if(!check_rights(R_DEBUG))
+		return
+	SSbonds.verbose_logging = !SSbonds.verbose_logging
+	SSbonds.bondlog("verbose logging turned [SSbonds.verbose_logging ? "ON" : "OFF"] by [key_name(mob)]", BONDLOG_INFO)
+	to_chat(src, span_notice("Подробный лог связей [SSbonds.verbose_logging ? "включён" : "выключен"]. Каждое действие пишется в data/logs/ss_bonds.log"))
 
 /datum/bonds_bench
 	var/label = ""

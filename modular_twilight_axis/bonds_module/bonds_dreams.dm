@@ -470,7 +470,7 @@
 			continue
 		notify_dream(dreamer, other)
 		announce_echo(other, apply_echo(other.mind, dreamer.mind, event_type))
-		bondlog("dream [dreamer.ckey] -> [other.ckey] [event_type]", BONDLOG_INFO)
+		bondlog("dream [dreamer.ckey] -> [other.ckey] [event_type]")
 		return TRUE
 	return FALSE
 

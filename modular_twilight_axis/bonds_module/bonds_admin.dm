@@ -3,11 +3,20 @@
 	var/focus_ref
 	var/partner_ref
 
+/datum/controller/subsystem/bonds/proc/admin_candidates()
+	RETURN_TYPE(/list)
+	var/list/out = list()
+	for(var/mob/living/carbon/human/person in GLOB.mob_list)
+		if(!person.mind || istype(person, /mob/living/carbon/human/dummy))
+			continue
+		out += person
+	return out
+
 /datum/controller/subsystem/bonds/proc/admin_resolve_person(person_ref)
 	RETURN_TYPE(/mob/living/carbon/human)
 	if(!istext(person_ref))
 		return null
-	for(var/mob/living/carbon/human/person in GLOB.player_list)
+	for(var/mob/living/carbon/human/person as anything in admin_candidates())
 		if(REF(person) == person_ref)
 			return person
 	return null
@@ -15,9 +24,7 @@
 /datum/controller/subsystem/bonds/proc/admin_people_list()
 	RETURN_TYPE(/list)
 	var/list/out = list()
-	for(var/mob/living/carbon/human/person in GLOB.player_list)
-		if(!person.mind || istype(person, /mob/living/carbon/human/dummy))
-			continue
+	for(var/mob/living/carbon/human/person as anything in admin_candidates())
 		var/datum/bond_faction/faction = faction_for(person)
 		out += list(list(
 			"ref" = REF(person),

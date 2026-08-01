@@ -639,7 +639,7 @@ SUBSYSTEM_DEF(bonds)
 	mark_seeded(person_a.ckey, person_b.ckey)
 	notify_seed(person_a, person_b)
 	notify_seed(person_b, person_a)
-	bondlog("seeded [person_a.ckey] <-> [person_b.ckey] as [seed_type]", BONDLOG_INFO)
+	bondlog("seeded [person_a.ckey] <-> [person_b.ckey] as [seed_type]")
 	return TRUE
 
 /datum/controller/subsystem/bonds/proc/notify_seed(mob/living/carbon/human/person, mob/living/carbon/human/partner)

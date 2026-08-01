@@ -495,7 +495,7 @@
 
 	if(state["left"] <= 0)
 		state["banned_until"] = world.time + BOND_INFLUENCE_BAN
-		bondlog("[actor.name_of()] exhausted their influence pool; muted for [BOND_INFLUENCE_BAN / 10]s", BONDLOG_INFO)
+		bondlog("[actor.name_of()] exhausted their influence pool; muted for [BOND_INFLUENCE_BAN / 10]s")
 		return FALSE
 
 	state["left"]--
