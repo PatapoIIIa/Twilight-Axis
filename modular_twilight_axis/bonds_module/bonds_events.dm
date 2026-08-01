@@ -87,8 +87,8 @@
 	category = BOND_CATEGORY_VIOLENCE
 	warmth_transient = -18
 	weight_transient = 22
-	warmth_commit = -4
-	weight_commit = 5
+	warmth_commit = -7
+	weight_commit = 15
 	timeout = 8 MINUTES
 	tag_applied = BOND_TAG_SHED_BLOOD
 	history_label = "Насилие"
@@ -100,8 +100,8 @@
 	category = BOND_CATEGORY_VIOLENCE
 	warmth_transient = -6
 	weight_transient = 12
-	warmth_commit = -1
-	weight_commit = 3
+	warmth_commit = -2
+	weight_commit = 8
 	timeout = 8 MINUTES
 	history_label = "Насилие"
 
@@ -112,8 +112,8 @@
 	category = BOND_CATEGORY_VIOLENCE
 	warmth_transient = -10
 	weight_transient = 14
-	warmth_commit = -2
-	weight_commit = 3
+	warmth_commit = -4
+	weight_commit = 11
 	timeout = 6 MINUTES
 	history_label = "Драка"
 
@@ -124,8 +124,8 @@
 	category = BOND_CATEGORY_VIOLENCE
 	warmth_transient = -4
 	weight_transient = 8
-	warmth_commit = -1
-	weight_commit = 2
+	warmth_commit = -1.5
+	weight_commit = 6
 	timeout = 6 MINUTES
 	history_label = "Драка"
 
@@ -162,8 +162,8 @@
 	category = BOND_CATEGORY_KINDNESS
 	warmth_transient = 14
 	weight_transient = 12
-	warmth_commit = 4
-	weight_commit = 3
+	warmth_commit = 7
+	weight_commit = 12
 	timeout = 10 MINUTES
 	tag_applied = BOND_TAG_COMFORTED
 	history_label = "Тепло"
@@ -175,8 +175,8 @@
 	category = BOND_CATEGORY_KINDNESS
 	warmth_transient = 10
 	weight_transient = 10
-	warmth_commit = 3
-	weight_commit = 3
+	warmth_commit = 5
+	weight_commit = 10
 	timeout = 10 MINUTES
 	history_label = "Тепло"
 

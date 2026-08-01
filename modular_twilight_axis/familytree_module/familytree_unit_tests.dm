@@ -280,6 +280,26 @@
 
 	FT_ASSERT(body.familytree_module_signal_bound, "COMSIG_GLOB_MOB_CREATED fires as the first line of /mob/Initialize(), so ckey/client/mind/job are all null for every player character; gating registration on them drops every single player and nothing rebinds them later")
 
+/datum/unit_test/familytree/leaving_a_house_keeps_sentiment/Run()
+	var/mob/living/carbon/human/leader = ft_spawn_player()
+	var/mob/living/carbon/human/leaver = ft_spawn_player()
+	FT_ASSERT_NOTNULL(leader, "spawn failed")
+	FT_ASSERT_NOTNULL(leaver, "spawn failed")
+
+	var/datum/heritage/house = new /datum/heritage(leader, null)
+	ft_track_house(house)
+	house.AddToFamily(leaver)
+
+	var/datum/social_bond/regard = SSbonds.get_or_create_bond(leader.mind, leaver.mind)
+	FT_ASSERT_NOTNULL(regard, "the two players must be able to hold a bond")
+	regard.attach_event(/datum/bond_event/embraced_by)
+
+	var/datum/bond_actor/leaver_actor = SSbonds.resolve_actor(leaver.mind)
+	house.RemovePersonFromFamily(leaver)
+
+	FT_ASSERT_EQUAL(SSbonds.resolve_actor(leaver.mind), leaver_actor, "a player who leaves a house keeps their graph identity; retiring it strands every bond that pointed at them")
+	FT_ASSERT_NOTNULL(SSbonds.get_bond(leader.mind, leaver.mind), "sentiment is not kinship - leaving a house must not erase what other people feel about you")
+
 #undef FT_SOURCE
 #undef FT_ASSERT
 #undef FT_ASSERT_EQUAL

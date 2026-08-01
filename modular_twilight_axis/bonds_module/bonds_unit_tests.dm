@@ -450,6 +450,24 @@
 	SSbonds.faction_stances -= bonds_stance_key(BOND_FACTION_WANDERER, BOND_FACTION_VANGUARD)
 	qdel(stance)
 
+/datum/unit_test/bonds/violence_outlives_its_transient/Run()
+	var/datum/mind/victim = bd_make_mind()
+	var/datum/mind/aggressor = bd_make_mind()
+	var/datum/social_bond/bond = SSbonds.get_or_create_bond(victim, aggressor)
+	BD_ASSERT_NOTNULL(bond, "the pair must be able to hold a bond")
+
+	bond.attach_event(/datum/bond_event/struck_by)
+	var/hot_warmth = bond.warmth
+	BD_ASSERT(hot_warmth < 0, "being struck must read as hostile while it is fresh")
+
+	for(var/category in bond.active_events.Copy())
+		var/datum/bond_event/live = bond.active_events[category]
+		live.expire()
+
+	BD_ASSERT_EQUAL(length(bond.active_events), 0, "every transient must be gone")
+	BD_ASSERT(bond.warmth < 0, "the grudge must survive its transient, not snap back to neutral")
+	BD_ASSERT(bond.weight >= BOND_VISIBLE_WEIGHT, "an assault must leave the attacker visible in the panel afterwards, or the bond reads as a reset")
+
 #undef BD_SOURCE
 #undef BD_ASSERT
 #undef BD_ASSERT_EQUAL

@@ -299,6 +299,7 @@
 	if(world.time >= swing_reset)
 		swing_used = 0
 		swing_reset = world.time + BOND_SWING_WINDOW
+		commit_counts = null
 	return max(0, BOND_MAX_SWING - swing_used)
 
 /datum/social_bond/proc/commit(datum/bond_event/prototype, applied_scale = 1)

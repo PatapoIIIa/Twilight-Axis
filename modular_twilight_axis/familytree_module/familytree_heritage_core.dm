@@ -220,7 +220,9 @@
 			person.family_member_datum = null
 		person.spouse_mob = null
 
-	SSbonds.drop_actor(SSbonds.resolve_actor(member))
+	var/datum/bond_actor/departing = SSbonds.resolve_actor(member)
+	if(departing?.phantom_member)
+		SSbonds.drop_actor(departing)
 	if(person)
 		SSfamilytree.graph_on_member_removed(person, src)
 	member.person = null
