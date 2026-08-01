@@ -4,6 +4,7 @@
 	return person.has_flaw(flaw_type)
 
 /datum/bond_disposition/masochist
+	flaw_type = /datum/charflaw/addiction/masochist
 	category_scales = list(
 		BOND_CATEGORY_VIOLENCE = 0,
 	)
