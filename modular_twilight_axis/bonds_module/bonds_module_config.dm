@@ -5,7 +5,8 @@
 //
 // --- FILE MAP ---
 // bonds_config_maps.dm  - TUNING: per-map lens over faction impact
-// bonds_config_roles.dm - TUNING: how loudly each job echoes between factions
+// bonds_config_roles.dm - TUNING: how loudly each job echoes between factions, plus the
+//                         archetype masks that decide which dream may name which pair of jobs
 // bonds_config_gods.dm  - TUNING: storyteller gods bending faction relations
 // bonds_config_vices.dm - TUNING: how a recipient's vices reshape what was done to them
 // bonds_core.dm       - the graph itself: /datum/bond_actor identity, /datum/bond_node buckets,
@@ -19,6 +20,12 @@
 //                       origins and their inherited lore, influence pool, the impact pipeline
 // bonds_round.dm      - SUBSYSTEM_DEF(bonds), rank hierarchy, character prefs and their savefile
 //                       hooks, per-ckey round prefs and ledger, roundstart seeding
+// bonds_dreams.dm     - role archetypes, the 20 baseline memories, echo application and the
+//                       sleep hook: one sleep rolls at most one memory, gated on what both
+//                       sides plausibly are; the sleeper gets it whole, the other side at half
+// bonds_dreams_gods.dm - CONTENT: five memories per storyteller, keyed on their domains
+// bonds_dreams_maps.dm - CONTENT: six memories per map, keyed on /datum/map_adjustment type,
+//                        so mountain passes stay out of the sands and the sands out of Enigma
 // bonds_panels.dm     - every tgui backend: bonds list, bond tree, faction map and standing,
 //                       faction roster, seeding prefs, admin editor, player verbs, family bridge
 // bonds_unit_tests.dm - CI unit tests for the bond chains; runs under UNIT_TESTS
@@ -65,6 +72,47 @@
 #define BOND_CATEGORY_KINDNESS "kindness"
 #define BOND_CATEGORY_DEATH "death"
 #define BOND_CATEGORY_SEED "seed"
+#define BOND_CATEGORY_DREAM "dream"
+
+// Dreams. Every sleep that opens the dream menu rolls ONE memory at most: the four chances
+// below are summed into a single gate, and only if that gate passes is one bucket drawn,
+// weighted by its own chance. Storyteller lenses scale the two valences independently.
+#define BOND_DREAM_CHANCE_OWN_NEGATIVE 10
+#define BOND_DREAM_CHANCE_FOREIGN_NEGATIVE 5
+#define BOND_DREAM_CHANCE_OWN_POSITIVE 10
+#define BOND_DREAM_CHANCE_FOREIGN_POSITIVE 5
+
+#define BOND_DREAM_POSITIVE 1
+#define BOND_DREAM_NEGATIVE 2
+
+// A memory has two ends. The sleeper gets the full event; the other side gets the same
+// event at this scale, applied straight to the permanent axes and announced in chat, so
+// being remembered well is something you can notice while awake.
+#define BOND_DREAM_ECHO_SCALE 0.5
+
+#define BOND_DREAM_VAMPIRE_NONE 0
+#define BOND_DREAM_VAMPIRE_OTHER 1
+#define BOND_DREAM_VAMPIRE_DREAMER 2
+
+#define BOND_DREAM_SCOPE_OWN (1<<0)
+#define BOND_DREAM_SCOPE_FOREIGN (1<<1)
+#define BOND_DREAM_SCOPE_ANY (BOND_DREAM_SCOPE_OWN | BOND_DREAM_SCOPE_FOREIGN)
+
+// Role archetypes. A dream is gated on what both sides plausibly are, so a priest never
+// wakes up remembering the shield wall. Masks are unioned per job in bonds_config_roles.dm
+// and resolved through the job type path, walking up the parent chain for subtypes.
+#define BOND_ARCH_WARRIOR (1<<0)
+#define BOND_ARCH_LAWMAN (1<<1)
+#define BOND_ARCH_DEVOUT (1<<2)
+#define BOND_ARCH_NOBLE (1<<3)
+#define BOND_ARCH_SCHOLAR (1<<4)
+#define BOND_ARCH_HEALER (1<<5)
+#define BOND_ARCH_CRAFTER (1<<6)
+#define BOND_ARCH_MERCHANT (1<<7)
+#define BOND_ARCH_OUTLAW (1<<8)
+#define BOND_ARCH_SERVILE (1<<9)
+#define BOND_ARCH_WANDERER (1<<10)
+#define BOND_ARCH_UNDEAD (1<<11)
 
 // Faction ids. The taxonomy is roguetown-local and lives in bonds_factions_defs.dm as data;
 // each faction points at one GLOB.*_positions list. Bathhouse and tavern are deliberately NOT
@@ -155,5 +203,8 @@
 #include "bonds_factions.dm"
 #include "bonds_context.dm"
 #include "bonds_round.dm"
+#include "bonds_dreams.dm"
+#include "bonds_dreams_gods.dm"
+#include "bonds_dreams_maps.dm"
 #include "bonds_panels.dm"
 #include "bonds_unit_tests.dm"

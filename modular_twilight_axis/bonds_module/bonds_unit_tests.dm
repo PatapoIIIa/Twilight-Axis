@@ -468,6 +468,107 @@
 	BD_ASSERT(bond.warmth < 0, "the grudge must survive its transient, not snap back to neutral")
 	BD_ASSERT(bond.weight >= BOND_VISIBLE_WEIGHT, "an assault must leave the attacker visible in the panel afterwards, or the bond reads as a reset")
 
+/datum/unit_test/bonds/archetypes_resolve_through_the_type_tree/Run()
+	BD_ASSERT(SSbonds.archetypes_for_job(/datum/job/roguetown/knight) & BOND_ARCH_WARRIOR, "a knight must read as a warrior")
+	BD_ASSERT(SSbonds.archetypes_for_job(/datum/job/roguetown/priest) & BOND_ARCH_DEVOUT, "a priest must read as devout")
+	BD_ASSERT(!(SSbonds.archetypes_for_job(/datum/job/roguetown/priest) & BOND_ARCH_WARRIOR), "a priest is not a man-at-arms")
+	BD_ASSERT(SSbonds.archetypes_for_job(/datum/job/roguetown/templar) & BOND_ARCH_WARRIOR, "a templar is both")
+	BD_ASSERT(SSbonds.archetypes_for_job(/datum/job/roguetown/templar) & BOND_ARCH_DEVOUT, "a templar is both")
+	BD_ASSERT(SSbonds.archetypes_for_job(/datum/job/roguetown/greater_skeleton/lich) & BOND_ARCH_UNDEAD, "an unlisted subtype must inherit its parent's archetypes")
+	BD_ASSERT_EQUAL(SSbonds.archetypes_for_job(null), 0, "no job means no archetype")
+
+/datum/unit_test/bonds/dreams_refuse_implausible_pairs/Run()
+	var/datum/bond_event/dream/wall = SSbonds.get_event_prototype(/datum/bond_event/dream/shield_wall)
+	BD_ASSERT_NOTNULL(wall, "the shield wall dream must exist")
+	BD_ASSERT(wall.fits(BOND_ARCH_WARRIOR, BOND_ARCH_WARRIOR, BOND_DREAM_SCOPE_OWN), "two men-at-arms may remember the same line")
+	BD_ASSERT(!wall.fits(BOND_ARCH_DEVOUT, BOND_ARCH_WARRIOR, BOND_DREAM_SCOPE_OWN), "a priest must never wake up a brother in arms")
+	BD_ASSERT(!wall.fits(BOND_ARCH_WARRIOR, BOND_ARCH_SCHOLAR, BOND_DREAM_SCOPE_OWN), "and never about someone who never stood in one")
+	BD_ASSERT(!wall.fits(BOND_ARCH_WARRIOR, BOND_ARCH_WARRIOR, BOND_DREAM_SCOPE_FOREIGN), "a shared line is a thing between your own")
+
+/datum/unit_test/bonds/dreams_are_permanent/Run()
+	var/found = 0
+	for(var/event_type in SSbonds.event_prototypes)
+		var/datum/bond_event/dream/prototype = SSbonds.event_prototypes[event_type]
+		if(!istype(prototype))
+			continue
+		found++
+		BD_ASSERT_EQUAL(prototype.timeout, 0, "[event_type] must not expire - a memory is not a mood")
+		BD_ASSERT_EQUAL(prototype.warmth_transient, 0, "[event_type] must carry no transient, or it would vanish on its own")
+		BD_ASSERT(prototype.warmth_commit != 0, "[event_type] must move warmth permanently")
+		BD_ASSERT(prototype.weight_commit > 0, "[event_type] must make the other person matter more")
+	BD_ASSERT(found >= 100, "the dream table lost entries: expected the baseline twenty plus the storyteller and map sets")
+
+/datum/unit_test/bonds/every_dream_has_two_sides/Run()
+	var/datum/mind/dreamer = bd_make_mind()
+	var/datum/mind/other = bd_make_mind()
+	var/datum/social_bond/bond = SSbonds.get_or_create_bond(dreamer, other)
+	BD_ASSERT_NOTNULL(bond, "need a bond to render stories against")
+	for(var/event_type in SSbonds.dream_prototypes)
+		var/datum/bond_event/dream/prototype = SSbonds.event_prototypes[event_type]
+		var/story = prototype.build_story(bond)
+		var/echo = prototype.build_echo(bond)
+		BD_ASSERT(length(story) > 0, "[event_type] has no dream text")
+		BD_ASSERT(story != echo, "[event_type] never overrode build_echo, so the other side would be told the sleeper's own dream verbatim")
+
+/datum/unit_test/bonds/dream_groups_are_namespaces/Run()
+	BD_ASSERT_NULL(SSbonds.event_prototypes[/datum/bond_event/dream], "the dream base must stay abstract")
+	BD_ASSERT_NULL(SSbonds.event_prototypes[/datum/bond_event/dream/azuria], "a map group is a namespace, not a memory anyone can dream")
+	BD_ASSERT_NULL(SSbonds.event_prototypes[/datum/bond_event/dream/astrata], "a storyteller group is a namespace, not a memory anyone can dream")
+
+	var/datum/bond_event/dream/pass = SSbonds.get_event_prototype(/datum/bond_event/dream/azuria/over_the_pass)
+	BD_ASSERT_EQUAL(length(pass.maps), 1, "map gating must come down from the group instead of being repeated on every memory")
+	var/datum/bond_event/dream/prayer = SSbonds.get_event_prototype(/datum/bond_event/dream/astrata/shared_prayer)
+	BD_ASSERT_EQUAL(prayer.storyteller_type, /datum/storyteller/astrata, "storyteller gating must come down from the group too")
+
+/datum/unit_test/bonds/dream_echo_lands_at_half/Run()
+	var/datum/mind/dreamer = bd_make_mind()
+	var/datum/mind/other = bd_make_mind()
+	var/datum/bond_event/dream/prototype = SSbonds.get_event_prototype(/datum/bond_event/dream/shared_bread)
+	BD_ASSERT_NOTNULL(prototype, "the bread memory must exist")
+
+	var/datum/bond_history/entry = SSbonds.apply_echo(other, dreamer, /datum/bond_event/dream/shared_bread)
+	BD_ASSERT_NOTNULL(entry, "the other side must receive a history entry of its own")
+	var/datum/social_bond/echoed = SSbonds.get_bond(other, dreamer)
+	BD_ASSERT_NOTNULL(echoed, "and a bond pointing back at the sleeper")
+	BD_ASSERT_EQUAL(echoed.warmth_committed, prototype.warmth_commit * BOND_DREAM_ECHO_SCALE, "the echo must land at exactly the configured share")
+	BD_ASSERT(echoed.warmth_committed < prototype.warmth_commit, "and must always be softer than what the sleeper felt")
+	BD_ASSERT(echoed.weight >= echoed.weight_committed, "the echo must be reflected in the live axes, not only the committed ones")
+
+/datum/unit_test/bonds/map_memories_stay_on_their_map/Run()
+	var/datum/bond_event/dream/pass = SSbonds.get_event_prototype(/datum/bond_event/dream/azuria/over_the_pass)
+	var/datum/bond_event/dream/water = SSbonds.get_event_prototype(/datum/bond_event/dream/ranesh/shared_water)
+	BD_ASSERT_NOTNULL(pass, "the mountain pass memory must exist")
+	BD_ASSERT_NOTNULL(water, "the waterskin memory must exist")
+	BD_ASSERT(pass.fits_round(/datum/map_adjustment/template/dunworld, null), "a mountain pass belongs to the Azurian valley")
+	BD_ASSERT(!pass.fits_round(/datum/map_adjustment/template/deserttown, null), "and must never be dreamt in the sands")
+	BD_ASSERT(water.fits_round(/datum/map_adjustment/template/deserttown, null), "a waterskin between wells belongs to the sands")
+	BD_ASSERT(!water.fits_round(/datum/map_adjustment/template/rockhill, null), "and has no business on an island under siege")
+
+/datum/unit_test/bonds/storyteller_memories_need_their_god/Run()
+	var/datum/bond_event/dream/prayer = SSbonds.get_event_prototype(/datum/bond_event/dream/astrata/shared_prayer)
+	BD_ASSERT_NOTNULL(prayer, "the dawn prayer memory must exist")
+	BD_ASSERT(prayer.fits_round(null, /datum/storyteller/astrata), "it must be drawable while Astrata tells the round")
+	BD_ASSERT(!prayer.fits_round(null, /datum/storyteller/graggar), "and never while another god does")
+	var/datum/bond_event/dream/wall = SSbonds.get_event_prototype(/datum/bond_event/dream/shield_wall)
+	BD_ASSERT(wall.fits_round(null, /datum/storyteller/graggar), "the baseline memories belong to no god and stay available")
+
+/datum/unit_test/bonds/blood_memory_needs_a_vampire/Run()
+	var/datum/bond_event/dream/blood = SSbonds.get_event_prototype(/datum/bond_event/dream/rockhill/shared_blood)
+	BD_ASSERT_NOTNULL(blood, "the shared blood memory must exist")
+	BD_ASSERT_EQUAL(blood.vampire_rule, BOND_DREAM_VAMPIRE_DREAMER, "only the one who drank may dream it")
+	BD_ASSERT(blood.rarity < 10, "it must be rarer than an ordinary memory")
+	BD_ASSERT(!blood.fits_blood(null, null), "with nobody to check, it must refuse rather than fire")
+	var/list/pool = SSbonds.dream_pool(BOND_DREAM_POSITIVE, BOND_DREAM_SCOPE_OWN, 0, 0)
+	BD_ASSERT(!(/datum/bond_event/dream/rockhill/shared_blood in pool), "a pool drawn without both mobs must never offer a blood-gated memory")
+
+/datum/unit_test/bonds/every_dream_bucket_can_fire/Run()
+	var/every_archetype = BOND_ARCH_WARRIOR | BOND_ARCH_LAWMAN | BOND_ARCH_DEVOUT | BOND_ARCH_NOBLE | BOND_ARCH_SCHOLAR | BOND_ARCH_HEALER | BOND_ARCH_CRAFTER | BOND_ARCH_MERCHANT | BOND_ARCH_OUTLAW | BOND_ARCH_SERVILE | BOND_ARCH_WANDERER | BOND_ARCH_UNDEAD
+	var/list/valences = list(BOND_DREAM_NEGATIVE, BOND_DREAM_NEGATIVE, BOND_DREAM_POSITIVE, BOND_DREAM_POSITIVE)
+	var/list/scopes = list(BOND_DREAM_SCOPE_OWN, BOND_DREAM_SCOPE_FOREIGN, BOND_DREAM_SCOPE_OWN, BOND_DREAM_SCOPE_FOREIGN)
+	for(var/i in 1 to 4)
+		var/list/pool = SSbonds.dream_pool(valences[i], scopes[i], every_archetype, every_archetype)
+		BD_ASSERT(length(pool) > 0, "bucket [i] can never draw a dream, so its share of the roll is silently wasted")
+
 #undef BD_SOURCE
 #undef BD_ASSERT
 #undef BD_ASSERT_EQUAL

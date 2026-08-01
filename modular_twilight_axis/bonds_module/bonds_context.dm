@@ -252,6 +252,8 @@
 	var/storyteller_type
 	var/list/pair_weights
 	var/default_weight = 1
+	var/dream_positive_bias = 1
+	var/dream_negative_bias = 1
 
 /datum/controller/subsystem/bonds/proc/build_storyteller_lenses()
 	storyteller_lenses = list()
