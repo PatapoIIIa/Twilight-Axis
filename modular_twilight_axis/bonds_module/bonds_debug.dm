@@ -23,36 +23,176 @@ GLOBAL_LIST_EMPTY(bonds_debug_rows)
 /datum/bonds_bench
 	var/label = ""
 	var/phase = ""
-	var/started = 0
-	var/tick_peak = 0
+	var/op_start = 0
+	var/accumulated_ms = 0
+	var/worst_ms = 0
+	var/crossings = 0
+	var/samples = 0
+	var/wall_start = 0
+	var/list/tally_mark
+	var/owns_profiler = FALSE
 	var/list/rows = list()
 
 /datum/bonds_bench/New(bench_label = "bench")
 	label = bench_label
-	SSbonds.bondlog("=== BENCH [label] BEGIN ===", BONDLOG_INFO)
+	SSbonds.instrumented = TRUE
+	SSbonds.tallies = list()
+	// Never stomp a server that is already profiling: PROFILE_CLEAR would throw away SSprofiler's
+	// accumulated round data, and PROFILE_REFRESH drains what it reads.
+	owns_profiler = !CONFIG_GET(flag/auto_profile)
+	SSbonds.bondlog("BENCH|run=[label]|event=begin|profiler=[owns_profiler ? "ours" : "shared, left alone"]", BONDLOG_INFO)
+	if(owns_profiler)
+		world.Profile(PROFILE_CLEAR)
+		world.Profile(PROFILE_START)
 
 /datum/bonds_bench/proc/open(name)
 	phase = name
-	tick_peak = TICK_USAGE
-	started = world.timeofday
+	accumulated_ms = 0
+	worst_ms = 0
+	crossings = 0
+	samples = 0
+	wall_start = world.timeofday
+	tally_mark = SSbonds.tallies.Copy()
 
-/datum/bonds_bench/proc/sample()
-	var/now = TICK_USAGE
-	if(now > tick_peak)
-		tick_peak = now
+// Wrap every single operation, not the whole phase: world.timeofday only resolves to 100ms, while
+// TICK_USAGE_TO_MS resolves to a fraction of a tick. A negative delta means the op ran across a tick
+// boundary, which is itself the interesting signal - those are counted rather than silently dropped.
+/datum/bonds_bench/proc/op_begin()
+	op_start = TICK_USAGE_REAL
+
+/datum/bonds_bench/proc/op_end()
+	var/ms = TICK_USAGE_TO_MS(op_start)
+	if(ms < 0)
+		crossings++
+		return
+	samples++
+	accumulated_ms += ms
+	if(ms > worst_ms)
+		worst_ms = ms
 
 /datum/bonds_bench/proc/close(ops = 0)
-	var/elapsed = world.timeofday - started
-	if(elapsed < 0)
-		elapsed += 864000
-	var/ms = elapsed * 100
-	var/per_op = ops > 0 ? (ms * 1000 / ops) : 0
+	var/wall = world.timeofday - wall_start
+	if(wall < 0)
+		wall += 864000
+	var/per_op = samples > 0 ? (accumulated_ms * 1000 / samples) : 0
 	var/list/state = SSbonds.debug_graph_state()
-	var/line = "[label] | [phase] | ops=[ops] ms=[ms] us/op=[round(per_op, 0.1)] peak_tick=[round(tick_peak, 0.1)]% | nodes=[state["nodes"]] bonds=[state["bonds"]] kin=[state["kin"]] history=[state["history"]] active=[state["active"]] stances=[state["stances"]] pools=[state["pools"]]"
+	var/line = "BENCH|run=[label]|phase=[phase]|ops=[ops]|sampled=[samples]|ms=[round(accumulated_ms, 0.01)]|us_op=[round(per_op, 0.1)]|worst_us=[round(worst_ms * 1000, 0.1)]|tick_crossings=[crossings]|wall_ms=[wall * 100]|nodes=[state["nodes"]]|bonds=[state["bonds"]]|kin=[state["kin"]]|history=[state["history"]]|active=[state["active"]]|stances=[state["stances"]]|pools=[state["pools"]]"
 	rows += line
 	GLOB.bonds_debug_rows += line
 	SSbonds.bondlog(line, BONDLOG_INFO)
+	report_tallies()
 	return line
+
+/datum/bonds_bench/proc/report_tallies()
+	var/list/moved = list()
+	for(var/key in SSbonds.tallies)
+		var/delta = SSbonds.tallies[key] - (tally_mark?[key] || 0)
+		if(delta > 0)
+			moved += "[key]=[delta]"
+	if(!length(moved))
+		return
+	SSbonds.bondlog("TALLY|run=[label]|phase=[phase]|[moved.Join("|")]", BONDLOG_INFO)
+
+/datum/bonds_bench/proc/finish()
+	if(owns_profiler)
+		world.Profile(PROFILE_STOP)
+		SSbonds.debug_dump_profile(label)
+	else
+		SSbonds.bondlog("PROFILE|run=[label]|skipped=server is auto-profiling; read data/logs/profiler/ instead", BONDLOG_INFO)
+	SSbonds.debug_report_distribution(label)
+	SSbonds.instrumented = FALSE
+	SSbonds.bondlog("BENCH|run=[label]|event=end", BONDLOG_INFO)
+
+// The built-in profiler is the only thing that can say WHICH proc ate the time. The column order of
+// BYOND's json rows is not documented here, so the filtered rows are written out verbatim rather than
+// interpreted - the reader parses the file, and nothing is silently mislabelled.
+/datum/controller/subsystem/bonds/proc/debug_dump_profile(label)
+	var/raw = world.Profile(PROFILE_REFRESH, format = "json")
+	if(!length(raw))
+		bondlog("PROFILE|run=[label]|error=empty (profiling stopped early?)", BONDLOG_WARN)
+		return FALSE
+	var/list/decoded
+	try
+		decoded = json_decode(raw)
+	catch
+		bondlog("PROFILE|run=[label]|error=undecodable", BONDLOG_WARN)
+		return FALSE
+	var/list/rows = islist(decoded) ? decoded["data"] : null
+	if(!islist(rows))
+		bondlog("PROFILE|run=[label]|error=no data array|keys=[islist(decoded) ? jointext(decoded, ",") : "none"]", BONDLOG_WARN)
+		return FALSE
+	var/list/keep = list()
+	for(var/list/row as anything in rows)
+		if(!islist(row) || !length(row))
+			continue
+		var/name = "[row[1]]"
+		if(!findtext(name, "bond") && !findtext(name, "familytree"))
+			continue
+		keep += list(row)
+	var/directory = GLOB.log_directory || "data/logs"
+	var/path = "[directory]/bonds_profile-[label].json"
+	var/payload = json_encode(list(
+		"run" = label,
+		"columns" = islist(decoded) ? decoded["columns"] : null,
+		"note" = "rows are verbatim from world.Profile(PROFILE_REFRESH); see columns if present",
+		"rows" = keep,
+	))
+	if(fexists(path))
+		fdel(path)
+	WRITE_FILE(file(path), payload)
+	bondlog("PROFILE|run=[label]|matched=[length(keep)]|of=[length(rows)]|file=[path]", BONDLOG_INFO)
+	return TRUE
+
+// Timings say how fast; these say what the run actually produced. A run where every dream landed on
+// one person, or where one event type crowded out the rest, looks fine on timings and is useless.
+/datum/controller/subsystem/bonds/proc/debug_report_distribution(label)
+	var/list/stages = list()
+	var/list/warmth_buckets = list("hostile" = 0, "cold" = 0, "neutral" = 0, "warm" = 0)
+	var/list/per_node = list()
+	var/total_bonds = 0
+	for(var/datum/bond_actor/owner as anything in nodes)
+		var/datum/bond_node/node = nodes[owner]
+		if(!node)
+			continue
+		per_node += length(node.bonds)
+		for(var/datum/bond_actor/target as anything in node.bonds)
+			var/datum/social_bond/bond = node.bonds[target]
+			total_bonds++
+			var/stage_label = bond.stage?.label || "-"
+			stages[stage_label] = (stages[stage_label] || 0) + 1
+			switch(bond.warmth)
+				if(-100 to -40)
+					warmth_buckets["hostile"]++
+				if(-39 to -10)
+					warmth_buckets["cold"]++
+				if(-9 to 14)
+					warmth_buckets["neutral"]++
+				else
+					warmth_buckets["warm"]++
+
+	var/widest = 0
+	var/emptiest = -1
+	var/sum = 0
+	for(var/count in per_node)
+		sum += count
+		if(count > widest)
+			widest = count
+		if(emptiest < 0 || count < emptiest)
+			emptiest = count
+	bondlog("DIST|run=[label]|bonds=[total_bonds]|nodes=[length(per_node)]|per_node_avg=[length(per_node) ? round(sum / length(per_node), 0.1) : 0]|per_node_max=[widest]|per_node_min=[max(0, emptiest)]|at_cap=[widest >= BOND_MAX_PER_MIND ? "YES" : "no"]", BONDLOG_INFO)
+
+	var/list/stage_parts = list()
+	for(var/key in stages)
+		stage_parts += "[key]=[stages[key]]"
+	bondlog("DIST|run=[label]|stages|[stage_parts.Join("|")]", BONDLOG_INFO)
+	bondlog("DIST|run=[label]|warmth|hostile=[warmth_buckets["hostile"]]|cold=[warmth_buckets["cold"]]|neutral=[warmth_buckets["neutral"]]|warm=[warmth_buckets["warm"]]", BONDLOG_INFO)
+
+	var/list/tally_parts = list()
+	for(var/key in tallies)
+		tally_parts += "[key]=[tallies[key]]"
+	if(length(tally_parts))
+		bondlog("TALLY|run=[label]|phase=TOTAL|[tally_parts.Join("|")]", BONDLOG_INFO)
+	return TRUE
 
 /datum/controller/subsystem/bonds/proc/debug_graph_state()
 	RETURN_TYPE(/list)
@@ -127,7 +267,7 @@ GLOBAL_LIST_EMPTY(bonds_debug_rows)
 		qdel(body)
 	GLOB.bonds_debug_population = list()
 
-/datum/controller/subsystem/bonds/proc/debug_storm(list/pool, count, list/event_types)
+/datum/controller/subsystem/bonds/proc/debug_storm(list/pool, count, list/event_types, datum/bonds_bench/bench)
 	var/fired = 0
 	for(var/i in 1 to count)
 		var/mob/living/carbon/human/subject = pick(pool)
@@ -135,8 +275,10 @@ GLOBAL_LIST_EMPTY(bonds_debug_rows)
 		if(subject == object || QDELETED(subject) || QDELETED(object))
 			continue
 		var/event_type = pick(event_types)
+		bench?.op_begin()
 		record(subject.mind, object.mind, event_type, object, TRUE)
 		social_impact(subject.mind, object.mind, event_type)
+		bench?.op_end()
 		fired++
 	return fired
 
@@ -176,43 +318,51 @@ GLOBAL_LIST_EMPTY(bonds_debug_rows)
 		state["banned_until"] = max(0, state["banned_until"] - deciseconds)
 	return expired
 
-/datum/controller/subsystem/bonds/proc/debug_seeding_pass(list/pool)
+/datum/controller/subsystem/bonds/proc/debug_seeding_pass(list/pool, datum/bonds_bench/bench)
 	var/paired = 0
 	for(var/mob/living/carbon/human/seeker as anything in pool)
 		if(remaining_seeds(seeker.ckey) <= 0)
 			continue
+		bench?.op_begin()
 		var/list/candidates = seed_candidates(seeker, pool)
-		if(!length(candidates))
-			continue
-		if(apply_seed(seeker, pick(candidates)))
+		var/hit = length(candidates) ? apply_seed(seeker, pick(candidates)) : FALSE
+		bench?.op_end()
+		if(hit)
 			paired++
 	return paired
 
-/datum/controller/subsystem/bonds/proc/debug_panel_pass(list/pool, samples)
+/datum/controller/subsystem/bonds/proc/debug_panel_pass(list/pool, samples, datum/bonds_bench/bench)
 	var/built = 0
 	for(var/i in 1 to samples)
 		var/mob/living/carbon/human/viewer = pool[((i - 1) % length(pool)) + 1]
+		bench?.op_begin()
 		build_panel_groups(viewer)
 		build_bonds_tree(viewer)
 		build_faction_map(viewer)
+		bench?.op_end()
 		built++
 	return built
 
-/datum/controller/subsystem/bonds/proc/debug_dream_pass(list/pool)
+/datum/controller/subsystem/bonds/proc/debug_dream_pass(list/pool, datum/bonds_bench/bench)
 	var/rolled = 0
 	for(var/mob/living/carbon/human/dreamer as anything in pool)
 		if(QDELETED(dreamer))
 			continue
+		bench?.op_begin()
 		roll_dream(dreamer)
+		bench?.op_end()
 		rolled++
 	return rolled
 
-/datum/controller/subsystem/bonds/proc/debug_forced_dream_pass(list/pool)
+/datum/controller/subsystem/bonds/proc/debug_forced_dream_pass(list/pool, datum/bonds_bench/bench)
 	var/fired = 0
 	for(var/mob/living/carbon/human/dreamer as anything in pool)
 		if(QDELETED(dreamer))
 			continue
-		if(fire_dream(dreamer, BOND_DREAM_POSITIVE, BOND_DREAM_SCOPE_FOREIGN))
+		bench?.op_begin()
+		var/hit = fire_dream(dreamer, BOND_DREAM_POSITIVE, BOND_DREAM_SCOPE_FOREIGN)
+		bench?.op_end()
+		if(hit)
 			fired++
 	return fired
 
@@ -252,7 +402,9 @@ GLOBAL_LIST_EMPTY(bonds_debug_rows)
 	var/datum/bonds_bench/bench = new("load[players]")
 
 	bench.open("spawn+register")
+	bench.op_begin()
 	GLOB.bonds_debug_population = SSbonds.debug_spawn_population(players, spot)
+	bench.op_end()
 	bench.close(players)
 	var/list/pool = GLOB.bonds_debug_population
 	if(!length(pool))
@@ -261,33 +413,34 @@ GLOBAL_LIST_EMPTY(bonds_debug_rows)
 	CHECK_TICK
 
 	bench.open("seeding")
-	var/paired = SSbonds.debug_seeding_pass(pool)
+	var/paired = SSbonds.debug_seeding_pass(pool, bench)
 	bench.close(length(pool))
 	to_chat(src, span_notice("Сидинг связал пар: [paired]"))
 	CHECK_TICK
 
 	bench.open("events")
-	var/fired = SSbonds.debug_storm(pool, events, SSbonds.debug_event_pool())
+	var/fired = SSbonds.debug_storm(pool, events, SSbonds.debug_event_pool(), bench)
 	bench.close(fired)
 	CHECK_TICK
 
 	bench.open("dreams")
-	var/rolled = SSbonds.debug_dream_pass(pool)
+	var/rolled = SSbonds.debug_dream_pass(pool, bench)
 	bench.close(rolled)
 	CHECK_TICK
 
 	bench.open("dreams-forced")
-	SSbonds.debug_forced_dream_pass(pool)
+	SSbonds.debug_forced_dream_pass(pool, bench)
 	bench.close(length(pool))
 	CHECK_TICK
 
 	bench.open("panels")
-	var/built = SSbonds.debug_panel_pass(pool, min(length(pool), 60))
+	var/built = SSbonds.debug_panel_pass(pool, min(length(pool), 60), bench)
 	bench.close(built)
 
 	for(var/line in bench.rows)
 		to_chat(src, span_smallnotice(line))
-	to_chat(src, span_notice("Готово. Полный отчёт в data/logs/ss_bonds.log"))
+	bench.finish()
+	to_chat(src, span_notice("Готово. Отчёт в ss_bonds.log, профиль процов в bonds_profile-[bench.label].json"))
 
 /client/proc/bonds_debug_timeskip()
 	set name = "Bonds Bench: Time Skip"
@@ -301,8 +454,11 @@ GLOBAL_LIST_EMPTY(bonds_debug_rows)
 	minutes = clamp(minutes, 1, 600)
 	var/datum/bonds_bench/bench = new("skip[minutes]m")
 	bench.open("timeskip")
+	bench.op_begin()
 	var/expired = SSbonds.debug_timeskip(minutes MINUTES)
+	bench.op_end()
 	bench.close(1)
+	bench.finish()
 	to_chat(src, span_notice("Промотано [minutes] мин, истекло транзиентов: [expired]"))
 	to_chat(src, span_smallnotice(bench.rows[bench.rows.len]))
 
@@ -333,27 +489,30 @@ GLOBAL_LIST_EMPTY(bonds_debug_rows)
 	var/list/event_types = SSbonds.debug_event_pool()
 	for(var/wave in 1 to waves)
 		bench.open("w[wave]-events")
-		var/fired = SSbonds.debug_storm(pool, events, event_types)
+		var/fired = SSbonds.debug_storm(pool, events, event_types, bench)
 		bench.close(fired)
 		CHECK_TICK
 
 		bench.open("w[wave]-dreams")
-		var/rolled = SSbonds.debug_dream_pass(pool)
+		var/rolled = SSbonds.debug_dream_pass(pool, bench)
 		bench.close(rolled)
 		CHECK_TICK
 
 		bench.open("w[wave]-panels")
-		var/built = SSbonds.debug_panel_pass(pool, min(length(pool), 30))
+		var/built = SSbonds.debug_panel_pass(pool, min(length(pool), 30), bench)
 		bench.close(built)
 		CHECK_TICK
 
 		bench.open("w[wave]-timeskip")
+		bench.op_begin()
 		SSbonds.debug_timeskip(minutes MINUTES)
+		bench.op_end()
 		bench.close(1)
 		CHECK_TICK
 
 	for(var/line in bench.rows)
 		to_chat(src, span_smallnotice(line))
+	bench.finish()
 	to_chat(src, span_notice("Деградация за [waves * minutes] симулированных минут отработана."))
 
 /client/proc/bonds_debug_purge()

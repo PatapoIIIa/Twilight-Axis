@@ -454,9 +454,11 @@
 /datum/controller/subsystem/bonds/proc/fire_dream(mob/living/carbon/human/dreamer, valence, scope)
 	var/list/round_pool = round_dream_pool(valence, scope)
 	if(!length(round_pool))
+		BONDS_TALLY("dream.no_round_pool")
 		return FALSE
 	var/list/candidates = dream_candidates(dreamer, scope)
 	if(!length(candidates))
+		BONDS_TALLY("dream.no_candidates")
 		return FALSE
 	var/dreamer_arch = archetypes_for(dreamer)
 	for(var/mob/living/carbon/human/other as anything in shuffle(candidates))
@@ -468,10 +470,12 @@
 			continue
 		if(!record(dreamer.mind, other.mind, event_type, other, TRUE))
 			continue
+		BONDS_TALLY("dream.fired")
 		notify_dream(dreamer, other)
 		announce_echo(other, apply_echo(other.mind, dreamer.mind, event_type))
 		bondlog("dream [dreamer.ckey] -> [other.ckey] [event_type]")
 		return TRUE
+	BONDS_TALLY("dream.no_matching_event")
 	return FALSE
 
 /datum/controller/subsystem/bonds/proc/notify_dream(mob/living/carbon/human/dreamer, mob/living/carbon/human/other)
@@ -528,8 +532,11 @@
 		BOND_DREAM_CHANCE_FOREIGN_POSITIVE * positive,
 	)
 	var/total = chances[1] + chances[2] + chances[3] + chances[4]
+	BONDS_TALLY("dream.rolled")
 	if(total <= 0 || !prob(total))
+		BONDS_TALLY("dream.gate_failed")
 		return FALSE
+	BONDS_TALLY("dream.gate_passed")
 	var/list/valences = list(BOND_DREAM_NEGATIVE, BOND_DREAM_NEGATIVE, BOND_DREAM_POSITIVE, BOND_DREAM_POSITIVE)
 	var/list/bucket_scopes = list(BOND_DREAM_SCOPE_OWN, BOND_DREAM_SCOPE_FOREIGN, BOND_DREAM_SCOPE_OWN, BOND_DREAM_SCOPE_FOREIGN)
 	var/roll = rand() * total

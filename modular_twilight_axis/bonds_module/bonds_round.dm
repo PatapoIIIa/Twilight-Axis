@@ -24,6 +24,11 @@ SUBSYSTEM_DEF(bonds)
 	var/list/hierarchy_by_faction = list()
 	var/list/rank_by_title = list()
 	var/list/weight_shares = list()
+	var/share_role = 0
+	var/share_lore = 0
+	var/share_teller = 0
+	var/share_zone = 0
+	var/share_map = 0
 	var/list/map_rosters = list()
 	var/list/faction_stances = list()
 	var/list/house_stances = list()
@@ -36,6 +41,8 @@ SUBSYSTEM_DEF(bonds)
 	var/stance_revision = 0
 	var/list/zone_lens_cache = list()
 	var/map_weight_cache
+	var/instrumented = FALSE
+	var/list/tallies = list()
 	var/seeding_idle = FALSE
 	var/bonds_log_file
 	var/bondlog_counter = 0

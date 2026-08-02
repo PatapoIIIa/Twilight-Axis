@@ -649,6 +649,34 @@
 	SSbonds.nudge_stance(BOND_FACTION_BURGHER, BOND_FACTION_ATC, 1, 0, "")
 	BD_ASSERT(SSbonds.faction_map_shape() != first, "moving a stance must invalidate the cached map, or the panel would show stale standings")
 
+/datum/unit_test/bonds/fast_blend_matches_the_general_one/Run()
+	BD_ASSERT_EQUAL(SSbonds.blend_impact(1, 1, 1, 1, 1), 1, "with every lens neutral the blend must be exactly 1")
+	var/list/cases = list(
+		list(2, 1, 1, 1, 1),
+		list(1, 0.5, 1.4, 1, 1),
+		list(0.25, 2, 0.6, 0, 1.2),
+		list(3, 3, 3, 3, 3),
+	)
+	for(var/list/one as anything in cases)
+		var/fast = SSbonds.blend_impact(one[1], one[2], one[3], one[4], one[5])
+		var/slow = SSbonds.blend_weights(list(
+			BOND_SHARE_ROLE = one[1],
+			BOND_SHARE_LORE = one[2],
+			BOND_SHARE_STORYTELLER = one[3],
+			BOND_SHARE_ZONE = one[4],
+			BOND_SHARE_MAP = one[5],
+		))
+		BD_ASSERT(abs(fast - slow) < 0.0001, "the hot path skips the assoc list and must stay numerically identical to blend_weights: got [fast] vs [slow]")
+
+/datum/unit_test/bonds/stance_history_is_bounded/Run()
+	var/datum/faction_stance/stance = SSbonds.get_or_create_stance(BOND_FACTION_PEASANT, BOND_FACTION_WANDERER)
+	BD_ASSERT_NOTNULL(stance, "the pair must resolve to a stance")
+	var/started_with = LAZYLEN(stance.history)
+	for(var/i in 1 to BOND_MAX_HISTORY * 3)
+		SSbonds.nudge_stance(BOND_FACTION_PEASANT, BOND_FACTION_WANDERER, 0, 0, "bench entry [i]")
+	BD_ASSERT(LAZYLEN(stance.history) <= BOND_MAX_HISTORY, "faction stance history must be trimmed like every other history: it is appended on every propagated combat event and would otherwise grow all round")
+	BD_ASSERT(LAZYLEN(stance.history) >= min(started_with, BOND_MAX_HISTORY), "trimming must drop the oldest, not everything")
+
 #undef BD_SOURCE
 #undef BD_ASSERT
 #undef BD_ASSERT_EQUAL

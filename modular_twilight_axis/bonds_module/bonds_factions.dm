@@ -254,6 +254,8 @@
 		entry.warmth_delta = warmth_delta
 		entry.weight_delta = weight_delta
 		LAZYADD(stance.history, entry)
+		while(LAZYLEN(stance.history) > BOND_MAX_HISTORY)
+			stance.history -= stance.history[1]
 	return stance
 
 /datum/controller/subsystem/bonds/proc/faction_affinity(mob/living/carbon/human/person_a, mob/living/carbon/human/person_b)

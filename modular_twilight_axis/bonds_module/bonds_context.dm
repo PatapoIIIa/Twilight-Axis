@@ -38,9 +38,29 @@
 		var/datum/bond_weight_share/entry = new share_type()
 		weight_shares[entry.id] = entry
 		total += entry.share
+		switch(entry.id)
+			if(BOND_SHARE_ROLE)
+				share_role = entry.share
+			if(BOND_SHARE_LORE)
+				share_lore = entry.share
+			if(BOND_SHARE_STORYTELLER)
+				share_teller = entry.share
+			if(BOND_SHARE_ZONE)
+				share_zone = entry.share
+			if(BOND_SHARE_MAP)
+				share_map = entry.share
 	if(total < 0.999 || total > 1.001)
 		bondlog("weight shares do not sum to 1 (got [total]) - the blend will not be neutral at rest", BONDLOG_ERROR)
 	bondlog("weight shares built: [weight_shares.len], total [total]", BONDLOG_INFO)
+
+/datum/controller/subsystem/bonds/proc/blend_impact(role, lore, teller, zone, map)
+	var/blended = (share_role * role) + (share_lore * lore) + (share_teller * teller) + (share_zone * zone) + (share_map * map)
+	var/covered = share_role + share_lore + share_teller + share_zone + share_map
+	if(!covered)
+		return 1
+	if(covered < 0.999)
+		blended += (1 - covered)
+	return blended
 
 /datum/controller/subsystem/bonds/proc/blend_weights(list/modifiers)
 	var/blended = 0
@@ -77,12 +97,14 @@
 		qdel(tier)
 	bondlog("role weights built: [role_weights.len] job types", BONDLOG_INFO)
 
-/datum/controller/subsystem/bonds/proc/role_impact_weight(mob/living/carbon/human/person)
-	var/job_type = job_type_of(person)
+/datum/controller/subsystem/bonds/proc/role_weight_for_job(job_type)
 	if(!job_type)
 		return 1
 	var/weight = role_weights[job_type]
 	return isnull(weight) ? 1 : weight
+
+/datum/controller/subsystem/bonds/proc/role_impact_weight(mob/living/carbon/human/person)
+	return role_weight_for_job(job_type_of(person))
 
 /datum/bond_zone_lens
 	abstract_type = /datum/bond_zone_lens
@@ -534,27 +556,35 @@
 	var/datum/bond_zone_lens/zone = zone_lens_for(object_body)
 	var/hostile = (prototype.category == BOND_CATEGORY_VIOLENCE) || (prototype.category == BOND_CATEGORY_DEATH)
 	if(hostile && !zone?.public_zone)
+		BONDS_TALLY("impact.blocked_private_zone")
 		return FALSE
 
 	if(!spend_influence(object_actor))
+		BONDS_TALLY("impact.blocked_influence")
 		return FALSE
 
 	var/datum/origin_lore/lore = origin_lore_for(subject_actor, object_actor)
-	var/id_a = faction_id_for(subject_body)
-	var/id_b = faction_id_for(object_body)
-	var/scale = applied_scale * blend_weights(list(
-		BOND_SHARE_ROLE = role_impact_weight(object_body) * role_impact_weight(subject_body),
-		BOND_SHARE_LORE = lore ? lore.weight_scale : 1,
-		BOND_SHARE_STORYTELLER = storyteller_weight(id_a, id_b),
-		BOND_SHARE_ZONE = zone ? zone.weight : 1,
-		BOND_SHARE_MAP = map_weight(),
-	))
+	var/subject_job = job_type_of(subject_body)
+	var/object_job = job_type_of(object_body)
+	var/datum/bond_faction/faction_a = faction_for_job(subject_job)
+	var/datum/bond_faction/faction_b = faction_for_job(object_job)
+	var/id_a = faction_a?.id
+	var/id_b = faction_b?.id
+	var/scale = applied_scale * blend_impact(
+		role_weight_for_job(object_job) * role_weight_for_job(subject_job),
+		lore ? lore.weight_scale : 1,
+		storyteller_weight(id_a, id_b),
+		zone ? zone.weight : 1,
+		map_weight(),
+	)
 	var/bias = lore ? lore.bias : 0
 
 	var/warmth_delta = (prototype.warmth_commit * scale) + bias
 	var/weight_delta = abs(prototype.weight_commit) * scale
 	if(!warmth_delta && !weight_delta)
+		BONDS_TALLY("impact.zero_scale")
 		return FALSE
+	BONDS_TALLY("impact.applied")
 
 	var/reason = "[subject_actor.name_of()] и [object_actor.name_of()]: [lowertext(prototype.history_label)]"
 	apply_faction_impact(id_a, id_b, warmth_delta, weight_delta, reason)

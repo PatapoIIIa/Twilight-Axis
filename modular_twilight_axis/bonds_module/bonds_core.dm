@@ -173,6 +173,7 @@
 		weakest_weight = bond.weight
 		weakest = target
 	if(weakest)
+		BONDS_TALLY("cap.evicted")
 		remove_bond(weakest)
 
 /datum/bond_node/proc/sorted_bonds()
@@ -311,10 +312,12 @@
 /datum/social_bond/proc/commit(datum/bond_event/prototype, applied_scale = 1)
 	var/allowance = swing_allowance()
 	if(!allowance)
+		BONDS_TALLY("commit.blocked_swing_exhausted")
 		return 0
 	var/scale = commit_scale(prototype.category) * applied_scale
 	var/requested = abs(prototype.warmth_commit * scale)
 	if(requested > allowance)
+		BONDS_TALLY("commit.clipped_by_swing")
 		scale *= allowance / requested
 	swing_used += abs(prototype.warmth_commit * scale)
 	warmth_committed = clamp(warmth_committed + (prototype.warmth_commit * scale), BOND_WARMTH_MIN, BOND_WARMTH_MAX)
@@ -626,18 +629,22 @@
 	var/datum/bond_actor/subject_actor = resolve_actor(subject)
 	var/datum/bond_actor/object_actor = resolve_actor(object)
 	if(!subject_actor || !object_actor || subject_actor == object_actor)
+		BONDS_TALLY("record.no_actor")
 		return null
 	if(!force && !bonds_identity_visible(object_mob) && !get_bond(subject_actor, object_actor))
+		BONDS_TALLY("record.blocked_identity")
 		return null
 	var/datum/bond_event/prototype = get_event_prototype(event_type)
 	if(!prototype)
 		bondlog("record() unknown event type [event_type]", BONDLOG_ERROR)
 		return null
 	if(!prototype.can_apply(subject_actor, object_actor))
+		BONDS_TALLY("record.blocked_can_apply")
 		return null
 	var/datum/social_bond/bond = get_or_create_bond(subject_actor, object_actor)
 	if(!bond)
 		return null
+	BONDS_TALLY("record.applied")
 	if(verbose_logging)
 		bondlog("record [subject_actor.name_of()] -> [object_actor.name_of()] [event_type]")
 	return bond.attach_event(event_type, applied_scale)
