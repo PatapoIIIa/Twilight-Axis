@@ -31,15 +31,17 @@ GLOBAL_LIST_EMPTY(bonds_debug_rows)
 	var/wall_start = 0
 	var/list/tally_mark
 	var/owns_profiler = FALSE
+	var/forced_profiler = FALSE
 	var/list/rows = list()
 
-/datum/bonds_bench/New(bench_label = "bench")
+/datum/bonds_bench/New(bench_label = "bench", force_profiler = FALSE)
 	label = bench_label
+	forced_profiler = force_profiler
 	SSbonds.instrumented = TRUE
 	SSbonds.tallies = list()
 	// Never stomp a server that is already profiling: PROFILE_CLEAR would throw away SSprofiler's
 	// accumulated round data, and PROFILE_REFRESH drains what it reads.
-	owns_profiler = !CONFIG_GET(flag/auto_profile)
+	owns_profiler = forced_profiler || !CONFIG_GET(flag/auto_profile)
 	SSbonds.bondlog("BENCH|run=[label]|event=begin|profiler=[owns_profiler ? "ours" : "shared, left alone"]", BONDLOG_INFO)
 	if(owns_profiler)
 		world.Profile(PROFILE_CLEAR)
@@ -185,6 +187,9 @@ GLOBAL_LIST_EMPTY(bonds_debug_rows)
 	for(var/key in stages)
 		stage_parts += "[key]=[stages[key]]"
 	bondlog("DIST|run=[label]|stages|[stage_parts.Join("|")]", BONDLOG_INFO)
+	var/applied = tallies["record.applied"] || 0
+	var/evicted = tallies["cap.evicted"] || 0
+	bondlog("DIST|run=[label]|churn|records=[applied]|evictions=[evicted]|evict_per_record=[applied ? round(evicted / applied, 0.001) : 0]", BONDLOG_INFO)
 	bondlog("DIST|run=[label]|warmth|hostile=[warmth_buckets["hostile"]]|cold=[warmth_buckets["cold"]]|neutral=[warmth_buckets["neutral"]]|warm=[warmth_buckets["warm"]]", BONDLOG_INFO)
 
 	var/list/tally_parts = list()
@@ -331,14 +336,24 @@ GLOBAL_LIST_EMPTY(bonds_debug_rows)
 			paired++
 	return paired
 
-/datum/controller/subsystem/bonds/proc/debug_panel_pass(list/pool, samples, datum/bonds_bench/bench)
+// One combined number cannot say which of the three builders is growing, and that was exactly the
+// question the last run left open. Each is timed as its own phase.
+/datum/controller/subsystem/bonds/proc/debug_panel_pass(list/pool, samples, datum/bonds_bench/bench, mode = "all")
 	var/built = 0
 	for(var/i in 1 to samples)
 		var/mob/living/carbon/human/viewer = pool[((i - 1) % length(pool)) + 1]
 		bench?.op_begin()
-		build_panel_groups(viewer)
-		build_bonds_tree(viewer)
-		build_faction_map(viewer)
+		switch(mode)
+			if("list")
+				build_panel_groups(viewer)
+			if("tree")
+				build_bonds_tree(viewer)
+			if("map")
+				build_faction_map(viewer)
+			else
+				build_panel_groups(viewer)
+				build_bonds_tree(viewer)
+				build_faction_map(viewer)
 		bench?.op_end()
 		built++
 	return built
@@ -394,12 +409,13 @@ GLOBAL_LIST_EMPTY(bonds_debug_rows)
 		return
 	players = clamp(players, 2, 400)
 	events = clamp(events, 0, 20000)
+	var/profile = tgui_alert(mob, "Снять профиль процов? На этом сервере включён AUTO_PROFILE, и захват выпьет буфер SSprofiler.", "Bonds Bench", list("Снять", "Не трогать")) == "Снять"
 
 	if(length(GLOB.bonds_debug_population))
 		SSbonds.debug_purge_population()
 
 	to_chat(src, span_notice("Бенчмарк запущен. Сервер будет подвисать: замеры идут без CHECK_TICK внутри фаз."))
-	var/datum/bonds_bench/bench = new("load[players]")
+	var/datum/bonds_bench/bench = new("load[players]", profile)
 
 	bench.open("spawn+register")
 	bench.op_begin()
@@ -433,9 +449,10 @@ GLOBAL_LIST_EMPTY(bonds_debug_rows)
 	bench.close(length(pool))
 	CHECK_TICK
 
-	bench.open("panels")
-	var/built = SSbonds.debug_panel_pass(pool, min(length(pool), 60), bench)
-	bench.close(built)
+	var/panel_samples = min(length(pool), 60)
+	for(var/mode in list("list", "tree", "map"))
+		bench.open("panels-[mode]")
+		bench.close(SSbonds.debug_panel_pass(pool, panel_samples, bench, mode))
 
 	for(var/line in bench.rows)
 		to_chat(src, span_smallnotice(line))
@@ -484,8 +501,9 @@ GLOBAL_LIST_EMPTY(bonds_debug_rows)
 	waves = clamp(waves, 1, 60)
 	events = clamp(events, 0, 20000)
 	minutes = clamp(minutes, 1, 120)
+	var/profile = tgui_alert(mob, "Снять профиль процов? На этом сервере включён AUTO_PROFILE, и захват выпьет буфер SSprofiler.", "Bonds Bench", list("Снять", "Не трогать")) == "Снять"
 
-	var/datum/bonds_bench/bench = new("degrade[waves]x[minutes]m")
+	var/datum/bonds_bench/bench = new("degrade[waves]x[minutes]m", profile)
 	var/list/event_types = SSbonds.debug_event_pool()
 	for(var/wave in 1 to waves)
 		bench.open("w[wave]-events")
@@ -498,9 +516,9 @@ GLOBAL_LIST_EMPTY(bonds_debug_rows)
 		bench.close(rolled)
 		CHECK_TICK
 
-		bench.open("w[wave]-panels")
-		var/built = SSbonds.debug_panel_pass(pool, min(length(pool), 30), bench)
-		bench.close(built)
+		for(var/mode in list("list", "tree", "map"))
+			bench.open("w[wave]-panels-[mode]")
+			bench.close(SSbonds.debug_panel_pass(pool, min(length(pool), 30), bench, mode))
 		CHECK_TICK
 
 		bench.open("w[wave]-timeskip")

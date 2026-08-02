@@ -615,14 +615,18 @@ SUBSYSTEM_DEF(bonds)
 	pool = shuffle(pool)
 	var/paired = 0
 	for(var/mob/living/carbon/human/seeker as anything in pool)
+		if(QDELETED(seeker) || !seeker.mind || !seeker.ckey)
+			continue
 		if(remaining_seeds(seeker.ckey) <= 0)
 			continue
 		var/list/candidates = seed_candidates(seeker, pool)
 		if(!length(candidates))
+			CHECK_TICK
 			continue
 		var/mob/living/carbon/human/partner = pick(candidates)
-		if(apply_seed(seeker, partner))
+		if(!QDELETED(partner) && partner.mind && apply_seed(seeker, partner))
 			paired++
+		CHECK_TICK
 	bondlog("run_seeding paired=[paired] pool=[pool.len]", BONDLOG_INFO)
 	if(anyone_still_wants_seeds())
 		schedule_seeding(BOND_SEED_RETRY)

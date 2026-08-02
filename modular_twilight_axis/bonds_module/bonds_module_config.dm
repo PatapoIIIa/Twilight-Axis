@@ -8,6 +8,9 @@
 // bonds_config_roles.dm - TUNING: how loudly each job echoes between factions, plus the
 //                         archetype masks that decide which dream may name which pair of jobs
 // bonds_config_gods.dm  - TUNING: storyteller gods bending faction relations
+// bonds_config_stances.dm - TUNING: the declared standing of every one of the 91 mortal faction
+//                         pairs. Leaving a pair out is not neutrality, it is a hole: an undeclared
+//                         pair sits at flat zero and the first brawl decides it, so keep it complete
 // bonds_config_vices.dm - TUNING: how a recipient's vices reshape what was done to them
 // bonds_core.dm       - the graph itself: /datum/bond_actor identity, /datum/bond_node buckets,
 //                       /datum/social_bond axes and history, /datum/social_bond/kin kinship, graph API
@@ -83,6 +86,11 @@
 #define BOND_CATEGORY_DEATH "death"
 #define BOND_CATEGORY_SEED "seed"
 #define BOND_CATEGORY_DREAM "dream"
+
+// Decision counters for the bench. Off by default and gated at the call site, so a normal round
+// pays one var read per tally. They answer the question raw timings never do: not "how slow", but
+// "how many attempts died, and at which gate".
+#define BONDS_TALLY(key) if(SSbonds.instrumented) { SSbonds.tallies[key] = (SSbonds.tallies[key] || 0) + 1 }
 
 // Once a blow puts someone into critical, every further hit on them inside this window is
 // read as finishing them off rather than as an ordinary strike. The window refreshes on each
@@ -212,6 +220,7 @@
 #include "bonds_config_maps.dm"
 #include "bonds_config_roles.dm"
 #include "bonds_config_gods.dm"
+#include "bonds_config_stances.dm"
 #include "bonds_config_vices.dm"
 #include "bonds_core.dm"
 #include "bonds_events.dm"
