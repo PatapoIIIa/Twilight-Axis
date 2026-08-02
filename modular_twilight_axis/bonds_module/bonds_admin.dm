@@ -224,6 +224,9 @@
 	seed_flavor_cache = null
 	zone_lens_cache = list()
 	map_weight_cache = null
+	present_factions_cache = null
+	faction_map_cache = null
+	faction_map_cache_revision = -1
 	log_admin("[key_name(user)] flushed bonds lookup caches")
 	bondlog("admin [key_name(user)] flushed lookup caches", BONDLOG_WARN)
 	return TRUE

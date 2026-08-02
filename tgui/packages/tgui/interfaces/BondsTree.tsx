@@ -4,8 +4,18 @@ import { Box, Button, NoticeBox, Section } from 'tgui-core/components';
 import { useBackend } from '../backend';
 import { Window } from '../layouts';
 
+type LogEntry = {
+  label: string;
+  story: string;
+  warmth: number;
+  weight: number;
+  dream: number | boolean;
+};
+
 type EdgeEntry = {
   name: string;
+  job: string;
+  log: LogEntry[];
   accent: string;
   outLabel: string;
   outProgress: number;
@@ -29,10 +39,10 @@ const HEIGHT = 700;
 
 const NODE_R = 28;
 const SELF_R = 42;
-const ARC_PER_NODE = 104;
+const ARC_PER_NODE = 158;
 const RING_BASE = 210;
-const RING_STEP = 150;
-const RING_CAPACITY = 14;
+const RING_STEP = 215;
+const RING_CAPACITY = 12;
 const PADDING = 110;
 
 const BAR_HALF = 44;
@@ -60,7 +70,7 @@ function computeLayout(edges: EdgeEntry[]) {
   let ringIndex = 0;
 
   while (placedCount < edges.length) {
-    const capacity = RING_CAPACITY + ringIndex * 8;
+    const capacity = RING_CAPACITY + ringIndex * 6;
     const take = Math.min(edges.length - placedCount, capacity);
     const needed = (take * ARC_PER_NODE) / (2 * Math.PI);
     const radius = Math.max(RING_BASE + ringIndex * RING_STEP, needed);
@@ -110,6 +120,7 @@ export const BondsTree = () => {
 
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const [transform, setTransform] = useState<Transform>(INITIAL_TRANSFORM);
+  const [hovered, setHovered] = useState<number | null>(null);
   const dragRef = useRef<{
     pointerId: number;
     startX: number;
@@ -188,6 +199,7 @@ export const BondsTree = () => {
         return;
       }
       (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+      setHovered(null);
       dragRef.current = {
         pointerId: e.pointerId,
         startX: e.clientX,
@@ -324,7 +336,18 @@ export const BondsTree = () => {
                   const barY = y + NODE_R + 8;
 
                   return (
-                    <g key={index}>
+                    <g
+                      key={index}
+                      style={{ cursor: 'help', pointerEvents: 'auto' }}
+                      onPointerEnter={() => !dragRef.current && setHovered(index)}
+                      onPointerLeave={() => setHovered(null)}
+                    >
+                      <circle
+                        cx={x}
+                        cy={y}
+                        r={NODE_R + 26}
+                        fill="transparent"
+                      />
                       <text
                         x={x}
                         y={y - NODE_R - 10}
@@ -423,6 +446,89 @@ export const BondsTree = () => {
                 </text>
               </svg>
             </div>
+            {hovered !== null && !!layout.placed[hovered] && (
+              <div
+                style={{
+                  background: 'rgba(10, 9, 8, 0.96)',
+                  border: `1px solid ${layout.placed[hovered].edge.accent}`,
+                  borderRadius: '4px',
+                  bottom: '10px',
+                  fontSize: '12px',
+                  left: '10px',
+                  maxHeight: '55%',
+                  maxWidth: '22rem',
+                  overflowY: 'auto',
+                  padding: '8px 10px',
+                  pointerEvents: 'none',
+                  position: 'absolute',
+                }}
+              >
+                <Box bold color={layout.placed[hovered].edge.accent}>
+                  {layout.placed[hovered].edge.name}
+                  {!!layout.placed[hovered].edge.job && (
+                    <Box inline ml={1} opacity={0.6}>
+                      {layout.placed[hovered].edge.job}
+                    </Box>
+                  )}
+                </Box>
+                <Box opacity={0.75} mb={0.5}>
+                  Вы к нему: {layout.placed[hovered].edge.outLabel}
+                  {!!layout.placed[hovered].edge.inLabel &&
+                    ` · он к вам: ${layout.placed[hovered].edge.inLabel}`}
+                </Box>
+                {(() => {
+                  const log = layout.placed[hovered].edge.log || [];
+                  const dreams = log.filter((entry) => !!entry.dream);
+                  const deeds = log.filter((entry) => !entry.dream);
+                  return (
+                    <>
+                      {!!dreams.length && (
+                        <Box mt={0.5}>
+                          <Box bold opacity={0.8}>
+                            Сны
+                          </Box>
+                          {dreams.map((entry, i) => (
+                            <Box key={`d${i}`} mt={0.25} italic opacity={0.85}>
+                              {entry.story}
+                            </Box>
+                          ))}
+                        </Box>
+                      )}
+                      {!!deeds.length && (
+                        <Box mt={0.5}>
+                          <Box bold opacity={0.8}>
+                            Последнее
+                          </Box>
+                          {deeds.map((entry, i) => (
+                            <Box key={`e${i}`} mt={0.25}>
+                              <Box inline bold opacity={0.7}>
+                                {entry.label}
+                              </Box>
+                              <Box inline ml={1} opacity={0.85}>
+                                {entry.story}
+                              </Box>
+                              {!!entry.warmth && (
+                                <Box
+                                  inline
+                                  ml={1}
+                                  color={entry.warmth > 0 ? 'good' : 'bad'}
+                                >
+                                  {entry.warmth > 0 ? '+' : ''}
+                                  {entry.warmth}
+                                </Box>
+                              )}
+                            </Box>
+                          ))}
+                        </Box>
+                      )}
+                      {!dreams.length && !deeds.length && (
+                        <Box opacity={0.5}>Ничего конкретного не припомнить.</Box>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
+            )}
           </div>
         </Section>
       </Window.Content>

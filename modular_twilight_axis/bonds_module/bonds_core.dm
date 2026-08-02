@@ -334,6 +334,7 @@
 	entry.warmth_delta = round(prototype.warmth_commit * scale, 0.1)
 	entry.weight_delta = round(prototype.weight_commit * scale, 0.1)
 	entry.pinned = (prototype.tag_applied != BOND_TAG_NONE)
+	entry.dream = istype(prototype, /datum/bond_event/dream)
 	LAZYADD(history, entry)
 	trim_history()
 	return entry

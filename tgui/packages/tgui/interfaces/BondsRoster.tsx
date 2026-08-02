@@ -24,58 +24,121 @@ type Block = {
   icon: string;
   ranks: Rank[];
   total: number;
+  warmth?: number;
+  label?: string;
+  labelAccent?: string;
 };
 
 type Data = {
   own: Block | null;
   ally: Block | null;
   allyWarmth: number;
+  leaders: Block[];
 };
 
-function RankRow(props: { rank: Rank; accent: string }) {
-  const { rank, accent } = props;
-  const leader = !!rank.leader;
+function SlotCard(props: { accent: string; person?: Person; title?: string }) {
+  const { accent, person, title } = props;
+
+  if (!person) {
+    return (
+      <Box
+        style={{
+          background: 'rgba(16, 15, 14, 0.6)',
+          border: '1px dashed #3a3630',
+          borderRadius: '3px',
+          minWidth: '9rem',
+          padding: '4px 8px',
+        }}
+      >
+        <Box opacity={0.3} italic>
+          <Icon name="user-slash" mr={1} />
+          свободно
+        </Box>
+        <Box opacity={0.35}>{title}</Box>
+      </Box>
+    );
+  }
 
   return (
     <Box
-      mb={1}
-      p={1}
       style={{
-        borderLeft: `3px solid ${leader ? accent : '#3a3a3a'}`,
-        background: leader ? '#1c1a14' : '#141414',
+        background: 'rgba(28, 26, 20, 0.9)',
+        border: `1px solid ${accent}`,
+        borderRadius: '3px',
+        minWidth: '9rem',
+        padding: '4px 8px',
       }}
     >
-      <Box bold color={leader ? accent : undefined}>
-        {leader && <Icon name="chess-king" mr={1} />}
-        {rank.label}
+      <Box bold color={person.self ? accent : undefined}>
+        {person.name}
+        {!!person.self && (
+          <Box inline ml={1} color={accent}>
+            <Icon name="location-dot" />
+          </Box>
+        )}
       </Box>
-      {rank.people.map((person, index) => (
-        <Box key={index} ml={1} mt={0.5}>
-          <Box inline bold={!!person.self} color={person.self ? accent : undefined}>
-            {person.name}
-          </Box>
-          <Box inline ml={1} opacity={0.55}>
-            {person.job}
-          </Box>
-          {!!person.self && (
-            <Box inline ml={1} color={accent} bold>
-              — вы здесь
-            </Box>
-          )}
-        </Box>
-      ))}
-      {rank.vacant.map((title, index) => (
-        <Box key={`v${index}`} ml={1} mt={0.5} opacity={0.35} italic>
-          <Icon name="user-slash" mr={1} />
-          {title} — место свободно
-        </Box>
-      ))}
+      <Box opacity={0.55}>{person.job}</Box>
     </Box>
   );
 }
 
-function RosterBlock(props: { block: Block; subtitle?: string }) {
-  const { block, subtitle } = props;
+function Tier(props: { rank: Rank; accent: string; last: boolean }) {
+  const { rank, accent, last } = props;
+  const leader = !!rank.leader;
+
+  return (
+    <Box
+      style={{ alignItems: 'center', display: 'flex', flexDirection: 'column' }}
+    >
+      <Box
+        style={{
+          color: leader ? accent : '#8a8378',
+          fontSize: leader ? '13px' : '11px',
+          fontWeight: leader ? 'bold' : 'normal',
+          letterSpacing: '0.06em',
+          marginBottom: '4px',
+          textTransform: 'uppercase',
+        }}
+      >
+        {leader && <Icon name="chess-king" mr={1} />}
+        {rank.label}
+      </Box>
+      <Box
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '6px',
+          justifyContent: 'center',
+        }}
+      >
+        {rank.people.map((person, index) => (
+          <SlotCard key={`p${index}`} accent={accent} person={person} />
+        ))}
+        {rank.vacant.map((title, index) => (
+          <SlotCard key={`v${index}`} accent={accent} title={title} />
+        ))}
+        {!rank.people.length && !rank.vacant.length && (
+          <Box opacity={0.3} italic>
+            нет мест
+          </Box>
+        )}
+      </Box>
+      {!last && (
+        <Box
+          style={{
+            background: '#3a3630',
+            height: '14px',
+            margin: '6px 0',
+            width: '1px',
+          }}
+        />
+      )}
+    </Box>
+  );
+}
+
+function OrgChart(props: { block: Block }) {
+  const { block } = props;
 
   return (
     <Section
@@ -85,52 +148,118 @@ function RosterBlock(props: { block: Block; subtitle?: string }) {
           {block.name}
         </Box>
       }
+      buttons={<Box opacity={0.5}>на месте: {block.total}</Box>}
     >
-      {!!subtitle && (
-        <Box opacity={0.6} mb={1}>
-          {subtitle}
-        </Box>
-      )}
       {!block.ranks.length && (
         <Box opacity={0.6}>Об этой фракции ничего не известно.</Box>
       )}
       {block.ranks.map((rank, index) => (
-        <RankRow key={index} rank={rank} accent={block.accent} />
+        <Tier
+          key={index}
+          rank={rank}
+          accent={block.accent}
+          last={index === block.ranks.length - 1}
+        />
       ))}
     </Section>
   );
 }
 
-export const BondsRoster = () => {
-  const { data } = useBackend<Data>();
-  const { own, ally, allyWarmth = 0 } = data;
+function LeaderRow(props: { block: Block }) {
+  const { block } = props;
 
   return (
-    <Window title="Лист фракции" width={620} height={720}>
+    <Box mb={1}>
+      <Box>
+        <Box inline bold color={block.accent}>
+          <Icon name={block.icon} mr={1} />
+          {block.name}
+        </Box>
+        {!!block.label && (
+          <Box inline ml={1} bold color={block.labelAccent}>
+            {block.label}
+          </Box>
+        )}
+        <Box inline ml={1} opacity={0.45}>
+          на месте {block.total}
+        </Box>
+      </Box>
+      {!block.ranks.length && (
+        <Box ml={2} opacity={0.4} italic>
+          никого из старших нет
+        </Box>
+      )}
+      {block.ranks.map((rank, index) => (
+        <Box key={index} ml={2}>
+          <Box inline opacity={0.6}>
+            {rank.label}:
+          </Box>
+          {!rank.people.length && (
+            <Box inline ml={1} opacity={0.35} italic>
+              место свободно
+            </Box>
+          )}
+          {rank.people.map((person, i) => (
+            <Box key={i} inline ml={1}>
+              <Box inline bold={!!person.self}>
+                {person.name}
+              </Box>
+              <Box inline ml={1} opacity={0.5}>
+                {person.job}
+              </Box>
+            </Box>
+          ))}
+        </Box>
+      ))}
+    </Box>
+  );
+}
+
+export const BondsRoster = () => {
+  const { data } = useBackend<Data>();
+  const { own, ally, allyWarmth = 0, leaders = [] } = data;
+
+  return (
+    <Window title="Лист фракции" width={700} height={760}>
       <Window.Content scrollable style={{ backgroundImage: 'none' }}>
-        {!own && <NoticeBox>Вы ни к кому не приписаны.</NoticeBox>}
         <Stack vertical fill>
+          {!own && (
+            <Stack.Item>
+              <NoticeBox>
+                Вы ни к кому не приписаны, но кто здесь распоряжается — видно
+                ниже.
+              </NoticeBox>
+            </Stack.Item>
+          )}
           {!!own && (
             <Stack.Item>
-              <RosterBlock
-                block={own}
-                subtitle={`На месте сейчас: ${own.total}`}
-              />
+              <OrgChart block={own} />
             </Stack.Item>
           )}
           {!!ally && (
             <Stack.Item>
-              <RosterBlock
-                block={ally}
-                subtitle={`Союзники · расположение ${allyWarmth}`}
-              />
+              <Section
+                title={
+                  <Box inline color={ally.accent} bold>
+                    <Icon name={ally.icon} mr={1} />
+                    {ally.name}
+                  </Box>
+                }
+                buttons={
+                  <Box opacity={0.5}>союзники · расположение {allyWarmth}</Box>
+                }
+              >
+                <LeaderRow block={ally} />
+              </Section>
             </Stack.Item>
           )}
-          {!!own && !ally && (
+          {!!leaders.length && (
             <Stack.Item>
-              <NoticeBox>
-                Союзников, к кому стоило бы обратиться, сейчас нет.
-              </NoticeBox>
+              <Section title="Кто распоряжается в прочих">
+                {leaders.map((block) => (
+                  <LeaderRow key={block.id} block={block} />
+                ))}
+              </Section>
             </Stack.Item>
           )}
         </Stack>

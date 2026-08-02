@@ -184,103 +184,6 @@
 	accent = "#8c3f3f"
 	positions_key = "antagonist_positions"
 
-/datum/faction_baseline
-	abstract_type = /datum/faction_baseline
-	var/faction_a = ""
-	var/faction_b = ""
-	var/warmth = 0
-	var/weight = 0
-
-/datum/faction_baseline/noble_court
-	faction_a = BOND_FACTION_NOBLE
-	faction_b = BOND_FACTION_COURT
-	warmth = 45
-	weight = 60
-
-/datum/faction_baseline/noble_retinue
-	faction_a = BOND_FACTION_NOBLE
-	faction_b = BOND_FACTION_RETINUE
-	warmth = 40
-	weight = 55
-
-/datum/faction_baseline/noble_peasant
-	faction_a = BOND_FACTION_NOBLE
-	faction_b = BOND_FACTION_PEASANT
-	warmth = -20
-	weight = 35
-
-/datum/faction_baseline/retinue_garrison
-	faction_a = BOND_FACTION_RETINUE
-	faction_b = BOND_FACTION_GARRISON
-	warmth = 30
-	weight = 45
-
-/datum/faction_baseline/garrison_citywatch
-	faction_a = BOND_FACTION_GARRISON
-	faction_b = BOND_FACTION_CITYWATCH
-	warmth = -15
-	weight = 50
-
-/datum/faction_baseline/church_inquisition
-	faction_a = BOND_FACTION_CHURCH
-	faction_b = BOND_FACTION_INQUISITION
-	warmth = -30
-	weight = 70
-
-/datum/faction_baseline/burgher_atc
-	faction_a = BOND_FACTION_BURGHER
-	faction_b = BOND_FACTION_ATC
-	warmth = -20
-	weight = 55
-
-/datum/faction_baseline/burgher_peasant
-	faction_a = BOND_FACTION_BURGHER
-	faction_b = BOND_FACTION_PEASANT
-	warmth = 15
-	weight = 40
-
-/datum/faction_baseline/church_peasant
-	faction_a = BOND_FACTION_CHURCH
-	faction_b = BOND_FACTION_PEASANT
-	warmth = 25
-	weight = 45
-
-/datum/faction_baseline/garrison_outlaw
-	faction_a = BOND_FACTION_GARRISON
-	faction_b = BOND_FACTION_OUTLAW
-	warmth = -70
-	weight = 80
-
-/datum/faction_baseline/citywatch_outlaw
-	faction_a = BOND_FACTION_CITYWATCH
-	faction_b = BOND_FACTION_OUTLAW
-	warmth = -70
-	weight = 80
-
-/datum/faction_baseline/inquisition_outlaw
-	faction_a = BOND_FACTION_INQUISITION
-	faction_b = BOND_FACTION_OUTLAW
-	warmth = -80
-	weight = 75
-
-/datum/faction_baseline/sidefolk_outlaw
-	faction_a = BOND_FACTION_SIDEFOLK
-	faction_b = BOND_FACTION_OUTLAW
-	warmth = 20
-	weight = 35
-
-/datum/faction_baseline/sidefolk_citywatch
-	faction_a = BOND_FACTION_SIDEFOLK
-	faction_b = BOND_FACTION_CITYWATCH
-	warmth = -30
-	weight = 45
-
-/datum/faction_baseline/wanderer_sidefolk
-	faction_a = BOND_FACTION_WANDERER
-	faction_b = BOND_FACTION_SIDEFOLK
-	warmth = 20
-	weight = 30
-
 /datum/faction_stance
 	var/faction_a
 	var/faction_b
@@ -323,6 +226,7 @@
 		return stance
 	stance = new(id_a, id_b)
 	faction_stances[key] = stance
+	stance_revision++
 	return stance
 
 /datum/controller/subsystem/bonds/proc/stance_warmth(id_a, id_b)
@@ -341,6 +245,7 @@
 	stance.warmth = clamp(stance.warmth + warmth_delta, BOND_WARMTH_MIN, BOND_WARMTH_MAX)
 	stance.weight = clamp(stance.weight + weight_delta, BOND_WEIGHT_MIN, BOND_WEIGHT_MAX)
 	stance.updated_at = world.time
+	stance_revision++
 	if(reason)
 		var/datum/bond_history/entry = new()
 		entry.label = "Фракции"
@@ -360,18 +265,14 @@
 
 /datum/controller/subsystem/bonds/proc/build_faction_stances()
 	faction_stances = list()
-	for(var/datum/faction_baseline/baseline_type as anything in typesof(/datum/faction_baseline))
-		if(IS_ABSTRACT(baseline_type))
-			continue
-		var/datum/faction_baseline/baseline = new baseline_type()
-		var/datum/faction_stance/stance = get_or_create_stance(baseline.faction_a, baseline.faction_b)
+	for(var/list/row as anything in GLOB.bond_faction_baselines)
+		var/datum/faction_stance/stance = get_or_create_stance(row[1], row[2])
 		if(!stance)
-			bondlog("baseline [baseline_type] references an unknown faction pair", BONDLOG_WARN)
-			qdel(baseline)
+			bondlog("baseline row [row[1]]|[row[2]] references an unknown faction pair", BONDLOG_WARN)
 			continue
-		stance.warmth = baseline.warmth
-		stance.weight = baseline.weight
-		qdel(baseline)
+		stance.warmth = row[3]
+		stance.weight = row[4]
+	stance_revision++
 	bondlog("faction stances seeded: [faction_stances.len] pairs", BONDLOG_INFO)
 
 /datum/controller/subsystem/bonds/proc/apply_storyteller_lens()
@@ -485,71 +386,6 @@
 			"intensity" = bonds_stance_intensity(stance ? stance.weight : 0),
 		))
 	return out
-
-/datum/faction_baseline/clan
-	abstract_type = /datum/faction_baseline/clan
-	warmth = 0
-	weight = 10
-
-/datum/faction_baseline/clan/abyss_crimson
-	faction_a = BOND_CLAN_ABYSS
-	faction_b = BOND_CLAN_CRIMSON
-
-/datum/faction_baseline/clan/abyss_eoran
-	faction_a = BOND_CLAN_ABYSS
-	faction_b = BOND_CLAN_EORAN
-
-/datum/faction_baseline/clan/abyss_nosferatu
-	faction_a = BOND_CLAN_ABYSS
-	faction_b = BOND_CLAN_NOSFERATU
-
-/datum/faction_baseline/clan/abyss_thronleer
-	faction_a = BOND_CLAN_ABYSS
-	faction_b = BOND_CLAN_THRONLEER
-
-/datum/faction_baseline/clan/crimson_eoran
-	faction_a = BOND_CLAN_CRIMSON
-	faction_b = BOND_CLAN_EORAN
-
-/datum/faction_baseline/clan/crimson_nosferatu
-	faction_a = BOND_CLAN_CRIMSON
-	faction_b = BOND_CLAN_NOSFERATU
-
-/datum/faction_baseline/clan/crimson_thronleer
-	faction_a = BOND_CLAN_CRIMSON
-	faction_b = BOND_CLAN_THRONLEER
-
-/datum/faction_baseline/clan/eoran_nosferatu
-	faction_a = BOND_CLAN_EORAN
-	faction_b = BOND_CLAN_NOSFERATU
-
-/datum/faction_baseline/clan/eoran_thronleer
-	faction_a = BOND_CLAN_EORAN
-	faction_b = BOND_CLAN_THRONLEER
-
-/datum/faction_baseline/clan/nosferatu_thronleer
-	faction_a = BOND_CLAN_NOSFERATU
-	faction_b = BOND_CLAN_THRONLEER
-
-/datum/faction_baseline/clan/caitiff_abyss
-	faction_a = BOND_CLAN_CAITIFF
-	faction_b = BOND_CLAN_ABYSS
-
-/datum/faction_baseline/clan/caitiff_crimson
-	faction_a = BOND_CLAN_CAITIFF
-	faction_b = BOND_CLAN_CRIMSON
-
-/datum/faction_baseline/clan/caitiff_eoran
-	faction_a = BOND_CLAN_CAITIFF
-	faction_b = BOND_CLAN_EORAN
-
-/datum/faction_baseline/clan/caitiff_nosferatu
-	faction_a = BOND_CLAN_CAITIFF
-	faction_b = BOND_CLAN_NOSFERATU
-
-/datum/faction_baseline/clan/caitiff_thronleer
-	faction_a = BOND_CLAN_CAITIFF
-	faction_b = BOND_CLAN_THRONLEER
 
 /datum/house_stance
 	var/datum/heritage/house_a

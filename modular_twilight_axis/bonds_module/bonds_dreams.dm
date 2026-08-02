@@ -501,6 +501,7 @@
 	entry.created_at = world.time
 	entry.warmth_delta = round(warmth_delta, 0.1)
 	entry.weight_delta = round(weight_delta, 0.1)
+	entry.dream = TRUE
 	LAZYADD(bond.history, entry)
 	bond.trim_history()
 	bond.recalculate()

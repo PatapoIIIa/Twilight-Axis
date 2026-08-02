@@ -31,6 +31,7 @@
 	var/warmth_delta = 0
 	var/weight_delta = 0
 	var/pinned = FALSE
+	var/dream = FALSE
 
 /datum/bond_event
 	abstract_type = /datum/bond_event

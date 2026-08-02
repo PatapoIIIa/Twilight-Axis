@@ -608,6 +608,47 @@
 	for(var/event_type in round_pool)
 		BD_ASSERT(event_type in positive, "the round pool must never leak a memory of the wrong valence")
 
+/datum/unit_test/bonds/baseline_table_is_well_formed/Run()
+	var/list/seen = list()
+	for(var/list/row as anything in GLOB.bond_faction_baselines)
+		BD_ASSERT_EQUAL(length(row), 4, "every baseline row is (faction, faction, warmth, weight)")
+		BD_ASSERT(istext(row[1]) && istext(row[2]), "both ends of a baseline row must be faction ids")
+		BD_ASSERT(row[1] != row[2], "a faction cannot hold a standing with itself")
+		BD_ASSERT(isnum(row[3]) && isnum(row[4]), "warmth and weight must be numbers")
+		BD_ASSERT(row[3] >= BOND_WARMTH_MIN && row[3] <= BOND_WARMTH_MAX, "[row[1]]|[row[2]] declares warmth outside the axis")
+		BD_ASSERT(row[4] >= BOND_WEIGHT_MIN && row[4] <= BOND_WEIGHT_MAX, "[row[1]]|[row[2]] declares weight outside the axis")
+		var/key = bonds_stance_key(row[1], row[2])
+		BD_ASSERT_NULL(seen[key], "[key] is declared twice: the later row silently wins and the earlier one is a lie")
+		seen[key] = TRUE
+
+/datum/unit_test/bonds/every_faction_pair_is_declared/Run()
+	var/list/mortal = list()
+	for(var/faction_id in SSbonds.faction_prototypes)
+		var/datum/bond_faction/faction = SSbonds.faction_prototypes[faction_id]
+		if(istype(faction, /datum/bond_faction/clan))
+			continue
+		mortal += faction_id
+	BD_ASSERT(length(mortal) >= 14, "the mortal faction roster shrank below the fourteen the matrix was written for")
+
+	var/list/missing = list()
+	for(var/i in 1 to length(mortal))
+		for(var/j in (i + 1) to length(mortal))
+			if(!SSbonds.get_stance(mortal[i], mortal[j]))
+				missing += "[mortal[i]]|[mortal[j]]"
+	BD_ASSERT_EQUAL(length(missing), 0, "an undeclared faction pair is not neutrality, it is a hole at flat zero that the first brawl decides: [missing.Join(", ")]")
+
+/datum/unit_test/bonds/faction_map_is_cached_until_a_stance_moves/Run()
+	var/list/first = SSbonds.faction_map_shape()
+	var/list/second = SSbonds.faction_map_shape()
+	BD_ASSERT_NOTNULL(first, "the map shape must build")
+	BD_ASSERT_EQUAL(first, second, "the faction map does not depend on the viewer and must be reused: rebuilding it walks every job type once per faction and allocates a stance key per pair")
+
+	var/list/present_first = SSbonds.present_faction_ids()
+	BD_ASSERT_EQUAL(present_first, SSbonds.present_faction_ids(), "faction presence is fixed for the round and must not be rescanned")
+
+	SSbonds.nudge_stance(BOND_FACTION_BURGHER, BOND_FACTION_ATC, 1, 0, "")
+	BD_ASSERT(SSbonds.faction_map_shape() != first, "moving a stance must invalidate the cached map, or the panel would show stale standings")
+
 #undef BD_SOURCE
 #undef BD_ASSERT
 #undef BD_ASSERT_EQUAL

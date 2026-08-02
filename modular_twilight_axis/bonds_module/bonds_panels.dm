@@ -159,6 +159,22 @@
 /datum/bonds_tree_panel/ui_close()
 	QDEL_NULL(src)
 
+/proc/bonds_history_payload(datum/social_bond/bond)
+	RETURN_TYPE(/list)
+	var/list/out = list()
+	if(!LAZYLEN(bond.history))
+		return out
+	for(var/i in max(1, bond.history.len - BOND_MAX_HISTORY + 1) to bond.history.len)
+		var/datum/bond_history/entry = bond.history[i]
+		out += list(list(
+			"label" = entry.label,
+			"story" = entry.story,
+			"warmth" = round(entry.warmth_delta, 0.1),
+			"weight" = round(entry.weight_delta, 0.1),
+			"dream" = entry.dream,
+		))
+	return out
+
 /datum/controller/subsystem/bonds/proc/build_bonds_tree(mob/living/carbon/human/person)
 	RETURN_TYPE(/list)
 	var/list/edges = list()
@@ -174,6 +190,8 @@
 			"inLabel" = mirror ? mirror.stage_label() : null,
 			"inProgress" = mirror ? round(mirror.progress_to_next(), 0.01) : 0,
 			"inAccent" = mirror?.stage?.accent || "#5a5a5a",
+			"job" = bond.snapshot?["job"] || "",
+			"log" = bonds_history_payload(bond),
 		))
 	return list(
 		"self" = list(
@@ -195,7 +213,17 @@
 
 /datum/controller/subsystem/bonds/proc/build_faction_map(mob/living/carbon/human/viewer)
 	RETURN_TYPE(/list)
+	var/list/shape = faction_map_shape()
 	var/own_id = faction_id_for(viewer)
+	var/list/nodes = list()
+	for(var/list/node as anything in shape["nodes"])
+		nodes += list(node + list("own" = (node["id"] == own_id)))
+	return list("nodes" = nodes, "edges" = shape["edges"])
+
+/datum/controller/subsystem/bonds/proc/faction_map_shape()
+	RETURN_TYPE(/list)
+	if(faction_map_cache && faction_map_cache_revision == stance_revision)
+		return faction_map_cache
 	var/list/nodes = list()
 	var/list/ordered = list()
 
@@ -207,7 +235,6 @@
 			"name" = faction.name,
 			"accent" = faction.accent,
 			"icon" = faction.icon_glyph,
-			"own" = (faction.id == own_id),
 		))
 
 	var/list/edges = list()
@@ -228,7 +255,9 @@
 				"declared" = (!isnull(stance) && (warmth || weight >= BOND_MAP_MIN_WEIGHT)),
 			))
 
-	return list("nodes" = nodes, "edges" = edges)
+	faction_map_cache = list("nodes" = nodes, "edges" = edges)
+	faction_map_cache_revision = stance_revision
+	return faction_map_cache
 
 /proc/bonds_stance_label(warmth)
 	if(warmth >= 60)
@@ -440,10 +469,23 @@
 	if(!own_id)
 		return list("own" = null, "ally" = null)
 	var/ally_id = best_allied_faction(own_id)
+	var/list/leaders = list()
+	for(var/faction_id in present_faction_ids())
+		if(faction_id == own_id || faction_id == ally_id)
+			continue
+		var/list/block = build_roster_block(faction_id, viewer, TRUE)
+		if(!block)
+			continue
+		var/warmth = own_id ? round(stance_warmth(own_id, faction_id)) : 0
+		block["warmth"] = warmth
+		block["label"] = own_id ? bonds_stance_label(warmth) : ""
+		block["labelAccent"] = bonds_stance_accent(warmth)
+		leaders += list(block)
 	return list(
-		"own" = build_roster_block(own_id, viewer, FALSE),
+		"own" = own_id ? build_roster_block(own_id, viewer, FALSE) : null,
 		"ally" = ally_id ? build_roster_block(ally_id, viewer, TRUE) : null,
 		"allyWarmth" = ally_id ? round(stance_warmth(own_id, ally_id)) : 0,
+		"leaders" = leaders,
 	)
 
 /mob/living/carbon/human/verb/bonds_roster()
@@ -451,8 +493,7 @@
 	set category = "Bonds"
 
 	if(!SSbonds.faction_for(src))
-		to_chat(src, span_notice("Вы никому не подчиняетесь и никем не командуете."))
-		return
+		to_chat(src, span_notice("Вы никому не подчиняетесь и никем не командуете, но знать, кто здесь распоряжается, вам никто не мешает."))
 	var/datum/bonds_roster_panel/panel = new(src)
 	panel.ui_interact(src)
 
@@ -579,6 +620,7 @@
 			stance.warmth = clamp(round(warmth), BOND_WARMTH_MIN, BOND_WARMTH_MAX)
 			stance.weight = clamp(round(weight), BOND_WEIGHT_MIN, BOND_WEIGHT_MAX)
 			stance.updated_at = world.time
+			SSbonds.stance_revision++
 			log_admin("[key_name(ui.user)] set bond stance [id_a]/[id_b] to warmth [stance.warmth] weight [stance.weight]")
 			SSbonds.bondlog("admin [key_name(ui.user)] set [id_a]/[id_b] warmth=[stance.warmth] weight=[stance.weight]", BONDLOG_WARN)
 			return TRUE
@@ -591,6 +633,7 @@
 				return FALSE
 			var/datum/faction_stance/stance = SSbonds.faction_stances[key]
 			SSbonds.faction_stances -= key
+			SSbonds.stance_revision++
 			qdel(stance)
 			log_admin("[key_name(ui.user)] cleared bond stance [id_a]/[id_b]")
 			return TRUE

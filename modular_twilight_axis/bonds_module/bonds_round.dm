@@ -30,6 +30,10 @@ SUBSYSTEM_DEF(bonds)
 	var/list/storyteller_lenses = list()
 	var/storyteller_lens_applied = FALSE
 	var/list/seed_flavor_cache
+	var/list/present_factions_cache
+	var/list/faction_map_cache
+	var/faction_map_cache_revision = -1
+	var/stance_revision = 0
 	var/list/zone_lens_cache = list()
 	var/map_weight_cache
 	var/seeding_idle = FALSE
@@ -257,6 +261,72 @@ SUBSYSTEM_DEF(bonds)
 	level = 2
 	label = "Гильдия"
 	titles = list("Guildsman", "Tailor", "Apothecary", "Innkeeper", "Bathmaster", "Magicians Associate", "Head Physician", "Bailiff")
+
+/datum/bond_rank/peasant_hearth
+	faction_id = BOND_FACTION_PEASANT
+	level = 1
+	label = "Хозяева очага"
+	titles = list("Towner", "Cook", "Tapster")
+
+/datum/bond_rank/peasant_hands
+	faction_id = BOND_FACTION_PEASANT
+	level = 2
+	label = "Рабочие руки"
+	titles = list("Soilson", "Bathhouse Attendant")
+
+/datum/bond_rank/peasant_bound
+	faction_id = BOND_FACTION_PEASANT
+	level = 3
+	label = "Подневольные"
+	titles = list("Servant", "Palace Slave")
+
+/datum/bond_rank/sidefolk_blooded
+	faction_id = BOND_FACTION_SIDEFOLK
+	level = 1
+	label = "Битые жизнью"
+	titles = list("Veteran", "Mercenary")
+
+/datum/bond_rank/sidefolk_drifters
+	faction_id = BOND_FACTION_SIDEFOLK
+	level = 2
+	label = "Пришлые"
+	titles = list("Migrant", "Pilgrim", "Vagabond")
+
+/datum/bond_rank/sidefolk_lost
+	faction_id = BOND_FACTION_SIDEFOLK
+	level = 3
+	label = "Пропащие"
+	titles = list("Lunatic")
+
+/datum/bond_rank/wanderer_agents
+	faction_id = BOND_FACTION_WANDERER
+	level = 1
+	label = "Люди с поручением"
+	titles = list("Court Agent", "Trader")
+
+/datum/bond_rank/wanderer_road
+	faction_id = BOND_FACTION_WANDERER
+	level = 2
+	label = "Дорожные"
+	titles = list("Adventurer")
+
+/datum/bond_rank/outlaw_hunted
+	faction_id = BOND_FACTION_OUTLAW
+	level = 1
+	label = "За чью голову платят"
+	titles = list("Assassin", "Hag")
+
+/datum/bond_rank/outlaw_bandits
+	faction_id = BOND_FACTION_OUTLAW
+	level = 2
+	label = "Лихие люди"
+	titles = list("Bandit", "Lost Grenzel", "Freeman")
+
+/datum/bond_rank/outlaw_dregs
+	faction_id = BOND_FACTION_OUTLAW
+	level = 3
+	label = "Отребье"
+	titles = list("Wretch", "Gnoll")
 
 /datum/bond_rank/atc_merchant
 	faction_id = BOND_FACTION_ATC

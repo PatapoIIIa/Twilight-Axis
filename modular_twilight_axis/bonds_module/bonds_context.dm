@@ -245,6 +245,8 @@
 
 /datum/controller/subsystem/bonds/proc/present_faction_ids()
 	RETURN_TYPE(/list)
+	if(present_factions_cache)
+		return present_factions_cache
 	var/list/out = list()
 	for(var/faction_id in faction_prototypes)
 		var/datum/bond_faction/faction = faction_prototypes[faction_id]
@@ -253,6 +255,7 @@
 		if(!faction_present(faction_id))
 			continue
 		out += faction_id
+	present_factions_cache = out
 	return out
 
 /datum/bond_storyteller_lens
