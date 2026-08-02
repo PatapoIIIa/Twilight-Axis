@@ -441,13 +441,16 @@
 	BD_ASSERT_EQUAL(SSbonds.stance_warmth(BOND_FACTION_NOBLE, BOND_FACTION_NOBLE), BOND_STANCE_SAME_FACTION_WARMTH, "same faction resolves without a stored pair")
 
 /datum/unit_test/bonds/stance_nudge_clamps/Run()
-	SSbonds.nudge_stance(BOND_FACTION_WANDERER, BOND_FACTION_VANGUARD, 500, 500, "unit test")
-	var/datum/faction_stance/stance = SSbonds.get_stance(BOND_FACTION_WANDERER, BOND_FACTION_VANGUARD)
+	// Must use a pair the baseline table does NOT declare, or the cleanup below would delete a
+	// seeded stance and leave a hole for whatever test runs next. Clan-to-mortal is never declared.
+	BD_ASSERT_NULL(SSbonds.get_stance(BOND_CLAN_CAITIFF, BOND_FACTION_WANDERER), "this pair must start undeclared for the test to mean anything")
+	SSbonds.nudge_stance(BOND_CLAN_CAITIFF, BOND_FACTION_WANDERER, 500, 500, "unit test")
+	var/datum/faction_stance/stance = SSbonds.get_stance(BOND_CLAN_CAITIFF, BOND_FACTION_WANDERER)
 	BD_ASSERT_NOTNULL(stance, "nudging must create the pair on demand")
 	BD_ASSERT_EQUAL(stance.warmth, BOND_WARMTH_MAX, "stance warmth must clamp")
 	BD_ASSERT_EQUAL(stance.weight, BOND_WEIGHT_MAX, "stance weight must clamp")
 	BD_ASSERT_EQUAL(LAZYLEN(stance.history), 1, "a reasoned nudge records history")
-	SSbonds.faction_stances -= bonds_stance_key(BOND_FACTION_WANDERER, BOND_FACTION_VANGUARD)
+	SSbonds.faction_stances -= bonds_stance_key(BOND_CLAN_CAITIFF, BOND_FACTION_WANDERER)
 	qdel(stance)
 
 /datum/unit_test/bonds/violence_outlives_its_transient/Run()
@@ -630,10 +633,15 @@
 		mortal += faction_id
 	BD_ASSERT(length(mortal) >= 14, "the mortal faction roster shrank below the fourteen the matrix was written for")
 
+	// Read the declaration, not the live matrix: faction_stances is round state that other tests
+	// legitimately nudge and clear, and completeness is a property of the table.
+	var/list/declared = list()
+	for(var/list/row as anything in GLOB.bond_faction_baselines)
+		declared[bonds_stance_key(row[1], row[2])] = TRUE
 	var/list/missing = list()
 	for(var/i in 1 to length(mortal))
 		for(var/j in (i + 1) to length(mortal))
-			if(!SSbonds.get_stance(mortal[i], mortal[j]))
+			if(!declared[bonds_stance_key(mortal[i], mortal[j])])
 				missing += "[mortal[i]]|[mortal[j]]"
 	BD_ASSERT_EQUAL(length(missing), 0, "an undeclared faction pair is not neutrality, it is a hole at flat zero that the first brawl decides: [missing.Join(", ")]")
 
@@ -676,6 +684,36 @@
 		SSbonds.nudge_stance(BOND_FACTION_PEASANT, BOND_FACTION_WANDERER, 0, 0, "bench entry [i]")
 	BD_ASSERT(LAZYLEN(stance.history) <= BOND_MAX_HISTORY, "faction stance history must be trimmed like every other history: it is appended on every propagated combat event and would otherwise grow all round")
 	BD_ASSERT(LAZYLEN(stance.history) >= min(started_with, BOND_MAX_HISTORY), "trimming must drop the oldest, not everything")
+
+/datum/unit_test/bonds/cap_holds_when_every_bond_is_tagged/Run()
+	var/datum/mind/owner = bd_make_mind()
+	var/datum/bond_node/node = SSbonds.get_or_create_node(owner)
+	// A fighter tags almost every bond they make. Measured on the bench: with an untagged-only
+	// filter a node reached 78 bonds against a cap of 40, and the panel cost grew with it.
+	for(var/i in 1 to BOND_MAX_PER_MIND * 2)
+		var/datum/mind/target = bd_make_mind()
+		var/datum/social_bond/bond = SSbonds.get_or_create_bond(owner, target)
+		bond.tags |= BOND_TAG_SHED_BLOOD
+		bond.weight_committed = i
+		bond.recalculate()
+	BD_ASSERT(length(node.bonds) <= BOND_MAX_PER_MIND, "the blood tag must not switch the cap off: got [length(node.bonds)] against a cap of [BOND_MAX_PER_MIND]")
+
+/datum/unit_test/bonds/a_death_outlives_cap_pressure/Run()
+	var/datum/mind/owner = bd_make_mind()
+	var/datum/mind/killer = bd_make_mind()
+	var/datum/social_bond/murder = SSbonds.get_or_create_bond(owner, killer)
+	murder.tags |= BOND_TAG_KILLED_ME
+	murder.weight_committed = 1
+	murder.recalculate()
+	for(var/i in 1 to BOND_MAX_PER_MIND * 2)
+		var/datum/mind/target = bd_make_mind()
+		var/datum/social_bond/bond = SSbonds.get_or_create_bond(owner, target)
+		bond.tags |= BOND_TAG_SHED_BLOOD
+		bond.weight_committed = 50
+		bond.recalculate()
+	BD_ASSERT_NOTNULL(SSbonds.get_bond(owner, killer), "being killed by someone is the one memory the cap may never take, even as the lightest bond on the node")
+	var/datum/bond_node/node = SSbonds.get_node(owner)
+	BD_ASSERT(length(node.bonds) <= BOND_MAX_PER_MIND, "and the cap must still hold around it")
 
 #undef BD_SOURCE
 #undef BD_ASSERT

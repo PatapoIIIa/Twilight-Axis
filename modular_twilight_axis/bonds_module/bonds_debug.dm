@@ -8,7 +8,21 @@ GLOBAL_LIST_EMPTY(bonds_debug_rows)
 		/client/proc/bonds_debug_degrade,
 		/client/proc/bonds_debug_purge,
 		/client/proc/bonds_toggle_verbose_logging,
+		/client/proc/bonds_toggle_reacting,
 	)
+
+/client/proc/bonds_toggle_reacting()
+	set name = "Bonds: Kill Switch"
+	set category = "Debug"
+
+	if(!check_rights(R_DEBUG))
+		return
+	SSbonds.reacting = !SSbonds.reacting
+	var/state = SSbonds.reacting ? "ВКЛЮЧЕНЫ" : "ЗАМОРОЖЕНЫ"
+	SSbonds.bondlog("reacting turned [SSbonds.reacting ? "ON" : "OFF"] by [key_name(mob)]", BONDLOG_WARN)
+	log_admin("[key_name(mob)] set bonds reacting to [SSbonds.reacting]")
+	message_admins("[key_name_admin(mob)] [SSbonds.reacting ? "включил" : "заморозил"] реакцию системы связей.")
+	to_chat(src, span_notice("Связи [state]. Граф и панели на месте, новые события [SSbonds.reacting ? "обрабатываются" : "игнорируются"]."))
 
 /client/proc/bonds_toggle_verbose_logging()
 	set name = "Bonds: Verbose Log"
@@ -119,9 +133,16 @@ GLOBAL_LIST_EMPTY(bonds_debug_rows)
 	catch
 		bondlog("PROFILE|run=[label]|error=undecodable", BONDLOG_WARN)
 		return FALSE
-	var/list/rows = islist(decoded) ? decoded["data"] : null
-	if(!islist(rows))
-		bondlog("PROFILE|run=[label]|error=no data array|keys=[islist(decoded) ? jointext(decoded, ",") : "none"]", BONDLOG_WARN)
+	// Measured shape on 516: the decode is already the array of rows, not an object with a "data"
+	// key. Both are handled so a future BYOND change cannot silently produce an empty dump.
+	var/list/rows
+	if(islist(decoded))
+		if(islist(decoded["data"]))
+			rows = decoded["data"]
+		else if(length(decoded) && islist(decoded[1]))
+			rows = decoded
+	if(!islist(rows) || !length(rows))
+		bondlog("PROFILE|run=[label]|error=no rows|decoded_len=[islist(decoded) ? length(decoded) : 0]", BONDLOG_WARN)
 		return FALSE
 	var/list/keep = list()
 	for(var/list/row as anything in rows)
@@ -136,6 +157,7 @@ GLOBAL_LIST_EMPTY(bonds_debug_rows)
 	var/payload = json_encode(list(
 		"run" = label,
 		"columns" = islist(decoded) ? decoded["columns"] : null,
+		"sample_row" = length(rows) ? rows[1] : null,
 		"note" = "rows are verbatim from world.Profile(PROFILE_REFRESH); see columns if present",
 		"rows" = keep,
 	))

@@ -499,6 +499,8 @@
 	handle_attack(attacker, target, null, /datum/bond_event/beat_them, /datum/bond_event/beaten_by)
 
 /datum/controller/subsystem/bonds/proc/handle_attack(mob/living/attacker, mob/living/target, obj/item/weapon, subject_event, object_event)
+	if(!reacting)
+		return
 	var/finishing = mark_critical(target)
 	if(finishing)
 		record_pair(attacker, target, /datum/bond_event/murder_attempt_them, /datum/bond_event/murder_attempt_by)
@@ -530,6 +532,8 @@
 
 /datum/controller/subsystem/bonds/proc/on_death(datum/source, gibbed)
 	SIGNAL_HANDLER
+	if(!reacting)
+		return
 	var/mob/living/carbon/human/victim = source
 	if(!ishuman(victim))
 		return

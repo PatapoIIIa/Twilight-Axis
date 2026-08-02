@@ -74,6 +74,10 @@
 #define BOND_TAG_COMFORTED (1<<3)
 #define BOND_TAG_SERVED_TOGETHER (1<<4)
 #define BOND_TAG_OWES_DEBT (1<<5)
+// Only an actual death between the two of you survives cap pressure. Everything else - blood drawn,
+// comfort given, a shared past, a debt - is memorable but evictable, because a fighter tags almost
+// every bond they make and a tag that blocks eviction silently turns the cap off.
+#define BOND_TAG_PROTECTED (BOND_TAG_KILLED_ME | BOND_TAG_KILLED_THEM)
 
 // Roundstart seeding. A seed is an ordinary event applied at t=0, so backstory and
 // in-round development share one code path.

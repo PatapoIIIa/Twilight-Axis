@@ -521,6 +521,8 @@
 	return TRUE
 
 /datum/controller/subsystem/bonds/proc/roll_dream(mob/living/carbon/human/dreamer)
+	if(!reacting)
+		return FALSE
 	if(!ishuman(dreamer) || !dreamer.mind)
 		return FALSE
 	var/negative = dream_bias(BOND_DREAM_NEGATIVE)

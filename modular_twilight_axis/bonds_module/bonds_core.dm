@@ -157,24 +157,38 @@
 		removed = TRUE
 	return removed
 
+// Evicts until the node is back under the cap, in two passes: plain bonds first, then anything that
+// is not a death between the two of you. One removal per call and an untagged-only filter is what let
+// a measured node reach 78 bonds against a cap of 40 - combat tags almost everything it touches.
 /datum/bond_node/proc/enforce_cap(datum/bond_actor/newcomer)
-	if(length(bonds) <= BOND_MAX_PER_MIND)
+	while(length(bonds) > BOND_MAX_PER_MIND)
+		if(evict_weakest(newcomer, TRUE))
+			continue
+		if(evict_weakest(newcomer, FALSE))
+			continue
+		BONDS_TALLY("cap.blocked_all_protected")
 		return
+
+/datum/bond_node/proc/evict_weakest(datum/bond_actor/newcomer, untagged_only)
 	var/datum/bond_actor/weakest
 	var/weakest_weight = BOND_WEIGHT_MAX + 1
 	for(var/datum/bond_actor/target as anything in bonds)
 		if(target == newcomer)
 			continue
 		var/datum/social_bond/bond = bonds[target]
-		if(!bond.evictable || bond.tags != BOND_TAG_NONE)
+		if(!bond.evictable)
+			continue
+		if(untagged_only ? (bond.tags != BOND_TAG_NONE) : (bond.tags & BOND_TAG_PROTECTED))
 			continue
 		if(bond.weight >= weakest_weight)
 			continue
 		weakest_weight = bond.weight
 		weakest = target
-	if(weakest)
-		BONDS_TALLY("cap.evicted")
-		remove_bond(weakest)
+	if(!weakest)
+		return FALSE
+	BONDS_TALLY("cap.evicted")
+	remove_bond(weakest)
+	return TRUE
 
 /datum/bond_node/proc/sorted_bonds()
 	var/list/out = list()
