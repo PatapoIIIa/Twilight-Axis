@@ -555,7 +555,8 @@ export const FamilySettingsPanel = () => {
     useState(false);
   const [motherSpeciesPickerOpen, setMotherSpeciesPickerOpen] =
     useState(false);
-  const [activeTab, setActiveTab] = useState<'preferences' | 'parents' | 'bonds'>(
+  const [mode, setMode] = useState<'family' | 'bonds'>('family');
+  const [activeTab, setActiveTab] = useState<'preferences' | 'parents'>(
     'preferences',
   );
   const speciesPickerRef = useRef<HTMLDivElement | null>(null);
@@ -741,7 +742,7 @@ export const FamilySettingsPanel = () => {
 
   return (
     <Window
-      title="Настройки связей"
+      title="Настройки семьи"
       width={FAMILY_WINDOW_FULLSCREEN_SIZE}
       height={FAMILY_WINDOW_FULLSCREEN_SIZE}
     >
@@ -749,15 +750,48 @@ export const FamilySettingsPanel = () => {
         <div className="FamilySettingsPanel">
           <div className="FamilySettingsPanel__header">
             <div className="FamilySettingsPanel__header-left">
-              <div className="FamilySettingsPanel__header-icon">
-                <Icon name="house-chimney-user" />
-              </div>
-              <div className="FamilySettingsPanel__header-titles">
-                <h2 className="FamilySettingsPanel__title">Настройки связей</h2>
-                <div className="FamilySettingsPanel__subtitle">
-                  Семья, родня и знакомства вашего персонажа
-                </div>
-              </div>
+              <button
+                type="button"
+                className={
+                  'FamilySettingsPanel__nav-card' +
+                  (mode === 'family'
+                    ? ' FamilySettingsPanel__nav-card--active'
+                    : '')
+                }
+                onClick={() => setMode('family')}>
+                <span className="FamilySettingsPanel__header-icon">
+                  <Icon name="house-chimney-user" />
+                </span>
+                <span className="FamilySettingsPanel__header-titles">
+                  <span className="FamilySettingsPanel__title">
+                    Настройки семьи
+                  </span>
+                  <span className="FamilySettingsPanel__subtitle">
+                    Семья, родня и происхождение персонажа
+                  </span>
+                </span>
+              </button>
+              <button
+                type="button"
+                className={
+                  'FamilySettingsPanel__nav-card' +
+                  (mode === 'bonds'
+                    ? ' FamilySettingsPanel__nav-card--active'
+                    : '')
+                }
+                onClick={() => setMode('bonds')}>
+                <span className="FamilySettingsPanel__header-icon FamilySettingsPanel__header-icon--bonds">
+                  <Icon name="hand-holding-heart" />
+                </span>
+                <span className="FamilySettingsPanel__header-titles">
+                  <span className="FamilySettingsPanel__title">
+                    Настройки связей
+                  </span>
+                  <span className="FamilySettingsPanel__subtitle">
+                    Знакомства, с которыми вы начнёте раунд
+                  </span>
+                </span>
+              </button>
             </div>
             <div
               className="FamilySettingsPanel__close"
@@ -770,356 +804,353 @@ export const FamilySettingsPanel = () => {
           </div>
 
           <div className="FamilySettingsPanel__body">
-            {/* TOP PANE — TYPE CARDS (full width) */}
-            <div className="FamilySettingsPanel__pane FamilySettingsPanel__pane-top">
-              <h3 className="FamilySettingsPanel__pane-title">Тип семьи</h3>
-              <div className="FamilySettingsPanel__type-grid">
-                {FAMILY_TYPE_CARDS.map((card) => {
-                  const disabled = false;
-                  const active = card.value === familyType;
-                  return (
-                    <FamilyTypeCardView
-                      key={card.value}
-                      card={card}
-                      active={active}
-                      disabled={disabled}
-                      onClick={() => setFamilyType(card.value)}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* BOTTOM PANE — PREFERENCES + PARENTS TABS */}
-            <div className="FamilySettingsPanel__pane FamilySettingsPanel__pane-bottom">
-              <div className="FamilySettingsPanel__tabs">
-                <button
-                  type="button"
-                  className={
-                    'FamilySettingsPanel__tab' +
-                    (activeTab === 'preferences'
-                      ? ' FamilySettingsPanel__tab--active'
-                      : '')
-                  }
-                  onClick={() => setActiveTab('preferences')}>
-                  <span className="FamilySettingsPanel__pane-title-icon">
-                    <Icon name="gear" />
-                  </span>
-                  <span>Предпочтения</span>
-                </button>
-                <button
-                  type="button"
-                  className={
-                    'FamilySettingsPanel__tab' +
-                    (activeTab === 'parents'
-                      ? ' FamilySettingsPanel__tab--active'
-                      : '')
-                  }
-                  onClick={() => setActiveTab('parents')}
-                  title="NPC-родители появятся в семейном древе, если вы станете основателем нового дома.">
-                  <span className="FamilySettingsPanel__pane-title-icon">
-                    <Icon name="user-group" />
-                  </span>
-                  <span>Родители (NPC)</span>
-                </button>
-                <button
-                  type="button"
-                  className={
-                    'FamilySettingsPanel__tab' +
-                    (activeTab === 'bonds'
-                      ? ' FamilySettingsPanel__tab--active'
-                      : '')
-                  }
-                  onClick={() => setActiveTab('bonds')}
-                  title="Знакомства, с которыми вы начнёте раунд.">
-                  <span className="FamilySettingsPanel__pane-title-icon">
-                    <Icon name="handshake" />
-                  </span>
-                  <span>Связи</span>
-                </button>
-              </div>
-
-              {!showPreferences && (
-                <div
-                  className="FamilySettingsPanel__hint"
-                  style={{ gridColumn: 'unset' }}>
-                  Персонаж не участвует в семейной системе. Выберите другой тип
-                  семьи, чтобы открыть настройки.
+            {mode === 'family' && (
+              <>
+                {/* TOP PANE — TYPE CARDS (full width) */}
+                <div className="FamilySettingsPanel__pane FamilySettingsPanel__pane-top">
+                  <h3 className="FamilySettingsPanel__pane-title">Тип семьи</h3>
+                  <div className="FamilySettingsPanel__type-grid">
+                    {FAMILY_TYPE_CARDS.map((card) => {
+                      const disabled = false;
+                      const active = card.value === familyType;
+                      return (
+                        <FamilyTypeCardView
+                          key={card.value}
+                          card={card}
+                          active={active}
+                          disabled={disabled}
+                          onClick={() => setFamilyType(card.value)}
+                        />
+                      );
+                    })}
+                  </div>
                 </div>
-              )}
 
-              {showPreferences && activeTab === 'preferences' && (
-                <div className="FamilySettingsPanel__form">
-                  <SelectField
-                    label="Гендерные предпочтения"
-                    icon="venus-mars"
-                    value={genderPreference}
-                    options={GENDER_OPTIONS}
-                    onChange={setGenderPreference}
-                  />
+                {/* BOTTOM PANE — PREFERENCES + PARENTS TABS */}
+                <div className="FamilySettingsPanel__pane FamilySettingsPanel__pane-bottom">
+                  <div className="FamilySettingsPanel__tabs">
+                    <button
+                      type="button"
+                      className={
+                        'FamilySettingsPanel__tab' +
+                        (activeTab === 'preferences'
+                          ? ' FamilySettingsPanel__tab--active'
+                          : '')
+                      }
+                      onClick={() => setActiveTab('preferences')}>
+                      <span className="FamilySettingsPanel__pane-title-icon">
+                        <Icon name="gear" />
+                      </span>
+                      <span>Предпочтения</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={
+                        'FamilySettingsPanel__tab' +
+                        (activeTab === 'parents'
+                          ? ' FamilySettingsPanel__tab--active'
+                          : '')
+                      }
+                      onClick={() => setActiveTab('parents')}
+                      title="NPC-родители появятся в семейном древе, если вы станете основателем нового дома.">
+                      <span className="FamilySettingsPanel__pane-title-icon">
+                        <Icon name="user-group" />
+                      </span>
+                      <span>Родители (NPC)</span>
+                    </button>
+                  </div>
 
-                  <SelectField
-                    label="Режим вида/расы"
-                    icon="paw"
-                    value={speciesPreferenceMode}
-                    options={SPECIES_OPTIONS}
-                    onChange={setSpeciesPreferenceMode}
-                  />
-
-                  {/* Preferred species types chip field — only when SPECIFIC_TYPE */}
-                  {speciesPreferenceMode === 'SPECIFIC_TYPE' ? (
+                  {!showPreferences && (
                     <div
-                      ref={speciesPickerRef}
-                      className="FamilySettingsPanel__field FamilySettingsPanel__field--species">
-                      <div className="FamilySettingsPanel__field-label">
-                        Предпочтительные типы видов
-                      </div>
-                      <div className="FamilySettingsPanel__field-input">
-                        <span className="FamilySettingsPanel__field-icon">
-                          <Icon name="dna" />
-                        </span>
+                      className="FamilySettingsPanel__hint"
+                      style={{ gridColumn: 'unset' }}>
+                      Персонаж не участвует в семейной системе. Выберите другой тип
+                      семьи, чтобы открыть настройки.
+                    </div>
+                  )}
+
+                  {showPreferences && activeTab === 'preferences' && (
+                    <div className="FamilySettingsPanel__form">
+                      <SelectField
+                        label="Гендерные предпочтения"
+                        icon="venus-mars"
+                        value={genderPreference}
+                        options={GENDER_OPTIONS}
+                        onChange={setGenderPreference}
+                      />
+
+                      <SelectField
+                        label="Режим вида/расы"
+                        icon="paw"
+                        value={speciesPreferenceMode}
+                        options={SPECIES_OPTIONS}
+                        onChange={setSpeciesPreferenceMode}
+                      />
+
+                      {/* Preferred species types chip field — only when SPECIFIC_TYPE */}
+                      {speciesPreferenceMode === 'SPECIFIC_TYPE' ? (
                         <div
-                          className="FamilySettingsPanel__chips"
-                          onClick={() => setSpeciesPickerOpen((v) => !v)}>
-                          {preferredSpeciesTypes.length === 0 ? (
-                            <span className="FamilySettingsPanel__chip-placeholder">
-                              Выберите виды...
+                          ref={speciesPickerRef}
+                          className="FamilySettingsPanel__field FamilySettingsPanel__field--species">
+                          <div className="FamilySettingsPanel__field-label">
+                            Предпочтительные типы видов
+                          </div>
+                          <div className="FamilySettingsPanel__field-input">
+                            <span className="FamilySettingsPanel__field-icon">
+                              <Icon name="dna" />
                             </span>
-                          ) : (
-                            preferredSpeciesTypes.map((sp) => (
-                              <span
-                                className="FamilySettingsPanel__chip"
-                                key={sp}>
-                                {sp}
-                                <span
-                                  className="close-x"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleSpecies(sp);
-                                  }}>
-                                  <Icon name="xmark" />
+                            <div
+                              className="FamilySettingsPanel__chips"
+                              onClick={() => setSpeciesPickerOpen((v) => !v)}>
+                              {preferredSpeciesTypes.length === 0 ? (
+                                <span className="FamilySettingsPanel__chip-placeholder">
+                                  Выберите виды...
                                 </span>
-                              </span>
-                            ))
+                              ) : (
+                                preferredSpeciesTypes.map((sp) => (
+                                  <span
+                                    className="FamilySettingsPanel__chip"
+                                    key={sp}>
+                                    {sp}
+                                    <span
+                                      className="close-x"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleSpecies(sp);
+                                      }}>
+                                      <Icon name="xmark" />
+                                    </span>
+                                  </span>
+                                ))
+                              )}
+                            </div>
+                            <span className="FamilySettingsPanel__chips-arrow">
+                              <Icon
+                                name={
+                                  speciesPickerOpen ? 'chevron-up' : 'chevron-down'
+                                }
+                              />
+                            </span>
+                          </div>
+                          {speciesPickerOpen && (
+                            <div className="FamilySettingsPanel__species-picker">
+                              {availableSpecies.map((sp) => {
+                                const selected = preferredSpeciesTypes.includes(sp);
+                                return (
+                                  <div
+                                    key={sp}
+                                    className={
+                                      'FamilySettingsPanel__species-option' +
+                                      (selected
+                                        ? ' FamilySettingsPanel__species-option--selected'
+                                        : '')
+                                    }
+                                    onClick={() => toggleSpecies(sp)}>
+                                    <Icon
+                                      name={selected ? 'square-check' : 'square'}
+                                    />
+                                    <span>{sp}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
                           )}
                         </div>
-                        <span className="FamilySettingsPanel__chips-arrow">
-                          <Icon
-                            name={
-                              speciesPickerOpen ? 'chevron-up' : 'chevron-down'
-                            }
-                          />
-                        </span>
-                      </div>
-                      {speciesPickerOpen && (
-                        <div className="FamilySettingsPanel__species-picker">
-                          {availableSpecies.map((sp) => {
-                            const selected = preferredSpeciesTypes.includes(sp);
-                            return (
-                              <div
-                                key={sp}
-                                className={
-                                  'FamilySettingsPanel__species-option' +
-                                  (selected
-                                    ? ' FamilySettingsPanel__species-option--selected'
-                                    : '')
-                                }
-                                onClick={() => toggleSpecies(sp)}>
-                                <Icon
-                                  name={selected ? 'square-check' : 'square'}
-                                />
-                                <span>{sp}</span>
-                              </div>
-                            );
-                          })}
+                      ) : (
+                        <div className="FamilySettingsPanel__field">
+                          <div className="FamilySettingsPanel__field-label">
+                            Предпочтительные типы видов
+                          </div>
+                          <div
+                            className="FamilySettingsPanel__field-input"
+                            style={{ opacity: 0.5 }}>
+                            <span className="FamilySettingsPanel__field-icon">
+                              <Icon name="dna" />
+                            </span>
+                            <div
+                              style={{
+                                padding: '9px 34px 9px 38px',
+                                color: '#5f6578',
+                                fontSize: 13,
+                              }}>
+                              Включите режим «Определённые виды»
+                            </div>
+                          </div>
                         </div>
                       )}
-                    </div>
-                  ) : (
-                    <div className="FamilySettingsPanel__field">
-                      <div className="FamilySettingsPanel__field-label">
-                        Предпочтительные типы видов
-                      </div>
-                      <div
-                        className="FamilySettingsPanel__field-input"
-                        style={{ opacity: 0.5 }}>
-                        <span className="FamilySettingsPanel__field-icon">
-                          <Icon name="dna" />
-                        </span>
+
+                      <SelectField
+                        label="Предпочтительная анатомия"
+                        icon="person"
+                        value={preferredSpeciesAnatomy}
+                        options={ANATOMY_OPTIONS}
+                        onChange={setPreferredSpeciesAnatomy}
+                      />
+
+                      <div className="FamilySettingsPanel__field">
+                        <div className="FamilySettingsPanel__field-label">
+                          Любимое имя (цель семьи)
+                        </div>
                         <div
-                          style={{
-                            padding: '9px 34px 9px 38px',
-                            color: '#5f6578',
-                            fontSize: 13,
-                          }}>
-                          Включите режим «Определённые виды»
+                          className="FamilySettingsPanel__field-input"
+                          style={{ position: 'relative' }}>
+                          <span className="FamilySettingsPanel__field-icon">
+                            <Icon name="heart" />
+                          </span>
+                          <input
+                            type="text"
+                            placeholder="Введите имя..."
+                            value={favoriteName}
+                            onChange={(e) => setFavoriteName(e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      <SelectField
+                        label="Режим полигамии"
+                        icon="heart-crack"
+                        value={polygamyMode}
+                        options={POLYGAMY_OPTIONS}
+                        onChange={setPolygamyMode}
+                        disabled={!allowPolygamy}
+                      />
+
+                      <SelectField
+                        label="Желаемая роль родственника"
+                        icon="user"
+                        value={desiredRelativeRole}
+                        options={relativeRoleOptions}
+                        onChange={setDesiredRelativeRole}
+                        disabled={!usesRelativeRole}
+                      />
+
+                      <div className="FamilySettingsPanel__field">
+                        <div className="FamilySettingsPanel__field-label">
+                          Дополнительные опции
+                        </div>
+                        <div className="FamilySettingsPanel__checkbox-group">
+                          <CheckboxRow
+                            icon="ring"
+                            label="Разрешить браки с низким статусом"
+                            tooltip="Низкий статус: бандиты, вретчи, банщики, бродяги, убийцы, лунатики, нищие и похожие роли."
+                            checked={allowLowStatusMarriage === 1}
+                            onToggle={() =>
+                              setAllowLowStatusMarriage(
+                                allowLowStatusMarriage === 1 ? 0 : 1,
+                              )
+                            }
+                          />
+                          <CheckboxRow
+                            icon="people-roof"
+                            label="Разрешить родственников в семье"
+                            checked={allowRelativesInFamily === 1}
+                            onToggle={() =>
+                              setAllowRelativesInFamily(
+                                allowRelativesInFamily === 1 ? 0 : 1,
+                              )
+                            }
+                          />
+                          <CheckboxRow
+                            icon="eye"
+                            label="Знать свою судьбу"
+                            tooltip="Включено: при матче вы видите расу, пол и анатомию пары; нажав «Нет», вы лишь блокируете эту пару на раунд. Выключено: «Нет» автоматически выключит вас из семейной системы."
+                            checked={knowYourFate === 1}
+                            onToggle={() =>
+                              setKnowYourFate(knowYourFate === 1 ? 0 : 1)
+                            }
+                          />
                         </div>
                       </div>
                     </div>
                   )}
 
-                  <SelectField
-                    label="Предпочтительная анатомия"
-                    icon="person"
-                    value={preferredSpeciesAnatomy}
-                    options={ANATOMY_OPTIONS}
-                    onChange={setPreferredSpeciesAnatomy}
-                  />
+                  {showPreferences && activeTab === 'parents' && (
+                    <div className="FamilySettingsPanel__form">
+                      <div
+                        className="FamilySettingsPanel__hint"
+                        style={{ gridColumn: '1 / -1' }}>
+                        Эти NPC появятся в вашем семейном древе, если вы станете
+                        основателем нового дома. Если указаны оба родителя — будет
+                        случайно выбран только один. Если вы влились в чужой дом,
+                        ваши NPC-родители НЕ появятся в нём.
+                      </div>
+                      <div className="FamilySettingsPanel__field">
+                        <div className="FamilySettingsPanel__field-label">
+                          Имя отца
+                        </div>
+                        <div
+                          className="FamilySettingsPanel__field-input"
+                          style={{ position: 'relative' }}>
+                          <span className="FamilySettingsPanel__field-icon">
+                            <Icon name="user" />
+                          </span>
+                          <input
+                            type="text"
+                            placeholder="Оставьте пустым, если не нужен..."
+                            value={fatherName}
+                            onChange={(e) => setFatherName(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <ParentSpeciesField
+                        label="Раса отца"
+                        value={fatherSpecies}
+                        onChange={setFatherSpecies}
+                        availableSpecies={availableSpecies}
+                        open={fatherSpeciesPickerOpen}
+                        setOpen={setFatherSpeciesPickerOpen}
+                        pickerRef={fatherSpeciesPickerRef}
+                      />
+                      <div className="FamilySettingsPanel__field">
+                        <div className="FamilySettingsPanel__field-label">
+                          Имя матери
+                        </div>
+                        <div
+                          className="FamilySettingsPanel__field-input"
+                          style={{ position: 'relative' }}>
+                          <span className="FamilySettingsPanel__field-icon">
+                            <Icon name="user" />
+                          </span>
+                          <input
+                            type="text"
+                            placeholder="Оставьте пустым, если не нужна..."
+                            value={motherName}
+                            onChange={(e) => setMotherName(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <ParentSpeciesField
+                        label="Раса матери"
+                        value={motherSpecies}
+                        onChange={setMotherSpecies}
+                        availableSpecies={availableSpecies}
+                        open={motherSpeciesPickerOpen}
+                        setOpen={setMotherSpeciesPickerOpen}
+                        pickerRef={motherSpeciesPickerRef}
+                      />
 
-                  <div className="FamilySettingsPanel__field">
-                    <div className="FamilySettingsPanel__field-label">
-                      Любимое имя (цель семьи)
-                    </div>
-                    <div
-                      className="FamilySettingsPanel__field-input"
-                      style={{ position: 'relative' }}>
-                      <span className="FamilySettingsPanel__field-icon">
-                        <Icon name="heart" />
-                      </span>
-                      <input
-                        type="text"
-                        placeholder="Введите имя..."
-                        value={favoriteName}
-                        onChange={(e) => setFavoriteName(e.target.value)}
+                      <DonatorRelativesSection
+                        isDonator={(settings?.isDonator ?? 0) === 1}
+                        maxValue={settings?.maxRandomRelatives ?? 3}
+                        siblings={randomSiblings}
+                        setSiblings={setRandomSiblings}
+                        childCount={randomChildren}
+                        setChildCount={setRandomChildren}
                       />
                     </div>
-                  </div>
-
-                  <SelectField
-                    label="Режим полигамии"
-                    icon="heart-crack"
-                    value={polygamyMode}
-                    options={POLYGAMY_OPTIONS}
-                    onChange={setPolygamyMode}
-                    disabled={!allowPolygamy}
-                  />
-
-                  <SelectField
-                    label="Желаемая роль родственника"
-                    icon="user"
-                    value={desiredRelativeRole}
-                    options={relativeRoleOptions}
-                    onChange={setDesiredRelativeRole}
-                    disabled={!usesRelativeRole}
-                  />
-
-                  <div className="FamilySettingsPanel__field">
-                    <div className="FamilySettingsPanel__field-label">
-                      Дополнительные опции
-                    </div>
-                    <div className="FamilySettingsPanel__checkbox-group">
-                      <CheckboxRow
-                        icon="ring"
-                        label="Разрешить браки с низким статусом"
-                        tooltip="Низкий статус: бандиты, вретчи, банщики, бродяги, убийцы, лунатики, нищие и похожие роли."
-                        checked={allowLowStatusMarriage === 1}
-                        onToggle={() =>
-                          setAllowLowStatusMarriage(
-                            allowLowStatusMarriage === 1 ? 0 : 1,
-                          )
-                        }
-                      />
-                      <CheckboxRow
-                        icon="people-roof"
-                        label="Разрешить родственников в семье"
-                        checked={allowRelativesInFamily === 1}
-                        onToggle={() =>
-                          setAllowRelativesInFamily(
-                            allowRelativesInFamily === 1 ? 0 : 1,
-                          )
-                        }
-                      />
-                      <CheckboxRow
-                        icon="eye"
-                        label="Знать свою судьбу"
-                        tooltip="Включено: при матче вы видите расу, пол и анатомию пары; нажав «Нет», вы лишь блокируете эту пару на раунд. Выключено: «Нет» автоматически выключит вас из семейной системы."
-                        checked={knowYourFate === 1}
-                        onToggle={() =>
-                          setKnowYourFate(knowYourFate === 1 ? 0 : 1)
-                        }
-                      />
-                    </div>
-                  </div>
+                  )}
                 </div>
-              )}
+              </>
+            )}
 
-              {showPreferences && activeTab === 'parents' && (
-                <div className="FamilySettingsPanel__form">
-                  <div
-                    className="FamilySettingsPanel__hint"
-                    style={{ gridColumn: '1 / -1' }}>
-                    Эти NPC появятся в вашем семейном древе, если вы станете
-                    основателем нового дома. Если указаны оба родителя — будет
-                    случайно выбран только один. Если вы влились в чужой дом,
-                    ваши NPC-родители НЕ появятся в нём.
-                  </div>
-                  <div className="FamilySettingsPanel__field">
-                    <div className="FamilySettingsPanel__field-label">
-                      Имя отца
-                    </div>
-                    <div
-                      className="FamilySettingsPanel__field-input"
-                      style={{ position: 'relative' }}>
-                      <span className="FamilySettingsPanel__field-icon">
-                        <Icon name="user" />
-                      </span>
-                      <input
-                        type="text"
-                        placeholder="Оставьте пустым, если не нужен..."
-                        value={fatherName}
-                        onChange={(e) => setFatherName(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <ParentSpeciesField
-                    label="Раса отца"
-                    value={fatherSpecies}
-                    onChange={setFatherSpecies}
-                    availableSpecies={availableSpecies}
-                    open={fatherSpeciesPickerOpen}
-                    setOpen={setFatherSpeciesPickerOpen}
-                    pickerRef={fatherSpeciesPickerRef}
-                  />
-                  <div className="FamilySettingsPanel__field">
-                    <div className="FamilySettingsPanel__field-label">
-                      Имя матери
-                    </div>
-                    <div
-                      className="FamilySettingsPanel__field-input"
-                      style={{ position: 'relative' }}>
-                      <span className="FamilySettingsPanel__field-icon">
-                        <Icon name="user" />
-                      </span>
-                      <input
-                        type="text"
-                        placeholder="Оставьте пустым, если не нужна..."
-                        value={motherName}
-                        onChange={(e) => setMotherName(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <ParentSpeciesField
-                    label="Раса матери"
-                    value={motherSpecies}
-                    onChange={setMotherSpecies}
-                    availableSpecies={availableSpecies}
-                    open={motherSpeciesPickerOpen}
-                    setOpen={setMotherSpeciesPickerOpen}
-                    pickerRef={motherSpeciesPickerRef}
-                  />
-
-                  <DonatorRelativesSection
-                    isDonator={(settings?.isDonator ?? 0) === 1}
-                    maxValue={settings?.maxRandomRelatives ?? 3}
-                    siblings={randomSiblings}
-                    setSiblings={setRandomSiblings}
-                    childCount={randomChildren}
-                    setChildCount={setRandomChildren}
-                  />
-                </div>
-              )}
-
-              {activeTab === 'bonds' && (
+            {mode === 'bonds' && (
+              <div className="FamilySettingsPanel__pane FamilySettingsPanel__pane-bottom">
+                <h3 className="FamilySettingsPanel__pane-title">
+                  <span className="FamilySettingsPanel__pane-title-icon">
+                    <Icon name="handshake" />
+                  </span>
+                  <span>Связи с раунда</span>
+                </h3>
                 <div className="FamilySettingsPanel__tab-body">
                   {!!bondSettings.locked && (
                     <div className="FamilySettingsPanel__hint">
@@ -1139,7 +1170,7 @@ export const FamilySettingsPanel = () => {
                             key={value}
                             type="button"
                             className={
-                              'FamilySettingsPanel__card' +
+                              'FamilySettingsPanel__card FamilySettingsPanel__card--compact' +
                               (seedCount === value
                                 ? ' FamilySettingsPanel__card--active'
                                 : '')
@@ -1169,7 +1200,7 @@ export const FamilySettingsPanel = () => {
                             key={flavor.key}
                             type="button"
                             className={
-                              'FamilySettingsPanel__card' +
+                              'FamilySettingsPanel__card FamilySettingsPanel__card--compact' +
                               (on ? ' FamilySettingsPanel__card--active' : '')
                             }
                             onClick={() =>
@@ -1193,8 +1224,8 @@ export const FamilySettingsPanel = () => {
                     )}
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           <div className="FamilySettingsPanel__footer">
