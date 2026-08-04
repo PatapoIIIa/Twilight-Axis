@@ -6,6 +6,10 @@
 #define VL_SERVANT_PQ 10
 #define VL_KNIGHT_SLOTS 2
 #define VL_SERVANT_SLOTS 4
+#define VL_AUTO_KNIGHT_SLOTS 1
+#define VL_AUTO_SERVANT_SLOTS 2
+#define VL_AUTO_CHANCE 25
+#define VL_AUTO_ROLL_DELAY (2 SECONDS)
 #define VL_WARD_TICK (5 SECONDS)
 #define VL_WARD_ESCALATE_AFTER (20 SECONDS)
 #define VL_WARD_STACKS_EARLY 1
@@ -16,6 +20,7 @@
 #define VL_ASCENSION_LOCK_DELAY (1 MINUTES)
 
 GLOBAL_VAR_INIT(ta_vampire_lord_expansion, FALSE)
+GLOBAL_VAR_INIT(ta_vampire_lord_auto_event, FALSE)
 GLOBAL_VAR_INIT(ta_vampire_lord_taken, FALSE)
 GLOBAL_VAR_INIT(ta_vampire_knights_taken, 0)
 GLOBAL_VAR_INIT(ta_vampire_servants_taken, 0)
@@ -27,6 +32,7 @@ SUBSYSTEM_DEF(ta_vampire_lord_expansion)
 	name = "TA Vampire Lord Expansion"
 	flags = SS_NO_FIRE
 	init_order = INIT_ORDER_DEFAULT
+	var/auto_attempted = FALSE
 
 /datum/controller/subsystem/ta_vampire_lord_expansion/Initialize(timeofday)
 	. = ..()
@@ -34,6 +40,39 @@ SUBSYSTEM_DEF(ta_vampire_lord_expansion)
 
 /datum/controller/subsystem/ta_vampire_lord_expansion/proc/schedule_ascension_lock()
 	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(ta_lock_vampire_lord_ascension)), VL_ASCENSION_LOCK_DELAY)
+	addtimer(CALLBACK(src, PROC_REF(attempt_auto_expansion)), VL_AUTO_ROLL_DELAY)
+
+/datum/controller/subsystem/ta_vampire_lord_expansion/proc/attempt_auto_expansion()
+	if(auto_attempted)
+		return
+	if(!SSticker.HasRoundStarted())
+		addtimer(CALLBACK(src, PROC_REF(attempt_auto_expansion)), 1 SECONDS)
+		return
+	auto_attempted = TRUE
+
+	if(GLOB.ta_vampire_lord_expansion || GLOB.ta_vampire_lord_taken)
+		return
+	if(!ta_vampire_lord_expansion_allowed())
+		return
+	if(!length(GLOB.vlord_starts))
+		log_storyteller("Vampire Lord Expansion auto-event skipped: no vampire lord landmark on the map.")
+		return
+	if(SSgamemode.halted_storyteller || SSgamemode.current_storyteller?.disable_distribution)
+		log_storyteller("Vampire Lord Expansion auto-event skipped: storyteller distribution is halted.")
+		return
+	if(SSgamemode.storyteller_is(/datum/storyteller/gamemode/extended, TRUE))
+		log_storyteller("Vampire Lord Expansion auto-event skipped: Extended is active.")
+		return
+	if(istype(SSgamemode.current_roundstart_event, /datum/round_event_control/antagonist/solo/vampires))
+		log_storyteller("Vampire Lord Expansion auto-event skipped: the storyteller already rolled the Vampire Lord.")
+		return
+	if(!prob(VL_AUTO_CHANCE))
+		log_storyteller("Vampire Lord Expansion auto-event skipped: failed the [VL_AUTO_CHANCE]% roll.")
+		return
+
+	ta_set_vampire_lord_expansion(TRUE, TRUE)
+	message_admins("STORYTELLER: Vampire Lord Expansion самостоятельно открылся (прошёл [VL_AUTO_CHANCE]% ролл). Свита урезана: [VL_AUTO_KNIGHT_SLOTS] рыцарь, [VL_AUTO_SERVANT_SLOTS] слуги.")
+	log_storyteller("Vampire Lord Expansion auto-event triggered (passed the [VL_AUTO_CHANCE]% roll), reduced retinue [VL_AUTO_KNIGHT_SLOTS]/[VL_AUTO_SERVANT_SLOTS].")
 
 /proc/ta_lock_vampire_lord_ascension()
 	GLOB.ta_vampire_lord_ascension_locked = TRUE
@@ -264,10 +303,11 @@ GLOBAL_LIST_INIT(ta_astrata_extra_wards, typecacheof(list(
 	ta_refresh_vampire_zone_watches()
 
 
-/proc/ta_set_vampire_lord_expansion(enabled)
+/proc/ta_set_vampire_lord_expansion(enabled, auto = FALSE)
 	if(enabled && !ta_vampire_lord_expansion_allowed())
 		return
 	GLOB.ta_vampire_lord_expansion = enabled
+	GLOB.ta_vampire_lord_auto_event = enabled ? auto : FALSE
 	var/datum/job/lord_job = SSjob.GetJob("Vampire Lord")
 	if(lord_job)
 		lord_job.total_positions = (enabled && !GLOB.ta_vampire_lord_taken) ? (lord_job.current_positions + 1) : 0
@@ -322,13 +362,15 @@ GLOBAL_LIST_INIT(ta_astrata_extra_wards, typecacheof(list(
 /proc/ta_vampire_lord_expansion_open_retinue()
 	if(!GLOB.ta_vampire_lord_expansion || !GLOB.ta_vampire_lord_taken)
 		return
+	var/knight_limit = GLOB.ta_vampire_lord_auto_event ? VL_AUTO_KNIGHT_SLOTS : VL_KNIGHT_SLOTS
+	var/servant_limit = GLOB.ta_vampire_lord_auto_event ? VL_AUTO_SERVANT_SLOTS : VL_SERVANT_SLOTS
 	var/datum/job/knight_job = SSjob.GetJob("Vampire Guard")
 	if(knight_job)
-		knight_job.total_positions = knight_job.current_positions + max(0, VL_KNIGHT_SLOTS - GLOB.ta_vampire_knights_taken)
+		knight_job.total_positions = knight_job.current_positions + max(0, knight_limit - GLOB.ta_vampire_knights_taken)
 		knight_job.min_pq = VL_KNIGHT_PQ
 	var/datum/job/servant_job = SSjob.GetJob("Vampire Servant")
 	if(servant_job)
-		servant_job.total_positions = servant_job.current_positions + max(0, VL_SERVANT_SLOTS - GLOB.ta_vampire_servants_taken)
+		servant_job.total_positions = servant_job.current_positions + max(0, servant_limit - GLOB.ta_vampire_servants_taken)
 		servant_job.min_pq = VL_SERVANT_PQ
 	ta_restore_stolen_wretch_slots()
 
@@ -485,6 +527,10 @@ GLOBAL_LIST_INIT(ta_astrata_extra_wards, typecacheof(list(
 #undef VL_SERVANT_PQ
 #undef VL_KNIGHT_SLOTS
 #undef VL_SERVANT_SLOTS
+#undef VL_AUTO_KNIGHT_SLOTS
+#undef VL_AUTO_SERVANT_SLOTS
+#undef VL_AUTO_CHANCE
+#undef VL_AUTO_ROLL_DELAY
 #undef VL_WARD_TICK
 #undef VL_WARD_ESCALATE_AFTER
 #undef VL_WARD_STACKS_EARLY
