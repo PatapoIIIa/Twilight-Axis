@@ -18,6 +18,7 @@
 #include "./overrides/portal.dm"
 #include "./overrides/vampire_forms.dm"
 #include "./overrides/discipline_balance.dm"
+#include "./overrides/spell_lockout.dm"
 #include "./necromantic_coven.dm"
 #include "./bestial_coven.dm"
 #include "./ascended_covens.dm"
