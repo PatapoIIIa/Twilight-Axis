@@ -1,6 +1,6 @@
 /datum/controller/subsystem/familytree/proc/familytree_join_create_phase_open()
 	if(!SSticker?.round_start_time)
-		return TRUE
+		return FALSE
 	return (world.time - SSticker.round_start_time) >= FAMILYTREE_JOIN_CREATE_DELAY
 
 /datum/controller/subsystem/familytree/proc/familytree_join_create_delay_remaining()
@@ -12,7 +12,7 @@
 
 /datum/controller/subsystem/familytree/proc/familytree_relative_join_phase_open()
 	if(!SSticker?.round_start_time)
-		return TRUE
+		return FALSE
 	return (world.time - SSticker.round_start_time) >= FAMILYTREE_RELATIVE_JOIN_DELAY
 
 /datum/controller/subsystem/familytree/proc/familytree_join_create_fallback_open()
@@ -95,7 +95,7 @@
 	GenerateRandomChildren(new_house, new_house.founder, H.familytree_random_children)
 	on_family_formed(new_house)
 	wake_waiting_relative_seekers(new_house)
-	ftlog("AddLocal: [H.real_name] founded new house '[new_house.housename]' ([audit_reason])")
+	ftlog("AddLocal: [H.real_name] founded new house '[new_house.housename]' ([audit_reason])", FTLOG_INFO)
 	familytree_admin_log_house_assignment(H, new_house, audit_reason)
 	stop_tracking_human(H, audit_reason)
 	return new_house
@@ -104,6 +104,10 @@
 	ftlog("AddLocal: [H?.real_name] ([H?.ckey]) status=[status]")
 	if(!H || istype(H, /mob/living/carbon/human/dummy))
 		return
+	if(!familytree_has_round_prefs(H))
+		ftlog("AddLocal STOP: [H.real_name] has no round preference datum")
+		return
+	familytree_tick_timeout_blocks(H)
 	var/family_mode = familytree_pref_mask(status)
 	if(!family_mode)
 		return
@@ -138,7 +142,6 @@
 		ftlog("AddLocal: [H.real_name] has favorite=[target_name], trying favorite assign (retry #[H.familytree_setspouse_retries])")
 		var/favorite_result = TryAssignToFavorite(H, status)
 		if(favorite_result == "assigned")
-			stop_tracking_human(H, "assigned via favorite")
 			return
 		if(favorite_result == "phase_locked")
 			wait_for_relative_join_phase(H, "favorite house join is phase locked")
@@ -151,10 +154,12 @@
 				find_and_confirm_newlywed(H)
 				wait_for_relative_join_phase(H, "favorite unavailable during join/create fallback phase")
 				return
+			if(!H.familytree_setspouse_wait_started)
+				H.familytree_setspouse_wait_started = world.time
 			H.familytree_setspouse_retries++
-			if(H.familytree_setspouse_retries >= 30 && !H.familytree_setspouse_timeout_offered)
+			if((world.time - H.familytree_setspouse_wait_started) >= FAMILYTREE_SETSPOUSE_TIMEOUT && !H.familytree_setspouse_timeout_offered)
 				H.familytree_setspouse_timeout_offered = TRUE
-				ftlog("AddLocal: [H.real_name] setspouse timeout reached (30 retries), offering reset")
+				ftlog("AddLocal: [H.real_name] setspouse timeout reached ([H.familytree_setspouse_retries] retries, [DisplayTimeText(world.time - H.familytree_setspouse_wait_started)] elapsed), offering reset")
 				INVOKE_ASYNC(src, PROC_REF(offer_setspouse_reset), H, status)
 				return
 			ftlog("AddLocal: [H.real_name] favorite not found, waiting 60s")
@@ -175,7 +180,12 @@
 		if(find_and_confirm_newlywed(H))
 			return
 		if(H.desired_relative_role != RELATIVE_ANY)
-			wait_for_new_family_match(H, "target house count not met for selected relative role")
+			var/forced_role_for_seed = familytree_forced_role_from_relative_role(H.desired_relative_role)
+			if(!HasSuitableHouseForRelative(H, forced_role_for_seed))
+				wait_for_new_family_match(H, "target house count not met for selected relative role")
+				return
+		if(!relative_join_phase_open)
+			wait_for_new_family_match(H, "holding solo house seed until relative join phase")
 			return
 		familytree_found_new_house(H, "created new house; target house count not met")
 		return
@@ -485,6 +495,9 @@
 		return "waiting"
 	if(favorite.familytree_confirmation_pending)
 		return "waiting"
+	if(familytree_pair_blocked(H, favorite))
+		ftlog("TryFavorite: [H.real_name] <-> [favorite.real_name] pair is blocked (mutual refusal), skipping")
+		return "waiting"
 
 	var/mutual_sibling = (H.desired_relative_role == RELATIVE_SIBLING && favorite.desired_relative_role == RELATIVE_SIBLING)
 
@@ -757,7 +770,7 @@
 			continue
 		var/list/assignment = familytree_pick_random_relative_assignment(house, H, forced_role)
 		if(!assignment)
-			reject_mask |= FTREJ_H_AGE
+			reject_mask |= familytree_house_fully_blocked(house, H) ? FTREJ_H_BLOCKED : FTREJ_H_AGE
 			continue
 		candidates += house
 		assignments_by_house[house] = assignment
@@ -874,7 +887,7 @@
 			reject_mask |= FTREJ_H_OFFLINE
 			continue
 		if(!familytree_house_supports_role(house, H, forced_role))
-			reject_mask |= FTREJ_H_AGE
+			reject_mask |= familytree_house_fully_blocked(house, H) ? FTREJ_H_BLOCKED : FTREJ_H_AGE
 			continue
 
 		candidates += house
@@ -914,6 +927,18 @@
 	assignment["member"] = new_member
 	return assignment
 
+/datum/controller/subsystem/familytree/proc/familytree_house_fully_blocked(datum/heritage/house, mob/living/carbon/human/person)
+	if(!house || !person)
+		return FALSE
+	var/real_members = 0
+	for(var/datum/family_member/member as anything in house.members)
+		if(!member?.person || member.person == person || member.cosmetic || member.phantom)
+			continue
+		real_members++
+		if(!familytree_pair_blocked(person, member.person))
+			return FALSE
+	return real_members > 0
+
 /datum/controller/subsystem/familytree/proc/familytree_pick_random_relative_assignment(datum/heritage/house, mob/living/carbon/human/person, forced_role = null, adopted = FALSE)
 	if(!house || !person)
 		return null
@@ -941,6 +966,8 @@
 	if(!house || !person || !anchor?.person || anchor.person == person)
 		return possible_roles
 	if(anchor.cosmetic || anchor.phantom)
+		return possible_roles
+	if(familytree_pair_blocked(person, anchor.person))
 		return possible_roles
 	if(!familytree_relative_species_compatible(person, anchor.person))
 		return possible_roles
@@ -2062,7 +2089,18 @@
 			continue
 		if(!H.familytree_module_signal_bound || !H.familytree_assignment_scheduled)
 			continue
-		addtimer(CALLBACK(src, PROC_REF(run_local_assignment), H, H.familytree_pref), 1 SECONDS)
+		if(H.familytree_wake_timerid || world.time < H.familytree_next_wake_time)
+			continue
+		H.familytree_next_wake_time = world.time + 20 SECONDS
+		H.familytree_wake_timerid = addtimer(CALLBACK(src, PROC_REF(familytree_run_wake_assignment), H), 1 SECONDS, TIMER_STOPPABLE)
+
+/datum/controller/subsystem/familytree/proc/familytree_run_wake_assignment(mob/living/carbon/human/H)
+	if(!H || QDELETED(H))
+		return
+	H.familytree_wake_timerid = null
+	if(H.family_datum || H.familytree_opted_out)
+		return
+	run_local_assignment(H, H.familytree_pref)
 
 /datum/controller/subsystem/familytree/proc/retry_local_assignment(mob/living/carbon/human/H, reason)
 	if(!H || QDELETED(H) || H.family_datum || H.familytree_opted_out)
@@ -2146,6 +2184,7 @@
 	if(mask & FTREJ_H_AGE)       parts += "age"
 	if(mask & FTREJ_H_EMPTY)     parts += "empty"
 	if(mask & FTREJ_H_OFFLINE)   parts += "offline"
+	if(mask & FTREJ_H_BLOCKED)   parts += "blocked_pair"
 	return parts.Join(",")
 
 /proc/ftreject_decode_newlywed(mask)

@@ -85,7 +85,7 @@
 	var/skeletonized = FALSE
 
 	var/fingers = TRUE
-	var/organ_slowdown = 0 // Its here because this is first shared definition between two leg organ paths
+	var/organ_slowdown = 0 // Its here because this is first shared definition between two leg organ paths // NOTE for future: The value starts at 0, example flavor of -10% is 0.1, so on.
 	var/is_prosthetic = FALSE
 	var/brand_text = null
 
@@ -184,6 +184,8 @@
 	if(embedded_objects && length(embedded_objects))
 		for(var/obj/item/embedded as anything in embedded_objects)
 			embedded_objects -= embedded
+			embedded.is_embedded = FALSE
+			embedded.embedded_host = null
 			if(!QDELETED(embedded))
 				qdel(embedded)
 		embedded_objects = null

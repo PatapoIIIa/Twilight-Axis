@@ -1,4 +1,5 @@
 /datum/action/cooldown/spell/bestow_ward
+	source_aspect = /datum/magic_aspect/battlewardry
 	name = "Bestow Ward"
 	desc = "Channel arcyne energy to wrap an ally in a protective ward. The ward covers their entire body with light armor, \
 	layering coverage over any real armor they wear. The ward lasts for 3 minutes or until destroyed. \
@@ -22,6 +23,7 @@
 
 	charge_required = TRUE
 	charge_time = CHARGETIME_HEAVY
+	charge_swingdelay_type = SWINGDELAY_PENALTY
 	hold_drain = 1
 	charge_slowdown = CHARGING_SLOWDOWN_MEDIUM
 	charge_sound = 'sound/magic/charging.ogg'

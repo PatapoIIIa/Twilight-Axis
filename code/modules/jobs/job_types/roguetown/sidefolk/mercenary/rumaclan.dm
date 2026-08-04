@@ -7,14 +7,14 @@
 	subclass_languages = list(/datum/language/kazengunese)
 	class_select_category = CLASS_CAT_KAZENGUN
 	category_tags = list(CTAG_MERCENARY)
-	traits_applied = list(TRAIT_CRITICAL_RESISTANCE, TRAIT_HARDDISMEMBER, TRAIT_NOPAINSTUN, TRAIT_HONORBOUND)
+	traits_applied = list(TRAIT_CRITICAL_RESISTANCE, TRAIT_NOPAINSTUN, TRAIT_HONORBOUND) //TA EDIT
 	cmode_music = 'sound/music/combat_Kazengun_Runaway_Chariot.ogg'
 	subclass_stats = list(
-		STATKEY_CON = 2,
+		STATKEY_CON = 3,
 		STATKEY_WIL = 3,
-		STATKEY_STR = 1,
+		STATKEY_STR = 2,
 		STATKEY_PER = 1,
-		STATKEY_SPD = 1
+		STATKEY_SPD = -1
 	)
 	subclass_skills = list(
 		/datum/skill/misc/swimming = SKILL_LEVEL_APPRENTICE,
@@ -38,7 +38,7 @@
 	beltl = /obj/item/rogueweapon/sword/sabre/mulyeog/rumahench
 	shirt = /obj/item/clothing/suit/roguetown/shirt/undershirt/eastshirt2
 	cloak = /obj/item/clothing/cloak/eastcloak1
-	armor = /obj/item/clothing/suit/roguetown/armor/regenerating/skin/easttats
+	armor = /obj/item/clothing/suit/roguetown/armor/manual/meditation/easttats/ruma
 	pants = /obj/item/clothing/under/roguetown/heavy_leather_pants/eastpants2
 	shoes = /obj/item/clothing/shoes/roguetown/armor/rumaclan
 	gloves = /obj/item/clothing/gloves/roguetown/eastgloves2
@@ -59,7 +59,7 @@
 	subclass_languages = list(/datum/language/kazengunese)
 	class_select_category = CLASS_CAT_KAZENGUN
 	category_tags = list(CTAG_MERCENARY)
-	traits_applied = list(TRAIT_BLOOD_RESISTANCE, TRAIT_NOPAINSTUN, TRAIT_HONORBOUND)
+	traits_applied = list(TRAIT_CRITICAL_RESISTANCE, TRAIT_NOPAINSTUN, TRAIT_HONORBOUND)
 	subclass_stats = list(
 		STATKEY_SPD = 4,
 		STATKEY_PER = 2,
@@ -90,7 +90,7 @@
 	beltl = /obj/item/flashlight/flare/torch/lantern
 	shirt = /obj/item/clothing/suit/roguetown/shirt/undershirt/eastshirt2
 	cloak = /obj/item/clothing/cloak/eastcloak1
-	armor = /obj/item/clothing/suit/roguetown/armor/regenerating/skin/easttats
+	armor = /obj/item/clothing/suit/roguetown/armor/manual/meditation/easttats/ruma
 	pants = /obj/item/clothing/under/roguetown/heavy_leather_pants/eastpants2
 	shoes = /obj/item/clothing/shoes/roguetown/armor/rumaclan
 	gloves = /obj/item/clothing/gloves/roguetown/eastgloves2

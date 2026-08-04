@@ -162,31 +162,31 @@ GLOBAL_LIST_EMPTY(loadout_items_by_category)
 	path = /obj/item/rogueweapon/hammer/wood
 	triumph_cost = 4
 
-/datum/loadout_item/axe 
+/datum/loadout_item/axe
 	name = "Stone Axe"
 	category = list("Разное", "Триумфы")
 	path = /obj/item/rogueweapon/stoneaxe
 	triumph_cost = 4
 
-/datum/loadout_item/knife 
+/datum/loadout_item/knife
 	name = "Stone Knife"
 	category = list("Разное", "Триумфы")
 	path = /obj/item/rogueweapon/huntingknife/stoneknife
 	triumph_cost = 3
 
-/datum/loadout_item/hoe 
+/datum/loadout_item/hoe
 	name = "Stone Hoe"
 	category = list("Разное", "Триумфы")
 	path = /obj/item/rogueweapon/hoe/stone
 	triumph_cost = 4
 
-/datum/loadout_item/spade 
+/datum/loadout_item/spade
 	name = "Wood Spade"
 	category = list("Разное", "Триумфы")
 	path = /obj/item/rogueweapon/shovel/small
 	triumph_cost = 4
 
-/datum/loadout_item/mirror 
+/datum/loadout_item/mirror
 	name = "Hand Mirror"
 	category = list("Разное", "Триумфы")
 	path = /obj/item/handmirror
@@ -563,45 +563,57 @@ GLOBAL_LIST_EMPTY(loadout_items_by_category)
 
 /datum/loadout_item/surcoatheavy
 	name = "Surcoat, Overvestments"
-	category = "Плащи"
+	category = list("Плащи", "Триумфы")
 	path = /obj/item/clothing/cloak/tabard/stabard/crusader/heavy
 	triumph_cost = 3
 
 /datum/loadout_item/surcoatgoldenorder
 	name = "Surcoat, Golden Order"
-	category = "Плащи"
+	category = list("Плащи", "Триумфы")
 	path = /obj/item/clothing/cloak/tabard/stabard/crusader
 	triumph_cost = 3
 
 /datum/loadout_item/surcoatsilverorder
 	name = "Surcoat, Silver Order"
-	category = "Плащи"
+	category = list("Плащи", "Триумфы")
 	path = /obj/item/clothing/cloak/tabard/stabard/crusader/t
 	triumph_cost = 3
 
 /datum/loadout_item/surcoatgoldenorderast
 	name = "Surcoat, Golden Order, Astratan"
-	category = "Плащи"
+	category = list("Плащи", "Триумфы")
 	path = /obj/item/clothing/cloak/tabard/stabard/crusader/astrata
 	triumph_cost = 3
 
 /datum/loadout_item/surcoatsilverorderast
 	name = "Surcoat, Silver Order, Astratan"
-	category = "Плащи"
+	category = list("Плащи", "Триумфы")
 	path = /obj/item/clothing/cloak/tabard/stabard/crusader/t/astrata
 	triumph_cost = 3
 
 /datum/loadout_item/surcoatgoldenorderuni
 	name = "Surcoat, Golden Order, Undivided"
-	category = "Плащи"
+	category = list("Плащи", "Триумфы")
 	path = /obj/item/clothing/cloak/tabard/stabard/crusader/undivided
 	triumph_cost = 3
 
 /datum/loadout_item/surcoatsilverorderuni
 	name = "Surcoat, Silver Order, Undivided"
-	category = "Плащи"
+	category = list("Плащи", "Триумфы")
 	path = /obj/item/clothing/cloak/tabard/stabard/crusader/t/undivided
 	triumph_cost = 3
+
+/datum/loadout_item/ranger_cloak
+	name = "Ranger Cloak, Forest Green"
+	category = list("Плащи", "Триумфы")
+	path = /obj/item/clothing/cloak/rangercloak
+	triumph_cost = 5
+
+/datum/loadout_item/ranger_cloak_gray
+	name = "Ranger Cloak, Neutral Gray"
+	category = list("Плащи", "Триумфы")
+	path = /obj/item/clothing/cloak/rangercloak/gray
+	triumph_cost = 5
 
 /datum/loadout_item/scaledcloak
 	name = "Scaled Cloak"
@@ -1041,6 +1053,16 @@ GLOBAL_LIST_EMPTY(loadout_items_by_category)
 	name = "Briar Mask"
 	category = "Аксессуары"
 	path = /obj/item/clothing/head/roguetown/dendormask
+
+/datum/loadout_item/tutorialbook
+	name = "A Tutorialeer's Handbook"
+	category = "Аксессуары"
+	path = /obj/item/recipe_book/survival
+
+/datum/loadout_item/ball
+	name = "Ball"
+	category = "Аксессуары"
+	path = /obj/item/ball
 
 /datum/loadout_item/eorahood
 	name = "Opera Mask - Eoran Hood"
@@ -1800,7 +1822,7 @@ GLOBAL_LIST_EMPTY(loadout_items_by_category)
 	donat_tier = 2
 
 /datum/loadout_item/donator_strudel3
-	name = "Donator Kit - Etruscan Design Cloak - Required: Poncho (Only Woman, No Small Races)"
+	name = "Donator Kit - Etruscan Design Cloak - Required: Poncho (No Small Races)"
 	category = list("Плащи", "Донат")
 	path = /obj/item/enchantingkit/strudel3
 	donatitem = TRUE
@@ -1881,6 +1903,7 @@ GLOBAL_LIST_EMPTY(loadout_items_by_category)
 	category = list("Оружие", "Донат")
 	path = /obj/item/enchantingkit/weapon/euthanasia
 	donatitem = TRUE
+
 
 /*
 /datum/loadout_item/donator_zydrasiconocrown
@@ -2179,7 +2202,7 @@ GLOBAL_LIST_EMPTY(loadout_items_by_category)
 	path = /obj/item/enchantingkit/weapon/nero_dagger
 	donatitem = TRUE
 	donat_tier = 2
-	
+
 /datum/loadout_item/donator/nero_sabre
 	name = "Donator Kit - Sylvan Sabre - Required: Sabre"
 	category = list("Оружие", "Донат")
@@ -2316,6 +2339,12 @@ GLOBAL_LIST_EMPTY(loadout_items_by_category)
 	path = /obj/item/enchantingkit/kumie_shirt
 	donatitem = TRUE
 
+/datum/loadout_item/donator/universal/armor_gothic_psydonic
+	name = "Donator Kit - Gothic Psydonic Cuirass - Required: Psydonic Cuirass"
+	category = list("Броня", "Донат")
+	path = /obj/item/enchantingkit/gothicpsydoniccuirass
+	donatitem = TRUE
+
 /datum/loadout_item/donator_kumie4
 	name = "Donator Kit - Aristocratic Coat - Required: Hardened Leather Coat or Lightweight Brigandine(No Small Races)"
 	category = list("Броня", "Донат")
@@ -2383,6 +2412,13 @@ GLOBAL_LIST_EMPTY(loadout_items_by_category)
 	path = /obj/item/enchantingkit/weapon/triumph_weaponkit_wodao
 	category = list("Оружие", "Донат")
 	donatitem = TRUE
+
+/datum/loadout_item/donator_athena_solace
+	name = "Donator Kit - Solace - Required: Rapier"
+	path = /obj/item/enchantingkit/weapon/athena_solace
+	category = list("Оружие", "Донат")
+	donatitem = TRUE
+	donat_tier = 2
 
 /datum/loadout_item/donator_weaponkitdadao
 	name = "Donator Kit - Dadao - Required: Iron Hunting Sword, Iron Dueling Messer, Steel Messer, Steel Hunting Sword Or Falx"
@@ -2653,11 +2689,12 @@ GLOBAL_LIST_EMPTY(loadout_items_by_category)
 	path = /obj/item/clothing/cloak/cape/blkknight
 	donatitem = TRUE
 
-/datum/loadout_item/donat/furcloak
-	name = "Меховой плащ"
+/datum/loadout_item/donator/longest_night
+	name = "Donator Item - Longest Night Cloak"
 	category = list("Плащи", "Донат")
-	path = /obj/item/clothing/cloak/raincloak/furcloak
+	path = /obj/item/clothing/cloak/longest_night
 	donatitem = TRUE
+	donat_tier = 2
 
 /datum/loadout_item/donat/snowcloak
 	name = "Снежный плащ"
@@ -2684,7 +2721,7 @@ GLOBAL_LIST_EMPTY(loadout_items_by_category)
 	category = list("Плащи", "Донат")
 	path = /obj/item/clothing/cloak/tabard/devotee/astrata
 	donatitem = TRUE
-	
+
 /datum/loadout_item/donat/tabard/templar/astrata
 	name = "Табард-плащ Астраты"
 	category = list("Плащи", "Донат")
@@ -3116,7 +3153,7 @@ GLOBAL_LIST_EMPTY(loadout_items_by_category)
 	path = /obj/item/clothing/head/roguetown/octopus
 	category = list("Головные уборы", "Донат")
 	donatitem = TRUE
-	donat_tier = 2	
+	donat_tier = 2
 
 /datum/loadout_item/shawl
 	name = "Shawl"
@@ -3168,7 +3205,7 @@ GLOBAL_LIST_EMPTY(loadout_items_by_category)
 	category = list("Аксессуары", "Донат")
 	path = /obj/item/storage/belt/rogue/leather/suspenders
 	donatitem = TRUE
- 
+
 /datum/loadout_item/woolencollar
 	name = "Woolen Collar"
 	category = list("Аксессуары", "Донат")
@@ -3677,6 +3714,34 @@ GLOBAL_LIST_EMPTY(loadout_items_by_category)
 	name = "Donator Kit - Imbued Longsword - Required: Longsword"
 	category = list("Оружие", "Донат")
 	path = /obj/item/enchantingkit/weapon/donator_imbuedlongsword
+	donatitem = TRUE
+	donat_tier = 2
+
+/datum/loadout_item/donator/falling_star
+	name = "Donator Kit - Falling Star - Required: Greatsword"
+	category = list("Оружие", "Донат")
+	path = /obj/item/enchantingkit/weapon/falling_star
+	donatitem = TRUE
+	donat_tier = 2
+
+/datum/loadout_item/donator/morto_staff
+	name = "Donator Kit - Frozen Vow - Required: Staff"
+	category = list("Оружие", "Донат")
+	path = /obj/item/enchantingkit/morto_staff
+	donatitem = TRUE
+	donat_tier = 2
+
+/datum/loadout_item/donator/cobb_conviction
+	name = "Donator Kit - Conviction - Required: Long Sword"
+	category = list("Оружие", "Донат")
+	path = /obj/item/enchantingkit/weapon/cobb_conviction
+	donatitem = TRUE
+	donat_tier = 2
+
+/datum/loadout_item/donator/racobio_staff
+	name = "Donator Kit - Obsidian Tower - Required: Grand Staff"
+	category = list("Оружие", "Донат")
+	path = /obj/item/enchantingkit/racobio_staff
 	donatitem = TRUE
 	donat_tier = 2
 

@@ -9,7 +9,6 @@
 	close_sound = 'sound/misc/chestclose.ogg'
 	keylock = TRUE
 	locked = FALSE
-	sellprice = 1
 	max_integrity = 200
 	blade_dulling = DULLING_BASHCHOP
 	mob_storage_capacity = 1
@@ -29,7 +28,7 @@
 	name = "otavan chest"
 	desc = "A foreboding red chest with black dye-washed silver embellishments."
 	icon_state = "chestweird2"
-	base_icon_state = "chestweird2"	
+	base_icon_state = "chestweird2"
 
 //obj/structure/closet/crate/chest/Initialize(mapload)
 //	. = ..()
@@ -299,6 +298,9 @@
 		/obj/item/roguegem/yellow = 10,
 		/obj/item/roguestatue/bronze = 10,
 		/obj/item/roguestatue/iron = 5,
+		/obj/item/ccg_card_generator/common = 3,
+		/obj/item/ccg_card_booster = 2,
+		/obj/item/ccg_card_booster/premium = 1,
 		/obj/item/clothing/mask/cigarette/rollie/nicotine = 20, //Misc stuff
 		/obj/item/reagent_containers/food/snacks/butter = 10,
 		/obj/item/reagent_containers/food/snacks/rogue/raisins = 10,
@@ -323,7 +325,7 @@
 	name = "coffin"
 	desc = "A coffin of some burgher."
 	icon_state = "vcasket" //Fancy casket
-	base_icon_state = "vcasket" 
+	base_icon_state = "vcasket"
 	locked = TRUE
 
 /obj/structure/closet/crate/chest/coffinlootbox_middle/PopulateContents()
@@ -341,6 +343,10 @@
 		/obj/item/roguegem/violet = 10,
 		/obj/item/roguestatue/gold/loot = 10,
 		/obj/item/roguestatue/aalloy = 5,
+		/obj/item/ccg_card_generator/common = 4,
+		/obj/item/ccg_card_generator/rare = 3,
+		/obj/item/ccg_card_booster = 2,
+		/obj/item/ccg_card_booster/premium = 1,
 		/obj/item/storage/belt/rogue/pouch/zigarrete/nicotine = 15, //Misc stuff
 		/obj/item/reagent_containers/food/snacks/butter = 15,
 		/obj/item/reagent_containers/food/snacks/canned = 15,
@@ -380,6 +386,11 @@
 		/obj/item/roguestatue/gold = 10,
 		/obj/item/roguestatue/silver = 10,
 		/obj/item/roguestatue/blacksteel = 5,
+		/obj/item/ccg_card_generator/common = 1,
+		/obj/item/ccg_card_generator/rare = 3,
+		/obj/item/ccg_card_generator/unique = 2,
+		/obj/item/ccg_card_booster = 2,
+		/obj/item/ccg_card_booster/premium = 1,
 		/obj/item/storage/belt/rogue/pouch/zigarrete/nicotine = 10, //Misc stuff
 		/obj/item/reagent_containers/food/snacks/canned = 20,
 		/obj/item/reagent_containers/food/snacks/rogue/crackerscooked = 5,

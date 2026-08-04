@@ -262,7 +262,7 @@
 						user.add_stress(/datum/stressevent/sewertouched)
 					if (!HAS_TRAIT(L,TRAIT_LEECHIMMUNE) && !HAS_TRAIT(L,TRAIT_BOGWALKER)) // cleaning yourself in nasty water is a wonderful way to get leeches.
 						if (prob(20)) // 1 in 5 chance of getting leeched if you wash up in gross water.
-							
+
 							if(HAS_TRAIT(L, TRAIT_LEECHRESIST))
 								var/avoid_chance = 20
 								avoid_chance += (L.STASPD - 10) * 10
@@ -306,6 +306,11 @@
 		var/mob/living/L = user
 		if(L.stat != CONSCIOUS)
 			return
+		//TA edit - Bard chages start
+		if(L.is_blocked_by_music_consumption())
+			to_chat(user, span_warning("I can't drink while performing music."))
+			return
+		//TA edit - Bard chages end
 		if(iscarbon(user))
 			var/mob/living/carbon/C = user
 			if(C.is_mouth_covered())
@@ -654,6 +659,20 @@
 	slowdown = 8
 	swim_skill = TRUE
 	wash_in = TRUE
+
+/turf/open/water/ocean/deep/dark
+	water_color = "#000211"
+
+/turf/open/water/ocean/abyssal
+	name = "darkwater"
+	desc = "Water from another realm, it's impossibly deep, like everything below the surface isn't fully within this plane."
+	icon_state = "water"
+	icon = 'icons/turf/roguefloor.dmi'
+	water_level = 3
+	water_color = "#000211"
+	slowdown = 8
+	swim_skill = TRUE
+	wash_in = FALSE
 
 /turf/open/water/pond
 	name = "pond"

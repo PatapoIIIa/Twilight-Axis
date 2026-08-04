@@ -218,6 +218,7 @@
 		/obj/item/natural/fibers = 1,
 		/obj/item/natural/wood/plank = 1,
 	)
+	subtype_reqs = TRUE
 	structurecraft = /obj/structure/artificer_table
 	skillcraft = /datum/skill/craft/engineering
 	craftdiff = 4
@@ -968,6 +969,22 @@
 	skillcraft = /datum/skill/craft/engineering
 	craftdiff = 5
 
+/datum/crafting_recipe/roguetown/engineering/autogrinder
+	name = "autogrinder"
+	category = "Machines"
+	display_category = ITEM_CAT_ENG_MACHINERY
+	result = /obj/structure/autogrinder
+	reqs = list(
+		/obj/item/roguegear = 3,
+		/obj/item/ingot/iron = 2,
+		/obj/item/natural/wood/plank = 4,
+		/obj/item/natural/stone = 4,
+	)
+	verbage_simple = "engineer"
+	verbage = "engineers"
+	skillcraft = /datum/skill/craft/engineering
+	craftdiff = 4
+
 /datum/crafting_recipe/roguetown/engineering/infernalengine
 	name = "infernal engine"
 	req_table = FALSE
@@ -1156,7 +1173,7 @@
 	craftdiff = 4
 
 // ------------ Craftable Traps ----------
-//setting these up as a more "arcane" alternative to trap making done with engineering. 
+//setting these up as a more "arcane" alternative to trap making done with engineering.
 
 /datum/crafting_recipe/roguetown/engineering/rocktrap
 	name = "rock trap (engineered)"

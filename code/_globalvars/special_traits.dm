@@ -44,25 +44,16 @@ GLOBAL_LIST_INIT(special_traits, build_special_traits())
 		apply_dnr_trait(character, player)
 	if(player.prefs.qsr_pref)
 		apply_qsr_trait(character, player)
-
-	var/triumph_discount_remaining = get_donator_triumph_discount(player.ckey) // TA EDIT
+	character.mind.triumph_discount_remaining = get_donator_triumph_discount(player.ckey)
 	if(player.prefs.selected_loadout_items)
 		for(var/key in player.prefs.selected_loadout_items)
 			var/datum/loadout_item/item = GLOB.loadout_items_by_name[key]
 			if(!item)
 				continue
-
 			if(item.triumph_cost)
-				var/discounted_cost = max(0, item.triumph_cost - triumph_discount_remaining)
-				if(discounted_cost > 0 && character.get_triumphs() < discounted_cost)
-					to_chat(character, span_warning("Недостаточно триумфов для [item.name]."))
-					continue
-
-				triumph_discount_remaining = max(0, triumph_discount_remaining - item.triumph_cost)
-				if(discounted_cost > 0)
-					character.adjust_triumphs(-discounted_cost)
-
-			character.mind.special_items[item.name] = item.path
+				character.mind.special_items["[item.name][TRIUMPH_STASH_SUFFIX]"] = item.path
+			else
+				character.mind.special_items[item.name] = item.path
 	var/datum/job/assigned_job = SSjob.GetJob(character.mind?.assigned_role)
 	if(assigned_job)
 		assigned_job.clamp_stats(character)
@@ -78,12 +69,12 @@ GLOBAL_LIST_INIT(special_traits, build_special_traits())
 		REMOVE_TRAIT(H, TRAIT_EASYDISMEMBER, null) // Doesn't care for source, they ARE getting canceled
 		REMOVE_TRAIT(H, TRAIT_CRITICAL_RESISTANCE, null)
 		to_chat(H, span_warning("My limbs are too frail and my body too tough... the contradiction leaves me unable to resist critical wounds."))
-		
+
 	var/datum/advclass/advclass = H.get_advclass_datum()
 	if(advclass?.tempo_capable && H.mind.assigned_role != "Court Agent" && H.mind.assigned_role != "Adventurer" && H.mind.assigned_role != "Towner") // (Easier to filter these out than apply the bool to every subclass)
 		if(!H.mind.has_antag_datum(/datum/antagonist/skeleton) && !H.mind.has_antag_datum(/datum/antagonist/lich) && !H.mind.has_antag_datum(/datum/antagonist/vampire) && !H.mind.has_antag_datum(/datum/antagonist/vampire/lord))
-			ADD_TRAIT(H, TRAIT_TEMPO, SPECIES_TRAIT)		
-	
+			ADD_TRAIT(H, TRAIT_TEMPO, SPECIES_TRAIT)
+
 	if(HAS_TRAIT(H, TRAIT_PSYDONIC_MEDICINE)) //TA EDIT
 		H.adjust_skillrank(/datum/skill/misc/medicine, 2, TRUE) //TA EDIT
 	return TRUE
@@ -176,7 +167,7 @@ GLOBAL_LIST_INIT(special_traits, build_special_traits())
 	var/bonus = player.prefs.race_bonus
 	if(!(bonus in character.dna.species.custom_selection))
 		return
-	var/full_bonus 
+	var/full_bonus
 	full_bonus = character.dna.species.custom_selection[bonus]
 	if(!full_bonus)
 		return
@@ -214,16 +205,19 @@ GLOBAL_LIST_INIT(special_traits, build_special_traits())
 
 /proc/apply_charflaw_equipment(mob/living/carbon/human/character, client/player)
 	var/has_extra_vice = FALSE
-	for(var/datum/charflaw/cf in character.charflaws) // if we didn't do this, someone could take hunted and targeted together and no other vice
-		if(!cf.needs_extra_vice)
+	var/needs_extra_vice = FALSE
+	for(var/datum/charflaw/cf in character.charflaws) // difficulty flaws don't count as each other's extra vice
+		if(cf.needs_extra_vice)
+			needs_extra_vice = TRUE
+		else
 			has_extra_vice = TRUE
 	for(var/datum/charflaw/cf in character.charflaws)
 		cf.apply_post_equipment(character)
-		if(cf.needs_extra_vice && !has_extra_vice)
-			var/datum/charflaw/randflaw/rf = new()
-			character.charflaws.Add(rf)
-			rf.apply_post_equipment(character)
 		record_featured_object_stat(FEATURED_STATS_VICES, cf.name)
+	if(needs_extra_vice && !has_extra_vice)
+		var/datum/charflaw/randflaw/rf = new()
+		character.charflaws.Add(rf)
+		rf.apply_post_equipment(character)
 
 /proc/apply_dnr_trait(mob/living/carbon/human/character, client/player)
 	ADD_TRAIT(player.mob, TRAIT_DNR, TRAIT_GENERIC)

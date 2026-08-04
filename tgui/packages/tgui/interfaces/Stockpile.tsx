@@ -9,14 +9,14 @@ import {
   INK_FAINT,
   INK_SOFT,
   inkButtonStyle,
-  pageStyle,
   PARCHMENT_SHADOW,
+  pageStyle,
   rulerStyle,
   SEAL_AMBER,
   SEAL_GREEN,
   SEAL_RED,
-  sectionHeaderStyle,
   SERIF,
+  sectionHeaderStyle,
   subTabBarStyle,
   subTabStyle,
   subtitleStyle,
@@ -113,7 +113,7 @@ const StockRowView = (props: {
   const canImport =
     !row.withdraw_disabled &&
     row.import_price > 0 &&
-    row.import_price <= data.budget;
+    (row.import_price <= data.budget || !!data.food_stipend);
   return (
     <div
       style={{
@@ -240,9 +240,11 @@ const StockRowView = (props: {
           title={
             row.import_price <= 0
               ? 'No region has supply of this good today.'
-              : data.charter_active
-                ? 'Import directly. Pays duty to the Crown.'
-                : 'Import directly. The surcharge covers transport.'
+              : !!data.food_stipend && row.import_price > data.budget
+                ? 'Food stipend covers this import through the treasury.'
+                : data.charter_active
+                  ? 'Import directly. Pays duty to the Crown.'
+                  : 'Import directly. The surcharge covers transport.'
           }
         >
           {row.import_price > 0 ? `Import ${row.import_price}m` : 'NO SUPPLY'}
@@ -287,9 +289,7 @@ export const Stockpile = () => {
               flexWrap: 'wrap',
             }}
           >
-            <span style={{ color: SEAL_AMBER }}>
-              Coinpouch
-            </span>
+            <span style={{ color: SEAL_AMBER }}>Coinpouch</span>
             <span
               style={{
                 color: data.budget > 0 ? INK : INK_FAINT,
@@ -299,14 +299,10 @@ export const Stockpile = () => {
               {data.budget}m
             </span>
             {!!data.food_stipend && (
-              <span style={{ color: SEAL_GREEN }}>
-                treasury-line
-              </span>
+              <span style={{ color: SEAL_GREEN }}>treasury-line</span>
             )}
             {!!data.below_floor && (
-              <span style={{ color: SEAL_RED }}>
-                crown ledger thin
-              </span>
+              <span style={{ color: SEAL_RED }}>crown ledger thin</span>
             )}
             <CharterChip data={data} />
             <div style={{ marginLeft: 'auto', display: 'flex', gap: '4px' }}>

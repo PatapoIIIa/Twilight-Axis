@@ -7,7 +7,7 @@
 	subclass_languages = list(/datum/language/kazengunese)
 	class_select_category = CLASS_CAT_KAZENGUN
 	category_tags = list(CTAG_MERCENARY)
-	traits_applied = list(TRAIT_BLOOD_RESISTANCE, TRAIT_NOPAINSTUN, TRAIT_HONORBOUND)
+	traits_applied = list(TRAIT_CRITICAL_RESISTANCE, TRAIT_HARDDISMEMBER, TRAIT_NOPAINSTUN, TRAIT_HONORBOUND) //TA EDIT
 	cmode_music = 'sound/music/combat_Kazengun_Overlord.ogg'
 	maximum_possible_slots = 1
 	subclass_stats = list(
@@ -33,7 +33,7 @@
 /datum/outfit/job/roguetown/mercenary/seonjang/pre_equip(mob/living/carbon/human/H)
 	..()
 	to_chat(H, span_warning("You are a Captain of the Clan, second to none. The blades and bows of the Ruma look to you for guidance - rally your warriors and lead by example!"))
-	armor = /obj/item/clothing/suit/roguetown/armor/regenerating/skin/easttats
+	armor = /obj/item/clothing/suit/roguetown/armor/manual/meditation/easttats/ruma
 	pants = /obj/item/clothing/under/roguetown/heavy_leather_pants/eastpants1
 	gloves = /obj/item/clothing/gloves/roguetown/eastgloves2
 	shoes = /obj/item/clothing/shoes/roguetown/armor/rumaclan

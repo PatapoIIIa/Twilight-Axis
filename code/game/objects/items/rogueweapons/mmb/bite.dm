@@ -46,6 +46,10 @@
 			. = ..()
 			return
 	user.changeNext_move(clickcd)
+	if(ismob(target))
+		SEND_SIGNAL(user, COMSIG_MOB_ATTACK_HAND, user)
+		if(SEND_SIGNAL(target, COMSIG_MOB_ATTACKED_BY_BITE, user) & COMPONENT_HAND_NO_ATTACK)
+			return
 	target.onbite(user)
 	. = ..()
 	return
@@ -120,6 +124,7 @@
 		return
 
 	next_attack_msg.Cut()
+
 	user.break_invisibility_from_combat()
 	user.do_attack_animation_simple(src, ATTACK_EFFECT_BITE)
 	playsound(user, 'sound/gore/flesh_eat_01.ogg', vol = 50, vary = FALSE, extrarange = -2, ignore_walls = FALSE, quiet = TRUE)
@@ -185,8 +190,18 @@
 				if(HAS_TRAIT(src, TRAIT_SILVER_BLESSED))
 					to_chat(user, span_warning("BLEH! [bite_victim] tastes of SILVER! My gift cannot take hold."))
 				else
-					caused_wound?.werewolf_infect_attempt()
-					if(prob(50))
+					if(caused_wound)
+						var/infected = FALSE
+
+						for(var/datum/wound/W in affecting.wounds)
+							if(W.werewolf_infect_attempt())
+								infected = TRUE
+								break
+
+						if(infected)
+							to_chat(user, span_boldnotice("I have successfully delivered the gift to [bite_victim] through their new wound!"))
+
+					if(prob(30))
 						user.werewolf_feed(bite_victim, 10)
 			if(istype(user.dna.species, /datum/species/gnoll))
 				if(prob(30))
@@ -345,7 +360,20 @@
 				WEREWOLF CHEW.
 			*/
 			if(istype(user.dna.species, /datum/species/werewolf))
-				if(prob(50))
+				if(HAS_TRAIT(C, TRAIT_SILVER_BLESSED))
+					to_chat(user, span_warning("BLEH! [C] tastes of SILVER! My gift cannot take hold."))
+				else
+					if(caused_wound)
+						var/infected = FALSE
+						for(var/datum/wound/W in limb_grabbed.wounds)
+							if(W.werewolf_infect_attempt())
+								infected = TRUE
+								break
+
+						if(infected)
+							to_chat(user, span_boldnotice("I have delivered the gift to [C] while chewing on their [parse_zone(sublimb_grabbed)]!"))
+
+				if(prob(30))
 					user.werewolf_feed(C)
 
 			/*

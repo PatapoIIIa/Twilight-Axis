@@ -191,6 +191,8 @@
 				if(get_dist(get_turf(user), get_turf(M)) <= user.used_intent.reach)
 					user.do_attack_animation(M, user.used_intent.animname, used_item = src, used_intent = user.used_intent, simplified = TRUE)
 			return
+	if(HAS_TRAIT(user, TRAIT_DUALWIELDER))
+		user.process_dualwield(M, src, null)
 	var/rmb_stam_penalty = 0
 	if(istype(user.rmb_intent, /datum/rmb_intent/strong))
 		rmb_stam_penalty = EXTRA_STAMDRAIN_SWIFSTRONG
@@ -240,12 +242,11 @@
 	SEND_SIGNAL(src, COMSIG_ITEM_ATTACK_SUCCESS, M, user)
 	SEND_SIGNAL(M, COMSIG_ITEM_ATTACKED_SUCCESS, src, user)
 	if(M.attacked_by(src, user))
-		if(user.used_intent == cached_intent)
-			var/tempsound = user.used_intent.hitsound
-			if(tempsound)
-				playsound(M.loc,  tempsound, 100, FALSE, -1)
-			else
-				playsound(M.loc,  "nodmg", 100, FALSE, -1)
+		var/tempsound = cached_intent?.hitsound
+		if(tempsound)
+			playsound(M.loc, tempsound, 100, FALSE, -1)
+		else
+			playsound(M.loc, "nodmg", 100, FALSE, -1)
 
 		if(M.has_flaw(/datum/charflaw/addiction/thrillseeker))
 			var/datum/component/arousal/CAR = M.GetComponent(/datum/component/arousal)
@@ -348,10 +349,6 @@
 		var/mob/living/carbon/C = user
 		if(C.domhand)
 			used_str = C.get_str_arms(C.used_hand)
-	if(ishuman(user))
-		var/mob/living/carbon/human/user_human = user
-		if(user_human.clan) // For each level of potence user gains 0.5 STR, at 5 Potence their STR buff is 2.5
-			used_str += floor(0.5 * user_human.potence_weapon_buff)
 	if(used_str >= 11)
 		var/strmod
 		if(used_str > STRENGTH_SOFTCAP && !HAS_TRAIT(user, TRAIT_STRENGTH_UNCAPPED))

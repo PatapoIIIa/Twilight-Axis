@@ -60,13 +60,17 @@
 			wrists = /obj/item/clothing/neck/roguetown/psicross/undivided
 			head = /obj/item/clothing/head/roguetown/helmet/heavy/undivided_alt
 			if(H.mind)
-				var/cloaks = list("Cloak", "Tabard")
+				var/cloaks = list("Cloak", "Tabard", "Clerical Cloak", "Clerical Tabard")
 				var/cloakchoice = input(H,"Choose your covering", "TAKE UP FASHION") as anything in cloaks
 				switch(cloakchoice)
 					if("Cloak")
 						cloak = /obj/item/clothing/cloak/undivided
 					if("Tabard")
 						cloak = /obj/item/clothing/cloak/templar/undivided_alt
+					if("Clerical Cloak")
+						cloak = /obj/item/clothing/cloak/undividedcleric
+					if("Clerical Tabard")
+						cloak = /obj/item/clothing/cloak/templar/undividedcleric
 		if(/datum/patron/divine/astrata)
 			wrists = /obj/item/clothing/neck/roguetown/psicross/astrata
 			head = /obj/item/clothing/head/roguetown/helmet/heavy/astratan
@@ -98,7 +102,7 @@
 			cloak = /obj/item/clothing/cloak/templar/eoran
 		if(/datum/patron/divine/noc)
 			wrists = /obj/item/clothing/neck/roguetown/psicross/noc
-			head = /obj/item/clothing/head/roguetown/helmet/heavy/nochelm
+			head = snouthelm_pick(H, /obj/item/clothing/head/roguetown/helmet/heavy/nochelm, /obj/item/clothing/head/roguetown/helmet/heavy/nochelm/snouted)
 			cloak = /obj/item/clothing/cloak/tabard/devotee/noc
 		if(/datum/patron/divine/ravox)
 			wrists = /obj/item/clothing/neck/roguetown/psicross/ravox

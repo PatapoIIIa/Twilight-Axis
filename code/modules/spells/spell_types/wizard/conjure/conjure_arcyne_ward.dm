@@ -3,6 +3,7 @@
 #define UPGRADE_ARCYNE_INTEGRITY 300
 
 /datum/action/cooldown/spell/conjure_arcyne_ward
+	source_aspect = /datum/magic_aspect/pseudo/wards
 	name = "Conjure Arcyne Ward"
 	desc = "Conjure an invisible arcyne ward that covers your entire body. Cast again to dismiss it. \
 	The ward withdraws from areas where you wear real armor, leaving those to your equipment instead - \
@@ -33,6 +34,7 @@
 	invocation_type = INVOCATION_SHOUT
 
 	charge_required = TRUE
+	charge_swingdelay_type = SWINGDELAY_CANCEL
 	charge_time = 6 SECONDS
 	charge_slowdown = 3
 	charge_sound = 'sound/magic/charging.ogg'
@@ -43,7 +45,8 @@
 	point_cost = 2
 	spell_tier = 2
 	spell_impact_intensity = SPELL_IMPACT_NONE
-	spell_requirements = SPELL_REQUIRES_NO_ANTIMAGIC | SPELL_REQUIRES_HUMAN | SPELL_REQUIRES_SAME_Z
+	charge_swingdelay_type = SWINGDELAY_CANCEL
+	spell_requirements = SPELL_REQUIRES_NO_ANTIMAGIC | SPELL_REQUIRES_HUMAN | SPELL_REQUIRES_SAME_Z | SPELL_REQUIRES_NO_MOVE
 
 	var/obj/item/clothing/suit/roguetown/armor/manual/arcyne_ward/conjured_ward
 	var/ward_type = /obj/item/clothing/suit/roguetown/armor/manual/arcyne_ward
@@ -144,7 +147,7 @@
 /datum/action/cooldown/spell/conjure_arcyne_ward/dragonhide
 	name = "Conjure Dragonhide Ward"
 	desc = "Conjure a dragonhide ward - an upgraded arcyne ward hardened with draconic scales. \
-	Grants fire resistance, halving fire damage and causing flames to burn out faster and bolsters constitution. 300 integrity. \
+	Grants fire resistance, halving fire damage and causing flames to burn out faster. 300 integrity. \
 	Otherwise functions as a standard arcyne ward - yields coverage to real armor, does not regenerate. \
 	Cast again to dismiss. Cooldown begins when dismissed or destroyed."
 	button_icon_state = "conjure_dragonhide"
@@ -153,13 +156,14 @@
 	dismiss_invocation = "Draconis Dissipo!"
 	regen_invocation = "Draconis Restauro!"
 	point_cost = 4
+	exclusive_group = "arcyne_ward"
 	ward_type = /obj/item/clothing/suit/roguetown/armor/manual/arcyne_ward/dragonhide
 	regen_spell_type = /datum/action/cooldown/spell/regenerate_arcyne_ward/dragonhide
 
 /datum/action/cooldown/spell/conjure_arcyne_ward/crystalhide
 	name = "Conjure Crystalhide Ward"
 	desc = "Conjure a crystalhide ward - an upgraded arcyne ward crystallized with leyline energy. \
-	Grants brigandine-tier protection and bolsters intelligence. Shatters violently when broken, knocking back nearby foes. 300 integrity. \
+	Grants brigandine-tier protection. Shatters violently when broken, knocking back nearby foes. 300 integrity. \
 	Otherwise functions as a standard arcyne ward - yields coverage to real armor, does not regenerate. \
 	Cast again to dismiss. Cooldown begins when dismissed or destroyed."
 	button_icon_state = "conjure_dragonhide"
@@ -170,12 +174,14 @@
 	charge_time = 6 SECONDS
 	point_cost = 4
 	spell_tier = 3
+	exclusive_group = "arcyne_ward"
 	ward_type = /obj/item/clothing/suit/roguetown/armor/manual/arcyne_ward/crystalhide
 	regen_spell_type = /datum/action/cooldown/spell/regenerate_arcyne_ward/crystalhide
 
 // --- Regenerate Arcyne Ward (paired spell, granted while a ward is active) ---
 
 /datum/action/cooldown/spell/regenerate_arcyne_ward
+	source_aspect = /datum/magic_aspect/pseudo/wards
 	name = "Regenerate Arcyne Ward"
 	desc = "Channel a restoration on my active Arcyne Ward, returning it to full integrity. \
 	The channel takes 10 seconds and costs stamina and energy proportional to how damaged the ward is - \
@@ -196,6 +202,7 @@
 	var/upfront_stamina_cost = 70
 
 	charge_required = TRUE
+	charge_swingdelay_type = SWINGDELAY_CANCEL
 	charge_time = 10 SECONDS
 	hold_drain = 1
 	charge_slowdown = 3
@@ -206,7 +213,7 @@
 	associated_skill = /datum/skill/magic/arcane
 	spell_tier = 2
 	spell_impact_intensity = SPELL_IMPACT_NONE
-	spell_requirements = SPELL_REQUIRES_NO_ANTIMAGIC | SPELL_REQUIRES_HUMAN | SPELL_REQUIRES_SAME_Z
+	spell_requirements = SPELL_REQUIRES_NO_ANTIMAGIC | SPELL_REQUIRES_HUMAN | SPELL_REQUIRES_SAME_Z | SPELL_REQUIRES_NO_MOVE
 
 	/// Back-reference to the conjure spell that owns this action, set by grant_regen_action().
 	var/datum/action/cooldown/spell/conjure_arcyne_ward/parent_spell

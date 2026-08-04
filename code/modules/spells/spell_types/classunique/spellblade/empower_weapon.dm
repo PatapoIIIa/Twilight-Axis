@@ -1,6 +1,7 @@
 #define EMPOWER_FILTER "empower_glow"
 
 /datum/action/cooldown/spell/empower_weapon
+	source_aspect = /datum/magic_aspect/pseudo/spellblade
 	name = "Empower Weapon"
 	desc = "Channel all accumulated momentum into your next strike, empowering it to bypass parry and dodge. Works with both weapons and unarmed attacks. \
 		Requires 5+ momentum. Burns ALL momentum."
@@ -77,8 +78,13 @@
 /datum/status_effect/buff/empowered_strike
 	id = "empowered_strike"
 	alert_type = /atom/movable/screen/alert/status_effect/buff/empowered_strike
-	duration = 5 SECONDS
+	duration = 8 SECONDS
 	status_type = STATUS_EFFECT_UNIQUE
+
+/datum/status_effect/buff/empowered_strike/on_creation(mob/living/new_owner, new_duration)
+	if(new_duration)
+		duration = new_duration
+	return ..()
 
 /datum/status_effect/buff/empowered_strike/on_apply()
 	. = ..()

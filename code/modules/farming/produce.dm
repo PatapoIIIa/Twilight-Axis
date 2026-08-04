@@ -137,6 +137,7 @@
 	fried_type = /obj/item/reagent_containers/food/snacks/rogue/grilledcorn
 
 /obj/item/reagent_containers/food/snacks/grown/apple
+	dish_type = DISH_FRUIT
 	seed = /obj/item/seeds/apple
 	name = "apple"
 	desc = "Deliciously crisp and fragrant. It's said that archers will sometimes \
@@ -210,6 +211,7 @@
 		)
 
 /obj/item/reagent_containers/food/snacks/grown/fruit
+	dish_type = DISH_FRUIT
 	name = "generic fruit"
 	desc = "Uh oh, this shouldn't be here."
 	bitesize = 2
@@ -217,6 +219,7 @@
 	foodtype = FRUIT
 	faretype = FARE_POOR
 	rotprocess = SHELFLIFE_DECENT
+	chopping_sound = TRUE
 	splat_type = /obj/effect/decal/cleanable/food/plant_smudge
 
 /obj/item/reagent_containers/food/snacks/grown/fruit/pear
@@ -264,6 +267,8 @@
 	splat_color = "#FFA500"
 
 /obj/item/reagent_containers/food/snacks/grown/fruit/tangerine_sugared
+	cuisine = CUISINE_RANESHENI
+	dish_type = DISH_FRUIT|DISH_SWEET
 	name = "smothered tangerine"
 	desc = "Sugared tangerines, smothered in sweetness and awaiting to be baptized in a pot of boiling fat."
 	icon_state = "tangerinesugar"
@@ -321,6 +326,8 @@
 		)
 
 /obj/item/reagent_containers/food/snacks/grown/fruit/blackberry_sugared
+	cuisine = CUISINE_RANESHENI
+	dish_type = DISH_FRUIT|DISH_SWEET
 	name = "smothered blackberry"
 	desc = "Sugared blackberries, smothered in sweetness and awaiting to be baptized in a pot of boiling fat."
 	icon_state = "blackberrysugar"
@@ -354,7 +361,8 @@
 	name = "split tomato"
 	seed = /obj/item/seeds/tomato
 	desc = "Split halves of a plump, red fruit with juicy flesh and a balanced sweet-tart flavor. Ruptured skin cradles a deliciously silky surprise, merely a palm away from being smeared into sauce atop flatdough or put through a millstone for marinara."
-	icon_state = "tomato_split"
+	icon = 'modular/Neu_Food/icons/raw/raw_fruit.dmi'
+	icon_state = "tomato_sliced"
 	tastes = list("to" = 1, "mato" = 1)
 	splat_color = "#CD5320"
 	mill_result = /obj/item/reagent_containers/food/snacks/grown/fruit/tomato_sauce
@@ -363,13 +371,14 @@
 	name = "tomato sauce"
 	seed = null
 	desc = "A smooth, ready-made sauce of crushed tomato. Its juicy, sweet-tart flavor pairs perfectly with noodles - second only to pesto."
-	icon = 'modular/Neu_Food/icons/raw/raw_veggies.dmi'
+	icon = 'modular/Neu_Food/icons/raw/raw_fruit.dmi'
 	icon_state = "tomato_sauce"
 	tastes = list("to" = 1, "ma" = 1)
 	splat_color = "#CD5320"
 
 
 /obj/item/reagent_containers/food/snacks/grown/berries/rogue
+	dish_type = DISH_FRUIT
 	seed = /obj/item/seeds/berryrogue
 	name = "jacksberries"
 	desc = ""
@@ -460,6 +469,8 @@
 	mill_result = /obj/item/reagent_containers/powder/rocknut
 
 /obj/item/reagent_containers/food/snacks/grown/nut_sugared
+	cuisine = CUISINE_RANESHENI
+	dish_type = DISH_SWEET
 	name = "smothered rocknut"
 	desc = "Sugary rocknuts, smothered in herbal sweetness and awaiting a baptism in boiling fat."
 	icon_state = "rocknutssugar"
@@ -797,6 +808,7 @@
 	rotprocess = null
 
 /obj/item/reagent_containers/food/snacks/grown/carrot
+	dish_type = DISH_VEGETABLE
 	name = "carrot"
 	desc = "A long vegetable said to help with eyesight. Often baked"
 	icon_state = "carrot"
@@ -869,6 +881,7 @@
 
 /*	..................   Cucumber   ................... */
 /obj/item/reagent_containers/food/snacks/grown/cucumber
+	dish_type = DISH_VEGETABLE
 	name = "cucumber"
 	desc = "A long, green vegetable that is crunchy and refreshing. Can be sliced for easier consumption."
 	icon_state = "cucumber"
@@ -880,6 +893,7 @@
 	seed = /obj/item/seeds/cucumber
 
 /obj/item/reagent_containers/food/snacks/grown/eggplant
+	dish_type = DISH_VEGETABLE
 	name = "eggplant"
 	desc = "A large, purple vegetable with a mild taste. Can be carved to be filled up."
 	icon_state = "eggplant"

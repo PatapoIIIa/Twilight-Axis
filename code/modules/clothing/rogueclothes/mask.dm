@@ -32,20 +32,8 @@
 	if(!istype(loc, /mob/living/carbon))
 		return
 	var/mob/living/carbon/H = user
-	if(icon_state == "[initial(icon_state)]_snout")
-		icon_state = initial(icon_state)
+	if(toggle_snout())
 		H.update_inv_wear_mask()
-		update_icon()
-		return
-
-	var/icon/J = new('icons/roguetown/clothing/onmob/masks.dmi')
-	var/list/istates = J.IconStates()
-	for(var/icon_s in istates)
-		if(findtext(icon_s, "[icon_state]_snout"))
-			icon_state += "_snout"
-			H.update_inv_wear_mask()
-			update_icon()
-			return
 
 /obj/item/clothing/mask/rogue/get_mechanics_examine()
 	. = ..()
@@ -199,6 +187,7 @@
 /obj/item/clothing/mask/rogue/equipped(mob/user, slot)
 	..()
 	user.update_fov_angles()
+	restore_snout()
 
 /obj/item/clothing/mask/rogue/dropped(mob/user)
 	..()
@@ -302,7 +291,7 @@
 		worn = TRUE
 
 /obj/item/clothing/mask/rogue/facemask/steel/confessor/ComponentInitialize()
-	AddComponent(/datum/component/armour_filtering/positive, TRAIT_NOSTINK, "plague_resistant")
+	AddElement(/datum/element/plague_ward)
 
 /obj/item/clothing/mask/rogue/facemask/steel/confessor/dropped(mob/user)
 	. = ..()
@@ -561,7 +550,7 @@
 	item_state = "feldmask"
 
 /obj/item/clothing/mask/rogue/physician/ComponentInitialize()
-	AddComponent(/datum/component/armour_filtering/positive, TRAIT_NOSTINK, "plague_resistant")
+	AddElement(/datum/element/plague_ward)
 
 /obj/item/clothing/mask/rogue/skullmask
 	name = "skull mask"
@@ -691,7 +680,7 @@
 	salvage_result = /obj/item/natural/bone
 
 /obj/item/clothing/mask/rogue/courtphysician/ComponentInitialize()
-	AddComponent(/datum/component/armour_filtering/positive, TRAIT_NOSTINK, "plague_resistant")
+	AddElement(/datum/element/plague_ward)
 
 //gemcarved masks from Vanderlin
 
@@ -711,7 +700,6 @@
 	max_integrity = ARMOR_INT_SIDE_CLOTH
 	anvilrepair = /datum/skill/craft/armorsmithing //Maybe these shouldn't be repairable, someone else can do that if they want.
 	clothing_flags = CANT_SLEEP_IN
-	sellprice = 70
 	smeltresult = null
 	salvage_result = null
 

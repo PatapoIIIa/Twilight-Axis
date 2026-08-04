@@ -33,9 +33,12 @@ SUBSYSTEM_DEF(vote)
 	var/list/map_vote_coefficients = list()
 	var/list/generated_actions = list()
 	var/static/list/everyone_is_equal = list("custom", "map") // TA EDIT
+	/// Vote types that require lobby players to ready up before voting.
+	var/static/list/ready_required_modes = list("gamemode", "storyteller")
 
 /datum/controller/subsystem/vote/fire()	//called by master_controller
 	if(mode)
+		remove_ineligible_votes()
 		var/vote_period = custom_vote_period || CONFIG_GET(number/vote_period)
 		time_remaining = round((started_time + vote_period - world.time)/10)
 
@@ -51,6 +54,7 @@ SUBSYSTEM_DEF(vote)
 /datum/controller/subsystem/vote/proc/end_vote()
 	if(!mode)
 		return
+	remove_ineligible_votes()
 	result()
 	for(var/client/C in voting)
 		C << browse(null, "window=vote;can_close=0;size=[vote_width]x[vote_height]")
@@ -473,7 +477,7 @@ SUBSYSTEM_DEF(vote)
 					else
 						GLOB.master_mode = .
 			if("map")
-				save_map_vote_log(.)
+				// save_map_vote_log(.)
 				SSmapping.changemap(global.config.maplist[.])
 				SSmapping.map_voted = TRUE
 			if("endround")
@@ -515,9 +519,13 @@ SUBSYSTEM_DEF(vote)
 /datum/controller/subsystem/vote/proc/can_client_vote(client/C)
 	if(isnull(C))
 		return FALSE
+	if(C.holder)
+		return TRUE
+	if(!(mode in ready_required_modes))
+		return TRUE
 	if(istype(C.mob, /mob/dead/new_player))
 		var/mob/dead/new_player/NP = C.mob
-		if(NP.ready != PLAYER_READY_TO_PLAY)
+		if(mode != "map" && NP.ready != PLAYER_READY_TO_PLAY)
 			return FALSE
 	return TRUE
 
@@ -640,6 +648,14 @@ SUBSYSTEM_DEF(vote)
 		save_storyteller_vote_log(null, "active")
 	return TRUE
 
+/datum/controller/subsystem/vote/proc/remove_ineligible_votes()
+	if(!(mode in ready_required_modes))
+		return
+	for(var/voter_ckey in voted.Copy())
+		var/client/C = GLOB.directory[voter_ckey]
+		if(C && !can_client_vote(C))
+			remove_vote_for_ckey(voter_ckey)
+
 /datum/controller/subsystem/vote/proc/submit_vote(vote)
 	// Voting where vote power is equal for all
 	if(mode)
@@ -746,8 +762,8 @@ SUBSYSTEM_DEF(vote)
 		message_admins(span_danger("Admin [key_name_admin(usr)] start a vote of [vote_type]!"))
 		log_admin("Admin [key_name_admin(usr)] start a vote of [vote_type]!")
 		mode = vote_type
-		if(mode == "map")
-			load_map_vote_coefficients()
+		// if(mode == "map")
+		// 	load_map_vote_coefficients()
 		initiator = initiator_key
 		started_time = world.time
 		var/text = "[capitalize(mode)] vote started by [initiator]."
@@ -822,8 +838,8 @@ SUBSYSTEM_DEF(vote)
 			. += "<div style='color:#992414;font-size:0.9rem;margin-bottom:6px;'>[pool_text]</div>"
 			. += render_storyteller_choices(can_vote, C)
 		else
-			if(mode == "map")
-				. += "<div style='color:#5a9f54;font-size:0.95rem;margin-bottom:6px;'>Каждая карта копит свой бонус отдельно: первый проигрыш даёт +20% к весу голоса, второй +10%, третий и последующие +5%. Победившая карта сбрасывает только свой бонус до x1.</div>"
+			// if(mode == "map")
+			// 	. += "<div style='color:#5a9f54;font-size:0.95rem;margin-bottom:6px;'>Каждая карта копит свой бонус отдельно: первый проигрыш даёт +20% к весу голоса, второй +10%, третий и последующие +5%. Победившая карта сбрасывает только свой бонус до x1.</div>"
 			. += "<ul>"
 			var/selected_option = vote_selections[C.ckey]
 			for(var/i=1,i<=choices.len,i++)

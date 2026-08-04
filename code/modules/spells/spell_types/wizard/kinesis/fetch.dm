@@ -21,6 +21,7 @@
 	charge_required = TRUE
 	weapon_cast_penalized = TRUE
 	charge_time = CHARGETIME_MINOR
+	charge_swingdelay_type = SWINGDELAY_PENALTY
 	hold_drain = 0
 	charge_slowdown = CHARGING_SLOWDOWN_SMALL
 	charge_sound = 'sound/magic/charging.ogg'
@@ -35,13 +36,14 @@
 
 /obj/projectile/magic/fetch
 	name = "bolt of fetching"
+	expose_caster_on_deflect = TRUE
 	icon_state = "cursehand0"
 	flag = "blunt"
 	speed = MAGE_PROJ_FAST
 	range = 15
 	cannot_cross_z = TRUE
 
-/obj/projectile/magic/fetch/on_hit(target)
+/obj/projectile/magic/fetch/on_hit(target, blocked = FALSE)
 	. = ..()
 	var/atom/throw_target = get_step(firer, get_dir(firer, target))
 	if(isliving(target))
@@ -49,7 +51,9 @@
 		if(L.anti_magic_check() || !firer)
 			L.visible_message(span_warning("[src] vanishes on contact with [target]!"))
 			return BULLET_ACT_BLOCK
-		L.throw_at(throw_target, FETCH_YEET_RANGE, 4)
+		if(blocked >= 100)
+			return
+		L.throw_at(throw_target, out_of_effective_range() ? round(FETCH_YEET_RANGE / 2) : FETCH_YEET_RANGE, 4)
 	else
 		if(isitem(target))
 			var/obj/item/I = target

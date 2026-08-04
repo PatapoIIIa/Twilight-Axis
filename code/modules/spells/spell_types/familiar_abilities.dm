@@ -27,7 +27,7 @@
 	if(familiar.health<=0)
 		// they're dead; track the vestige
 		return track_vestige(user,familiar)
-	var/message = input(user, "You make a connection. What are you trying to say?")
+	var/message = sanitize(input(user, "You make a connection. What are you trying to say?"))
 	if(!message)
 		return FALSE
 	to_chat_immediate(familiar, "Arcane whispers fill the back of my head, resolving into [user]'s voice: <font color=#7246ff>[message]</font>")
@@ -94,7 +94,7 @@
 		to_chat(user, span_warning("You cannot sense your summoner's mind."))
 		return FALSE
 
-	var/message = input(user, "You make a connection. What are you trying to say?")
+	var/message = sanitize(input(user, "You make a connection. What are you trying to say?"))
 	if(!message)
 		return FALSE
 	to_chat_immediate(summoner, "Arcane whispers fill the back of my head, resolving into [user.real_name]'s voice: <font color=#7246ff>[message]</font>")
@@ -102,6 +102,93 @@
 	user.whisper(message, language = /datum/language/common)
 	log_game("[key_name(user)] sent a message to [key_name(summoner)] with contents [message]")
 	return TRUE
+
+/datum/action/cooldown/spell/rootcheck
+	name = "Nature's Bounty"
+	desc = "Invigorate the lyfe in a small area, causing hidden roots to bear fruit instantly."
+	button_icon_state = "ensnare"
+
+	click_to_activate = TRUE
+	self_cast_possible = TRUE
+	charge_required = TRUE
+	charge_time = 1 SECONDS
+	cooldown_time = 10 MINUTES
+
+	primary_resource_type = SPELL_COST_NONE
+	spell_requirements = NONE
+	spell_impact_intensity = SPELL_IMPACT_NONE
+
+	var/static/list/rootpool = list( // basically most crops, including poison berries. also a few alchemically-useful things. and junk items to make it less useful
+		/obj/item/natural/fibers,
+		/obj/item/grown/log/tree/stick,
+		/obj/item/natural/thorn,
+		/obj/item/natural/chaff/wheat, // what, you thought it'd be usable? nah you have to shuck that yourself, it's freshly-grown
+		/obj/item/natural/chaff/oat,
+		/obj/item/natural/chaff/rice,
+		/obj/item/reagent_containers/food/snacks/grown/maize,
+		/obj/item/reagent_containers/food/snacks/grown/apple,
+		/obj/item/reagent_containers/food/snacks/grown/fruit/pear,
+		/obj/item/reagent_containers/food/snacks/grown/fruit/lemon,
+		/obj/item/reagent_containers/food/snacks/grown/fruit/lime,
+		/obj/item/reagent_containers/food/snacks/grown/fruit/tangerine,
+		/obj/item/reagent_containers/food/snacks/grown/fruit/plum,
+		/obj/item/reagent_containers/food/snacks/grown/fruit/strawberry,
+		/obj/item/reagent_containers/food/snacks/grown/fruit/blackberry,
+		/obj/item/reagent_containers/food/snacks/grown/fruit/raspberry,
+		/obj/item/reagent_containers/food/snacks/grown/fruit/tomato,
+		/obj/item/reagent_containers/food/snacks/grown/nut,
+		/obj/item/reagent_containers/food/snacks/grown/sugarcane,
+		/obj/item/reagent_containers/food/snacks/grown/vegetable/turnip,
+		/obj/item/reagent_containers/food/snacks/grown/sunflower,
+		/obj/item/reagent_containers/food/snacks/grown/rogue/fyritius,
+		/obj/item/reagent_containers/food/snacks/grown/rogue/swampweed,
+		/obj/item/reagent_containers/food/snacks/grown/rogue/pipeweed,
+		/obj/item/reagent_containers/food/snacks/grown/onion/rogue,
+		/obj/item/reagent_containers/food/snacks/grown/cabbage/rogue,
+		/obj/item/reagent_containers/food/snacks/grown/potato/rogue,
+		/obj/item/reagent_containers/food/snacks/grown/garlick/rogue,
+		/obj/item/reagent_containers/food/snacks/grown/rogue/poppy,
+		/obj/item/reagent_containers/food/snacks/grown/coffee,
+		/obj/item/reagent_containers/food/snacks/grown/tea,
+		/obj/item/reagent_containers/food/snacks/grown/carrot,
+		/obj/item/reagent_containers/food/snacks/grown/cucumber,
+		/obj/item/reagent_containers/food/snacks/grown/eggplant,
+		/obj/item/reagent_containers/food/snacks/grown/berries/rogue,
+		/obj/item/reagent_containers/food/snacks/grown/berries/rogue/poison,
+		/obj/item/alch/atropa, // herbs, synergizes with fae brew and makes the food potential less strong
+		/obj/item/alch/matricaria,
+		/obj/item/alch/symphitum,
+		/obj/item/alch/taraxacum,
+		/obj/item/alch/euphrasia,
+		/obj/item/alch/paris,
+		/obj/item/alch/calendula,
+		/obj/item/alch/mentha,
+		/obj/item/alch/urtica,
+		/obj/item/alch/salvia,
+		/obj/item/alch/hypericum,
+		/obj/item/alch/benedictus,
+		/obj/item/alch/valeriana,
+		/obj/item/alch/artemisia,
+		/obj/item/alch/rosa,
+		/obj/item/reagent_containers/food/snacks/grown/manabloom,
+	)
+
+/datum/action/cooldown/spell/rootcheck/cast(atom/cast_on)
+	. = ..()
+	var/turf/target = get_turf(cast_on)
+	if(!target)
+		return FALSE
+
+	target.visible_message(span_notice("Hidden roots tremble underfoot as crops flourish before your very eyes, bursting through the ground!"))
+	for(var/i in 1 to 3)
+		var/obj/item/path = pick(rootpool)
+		new path(target)
+
+/datum/action/cooldown/spell/invisibility/fae
+	name = "Fey Shroud"
+	desc = "Cloak yourself, blending into the surroundings. Attacking, being attacked, or casting another ability will break your stealth."
+	click_to_activate = FALSE
+	spell_requirements = SPELL_REQUIRES_SAME_Z
 
 /mob/living/simple_animal/pet/familiar/proc/clear_familiar_click_intercepts()
 	if(ranged_ability)
@@ -137,69 +224,6 @@
 		action.build_all_button_icons(ALL, TRUE)
 
 	update_action_buttons(TRUE)
-
-/datum/action/cooldown/spell/familiar_transform
-	name = "Spirit Transformation"
-	desc = "Draw your form into itself, becoming a small orb that is wearable as a pendant, or revert to your original form."
-	button_icon_state = "rune2"
-
-	click_to_activate = FALSE
-	self_cast_possible = TRUE
-	charge_required = FALSE
-	cooldown_time = 1 SECONDS
-
-	primary_resource_type = SPELL_COST_NONE
-	spell_requirements = NONE
-	spell_impact_intensity = SPELL_IMPACT_NONE
-
-/datum/action/cooldown/spell/familiar_transform/IsAvailable(feedback = FALSE)
-	var/mob/living/simple_animal/pet/familiar/user = owner
-	if(istype(user) && istype(user.loc, /obj/item/magic/familiar/familiar_spirit))
-		var/old_check_flags = check_flags
-		check_flags &= ~AB_CHECK_IMMOBILE
-		. = ..(feedback)
-		check_flags = old_check_flags
-		return
-	return ..(feedback)
-
-/datum/action/cooldown/spell/familiar_transform/cast(atom/cast_on)
-	. = ..()
-	var/mob/living/simple_animal/pet/familiar/user = owner
-	if(!istype(user))
-		return FALSE
-
-	if(isturf(user.loc))
-		// we're on the ground somewhere, so we should become orb
-		var/obj/item/magic/familiar/familiar_spirit/spirit = new /obj/item/magic/familiar/familiar_spirit(user.loc)
-		spirit.icon = user.icon
-		spirit.icon_state = user.icon_living
-		spirit.name = user.name
-		spirit.desc = "A small orb, containing the spirit of [user.name]."
-		user.clear_familiar_click_intercepts()
-		user.forceMove(spirit)
-		user.status_flags |= GODMODE
-		user.reset_perspective()
-		user.refresh_familiar_action_buttons(TRUE)
-		return TRUE
-
-	if(user.health <= 0) // you shouldn't be able to cast this while dead, but just in case
-		return FALSE
-
-	var/obj/item/magic/familiar/familiar_spirit/spirit = user.loc
-	if(!istype(spirit)) // we might be inside another item like warden tools
-		return FALSE
-
-	var/turf/T = get_turf(user)
-	if(!T)
-		return FALSE
-
-	user.clear_familiar_click_intercepts()
-	user.forceMove(T)
-	user.status_flags &= ~GODMODE
-	user.reset_perspective()
-	user.refresh_familiar_action_buttons(TRUE)
-	qdel(spirit)
-	return TRUE
 
 /datum/action/cooldown/spell/fae_brew
 	name = "Alchemical Stomach"
@@ -255,7 +279,7 @@
 			span_notice("[user.name] gently bites the top of [targets[1]], filling it with an alchemical cocktail..."),
 			span_notice("You gently bite the top of [targets[1]], filling it with your alchemical cocktail...")
 		)
-		// we're not biting a mob, so we can loop for convenience 
+		// we're not biting a mob, so we can loop for convenience
 		while(do_after(user, 1 SECONDS, FALSE, target) && user.reagents.trans_to(targets[1], 5, transfered_by = user))
 			user.visible_message(
 				span_notice("[user.name] fills [targets[1]] with more of [user.p_their()] alchemical cocktail..."),
@@ -334,6 +358,11 @@
 	fluff_desc = ""
 	spell_requirements = SPELL_REQUIRES_NO_ANTIMAGIC | SPELL_REQUIRES_SAME_Z
 
+/datum/action/cooldown/spell/aetherknife/elemental
+	name = "Shape Knife"
+	fluff_desc = ""
+	spell_requirements = SPELL_REQUIRES_NO_ANTIMAGIC | SPELL_REQUIRES_SAME_Z
+
 /obj/item/rogueweapon/woodstaff/implement/greater/elemental
 	name = "Staff of the Binder"
 	desc = "A mage's staff crowned with the spirit-gem of a familiar. The gem captures excess energy dissipated into the air when a spell is cast, giving a generous share of it back to the wielder."
@@ -341,7 +370,7 @@
 
 /datum/action/cooldown/spell/arcyne_forge/elemental
 	name = "Earthen Forge"
-	desc = "Shape your earthen form into a tool or weapon. Shaped items have halved durability. When the item breaks, you will revert to your original form. Cast again to manually revert."
+	desc = "Shape your earthen form into a tool or weapon. When the item breaks, you will revert to your original form. Cast again to manually revert."
 	spell_requirements = SPELL_REQUIRES_NO_ANTIMAGIC | SPELL_REQUIRES_SAME_Z
 	conjure_options = list(
 		// Staff
@@ -409,8 +438,6 @@
 	var/item_path = conjure_options[choice]
 	var/obj/item/R = new item_path(H.drop_location())
 
-	// Halve durability
-	R.max_integrity = round(R.max_integrity * 0.5)
 	R.obj_integrity = R.max_integrity
 	owner.status_flags |= GODMODE
 	// Mark as conjured — no salvage, no smelting
@@ -421,6 +448,7 @@
 	// Conjured glow
 	R.AddComponent(/datum/component/conjured_item, GLOW_COLOR_EARTHEN)
 	RegisterSignal(R, COMSIG_ITEM_BROKEN, PROC_REF(revert))
+	RegisterSignal(H, COMSIG_LIVING_RESIST, PROC_REF(revert))
 	RegisterSignal(R, COMSIG_ITEM_DROPPED, PROC_REF(revert_perspective))
 	H.clear_familiar_click_intercepts()
 	H.forceMove(R)
@@ -464,7 +492,7 @@
 
 /datum/action/cooldown/spell/arcyne_forge/elemental/void // lmao
 	name = "Void Forge"
-	desc = "Shape your ever-malleable form into a tool or weapon. Shaped items have halved durability. When the item breaks, you will revert to your original form. Cast again to manually revert."
+	desc = "Shape your ever-malleable form into a tool or weapon. When the item breaks, you will revert to your original form. Cast again to manually revert."
 
 /datum/action/cooldown/spell/arcyne_forge/elementalt2
 	name = "Greater Earthen Shaping"
