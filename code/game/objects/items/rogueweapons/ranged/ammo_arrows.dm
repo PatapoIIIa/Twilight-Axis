@@ -284,13 +284,13 @@
 	woundclass = BCLASS_BURN
 	damage_type = BURN
 
-/obj/projectile/bullet/arrow/elemental/fire/on_hit(atom/target)
+/obj/projectile/bullet/arrow/elemental/fire/on_hit(atom/target, blocked = FALSE)
 	..()
 	var/turf/epicenter = get_turf(target)
 	if(epicenter)
 		new /obj/effect/temp_visual/explosion(epicenter)
 		playsound(epicenter, pick('sound/misc/explode/incendiary (1).ogg', 'sound/misc/explode/incendiary (2).ogg'), 100, TRUE, 4)
-	if(!ismob(target))
+	if(!ismob(target) || blocked >= 100)
 		return
 	var/mob/living/M = target
 	apply_scorch_stack(M, 3, def_zone)
@@ -432,6 +432,46 @@
 	embedchance = 80
 	npc_simple_damage_mult = 7 //..or 350 damage against a mindless mob.
 	accuracy = 100
+
+/obj/projectile/bullet/reusable/arrow/iron/paint
+	name = "painted arrow"
+	ammo_type = null
+	icon_state = "paint_arrow"
+	damage = 10
+	armor_penetration = PEN_LIGHT
+	flag = "piercing"
+	/// Track if this projectile was primed by the paint bow when shot
+	var/primed = FALSE
+	embedchance = 0
+
+/obj/item/ammo_casing/caseless/rogue/arrow/iron/paint
+	name = "painted arrow"
+	icon_state = "paint_arrow"
+	desc = "A painted arrow, it almost doesn't seem real, if not for the fact it reflects with iridescent light."
+	projectile_type = /obj/projectile/bullet/reusable/arrow/iron/paint
+	item_flags = DROPDEL
+
+/obj/projectile/bullet/reusable/arrow/iron/paint/on_hit(atom/target, blocked = 0, piercing_hit = FALSE)
+	// If not primed, or if it didn't hit a living mob, act like a standard arrow
+	if(!primed || !isliving(target))
+		return ..()
+
+	var/mob/living/living_target = target
+	var/mob/living/caster = firer
+	var/is_mindless = FALSE
+
+	if(istype(living_target, /mob/living/simple_animal) || !living_target.mind)
+		is_mindless = TRUE
+
+	if(is_mindless)
+		living_target.visible_message(span_purple("The umbral paint on \the [src] violently implodes against [living_target]!"))
+		living_target.adjustBruteLoss(60)
+	else
+		if(caster)
+			to_chat(caster, span_notice("My strike doesn't harm [living_target] much, but it does make them ooze beneficial ink."))
+		living_target.adjustBruteLoss(10)
+	living_target.apply_status_effect(/datum/status_effect/debuff/ink_leak, caster)
+	return ..()
 
 #undef MIN_ARROW_RANGE
 #undef MAX_ARROW_RANGE

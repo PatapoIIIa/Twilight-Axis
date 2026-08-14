@@ -59,7 +59,7 @@
 
 /datum/reagent/blood/on_mob_life(mob/living/carbon/H)
 	..()
-	if(HAS_TRAIT(H, TRAIT_NASTY_EATER) || HAS_TRAIT(H, TRAIT_WILD_EATER))
+	if(HAS_TRAIT(H, TRAIT_NASTY_EATER) || HAS_TRAIT(H, TRAIT_WILD_EATER) || HAS_TRAIT(H, TRAIT_NOHUNGER) || HAS_TRAIT(H, TRAIT_IRONMAN))
 		if(ishuman(H))
 			var/mob/living/carbon/human/Hu = H
 			Hu.adjust_hydration(8)
@@ -74,7 +74,7 @@
 		..()
 /datum/reagent/blood/shitty/on_mob_life(mob/living/carbon/H)
 	..()
-	if(HAS_TRAIT(H, TRAIT_NASTY_EATER) || HAS_TRAIT(H, TRAIT_WILD_EATER))
+	if(HAS_TRAIT(H, TRAIT_NASTY_EATER) || HAS_TRAIT(H, TRAIT_WILD_EATER) || HAS_TRAIT(H, TRAIT_NOHUNGER) || HAS_TRAIT(H, TRAIT_IRONMAN))
 		if(ishuman(H))
 			var/mob/living/carbon/human/Hu = H
 			Hu.adjust_hydration(12) // hydrates, but does not restore blood nor has any other special effect
@@ -95,7 +95,7 @@
 /datum/reagent/water
 	name = "Water"
 	description = "An ubiquitous chemical substance that is composed of hydrogen and oxygen."
-	color = "#6a9295c6"
+	color = "#6a9295"
 	taste_description = "water"
 	var/cooling_temperature = 2
 	glass_icon_state = "glass_clear"
@@ -125,7 +125,7 @@
 
 /datum/reagent/water/gross
 	taste_description = "something vile"
-	color = "#98934bc6"
+	color = "#98934b"
 	harmful = TRUE
 /datum/reagent/water/gross/sewage
 	taste_description = "repulsive sulfur and decaying shit"
@@ -157,11 +157,11 @@
 
 /datum/reagent/water/bathwater
 	taste_description = "bathwater"
-	color = "#c9e5eec6"
+	color = "#c9e5ee"
 
 /datum/reagent/water/salty
 	taste_description = "salt"
-	color = "#417ac5c6"
+	color = "#417ac5"
 
 /datum/reagent/water/salty/reaction_mob(mob/living/L, method=TOUCH, reac_volume)
 	if(method == INGEST) // Make sure you DRANK the salty water before losing hydration
@@ -243,7 +243,7 @@
 		if(hotspot)
 			new /obj/effect/temp_visual/small_smoke(T)
 			qdel(hotspot)
-	
+
 	if(iswallturf(T))
 		if(!T.color)
 			return

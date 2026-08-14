@@ -15,7 +15,7 @@ GLOBAL_LIST_EMPTY(redstone_objs)
 				S.redstone_attached |= src
 
 /obj/structure/multitool_act(mob/living/user, obj/item/I)
-	var/obj/item/contraption/linker/multitool = I
+	var/obj/item/rogueweapon/contraption/linker/multitool = I
 	var/guildmasteroverride = FALSE
 	var/trigger_structure = FALSE //if the source is something like a lever or pressure plate or some other item
 	var/trigger_buffer = FALSE //if the buffer is something like a lever or pressure plate or some other item
@@ -24,9 +24,9 @@ GLOBAL_LIST_EMPTY(redstone_objs)
 	. = ..()
 	if(!redstone_structure)
 		return
-	if(!istype(I, /obj/item/contraption/linker))
+	if(!istype(I, /obj/item/rogueweapon/contraption/linker))
 		return
-	if(istype(I, /obj/item/contraption/linker/master))
+	if(istype(I, /obj/item/rogueweapon/contraption/linker/master) || istype(I, /obj/item/rogueweapon/contraption/linker/mace/master) || istype(I, /obj/item/rogueweapon/contraption/linker/mace/big/master))
 		guildmasteroverride = TRUE //this is for the guildmaster's wrench
 	if(!multitool.current_charge)
 		return
@@ -329,7 +329,6 @@ GLOBAL_LIST_EMPTY(redstone_objs)
 	else if(istype(item, /obj/item/rogueweapon/chisel/assembly))
 		to_chat(user, span_warning("You most use both hands to rename plates."))
 
-
 /*
 /obj/structure/pressure_plate/attack_hand(mob/user) //commented out for now, they're stuposed to be anchored structures for dungeons. End of vanderlin traps port. Maybe an artificer subtype craft in the future.
 	. = ..()
@@ -338,6 +337,31 @@ GLOBAL_LIST_EMPTY(redstone_objs)
 		triggerplate()
 		anchored = !anchored
 */
+
+/obj/structure/pressure_plate/once
+	name = "rusty pressure plate"
+	desc = "Be careful. Stepping on this could either mean a bomb exploding or a door closing on you. Luckily, it seems to have only one last wheeze before it's stuck."
+	var/triggered = FALSE
+
+/obj/structure/pressure_plate/once/Crossed(atom/movable/AM)
+	. = ..()
+	if(triggered)
+		return
+	if(!anchored)
+		return
+	if(!isliving(AM))
+		return
+	triggered = TRUE
+	var/mob/living/L = AM
+	to_chat(L, "<span class='info'>I feel something permanently click beneath me.</span>")
+	AM.log_message("has activated a permanent pressure plate", LOG_GAME)
+	playsound(src, 'sound/misc/pressurepad_down.ogg', 35, extrarange = 2)
+	triggerplate()
+
+/obj/structure/pressure_plate/once/triggerplate()
+	for(var/obj/structure/O in redstone_attached)
+		spawn(0)
+			O.redstone_triggered()
 
 /obj/structure/englauncher
 	name = "Engineer's Launcher"
@@ -453,7 +477,7 @@ GLOBAL_LIST_EMPTY(redstone_objs)
 		playsound(loc, 'sound/misc/machineno.ogg', 100, FALSE, -1)
 		return
 	if (user.rmb_intent)
-		if (user.is_holding_item_of_type(/obj/item/contraption/linker))
+		if (user.is_holding_item_of_type(/obj/item/rogueweapon/contraption/linker))
 			sleep(1)
 			switch(firedirection)
 				if(WEST)

@@ -22,6 +22,10 @@
 	if(!CheckAdminHref(href, href_list))
 		return
 
+	if(href_list["ccg_manage"])
+		ccg_management_topic(href_list)
+		return
+
 	// Open Heal Panel from Player Panel
 	if(href_list["heal_panel"])
 		var/mob/living/M = locate(href_list["heal_panel"])
@@ -798,7 +802,6 @@
 		log_admin("[key_name(usr)] has sent [key_name(M)] back to the Lobby.")
 		GLOB.chosen_names -= M.real_name
 		LAZYREMOVE(GLOB.actors_list, M.mobid)
-		LAZYREMOVE(GLOB.roleplay_ads, M.mobid)
 		SSdroning.kill_droning(M.client)
 		SSdroning.kill_loop(M.client)
 		SSdroning.kill_rain(M.client)
@@ -1697,7 +1700,7 @@
 		if(M.ckey == usr.ckey)
 			to_chat(src, span_boldwarning("Самому себе триумфы выдавать нельзя."))
 			return
-		M.adjust_triumphs(amt2change, FALSE, raisin)
+		M.adjust_triumphs(amt2change, FALSE, "Edit Triumphs (Game Master panel) by [usr.key]: [raisin]")
 		world.TgsAnnounceTriumphChanges(amt2change, M.ckey, usr.ckey, raisin)
 		message_admins("[usr.key] adjusted [M.key]'s triumphs by [amt2change] with [!raisin ? "no reason given" : "reason: [raisin]"].")
 		log_admin("[usr.key] adjusted [M.key]'s triumphs by [amt2change] with [!raisin ? "no reason given" : "reason: [raisin]"].")

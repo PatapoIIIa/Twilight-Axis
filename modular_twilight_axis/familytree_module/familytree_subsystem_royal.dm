@@ -40,12 +40,17 @@
 	if(duke_forced_hetero_mode(P))
 		return "consort"
 
+	if(P.desired_relative_role == RELATIVE_SPOUSE)
+		return "consort"
+
 	if(familytree_pref_is_join(P.family) || familytree_pref_is_legacy_spouse(P.family))
 		return "suitor"
+
 	if(familytree_pref_is_create(P.family) || !familytree_pref_enabled(P.family))
 		return "consort"
 
 	return "consort"
+
 
 /datum/controller/subsystem/familytree/proc/duke_forced_hetero_mode(datum/preferences/P)
 	if(!P)
@@ -569,6 +574,8 @@
 					cousin_member.AddParent(sibling_spouse_member)
 
 		current_ancestor = parent
+
+	ta_apply_pending_royal_ancestor()
 
 /datum/controller/subsystem/familytree/proc/set_species_type(mob/living/carbon/human/H, species_type)
 	if(!H || !species_type)

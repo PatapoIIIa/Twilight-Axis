@@ -16,6 +16,7 @@
 	var/hammer_repair
 	var/hidingspot = FALSE //safety measures, dw about it
 	var/occupied = FALSE
+	var/broken_icon_state = null //if the structure is broken, use this icon
 //	move_resist = MOVE_FORCE_STRONG
 
 /obj/structure/Initialize()
@@ -48,7 +49,7 @@
 					else
 						if(H.STASTR >= 13)	//STR adding role w/ Giant or half-orc, seems fair
 							take_damage((max_integrity / 3) * 2 + 1)
-						else 
+						else
 							take_damage(max_integrity / 3 + 1)
 					H.Immobilize(20)
 					//hurts you a little bit but doesn't immediately chestfrac  you lmao
@@ -182,9 +183,9 @@
 		if(EXPLODE_HEAVY)
 			hard_cap = min(round(max_integrity * 0.25), 20) //some shit has 50 hps and some shit like doors 1500. I dont want one bomb to nuke 10000 windows around coz its annoying
 		if(EXPLODE_LIGHT)
-			hard_cap = min(round(max_integrity * 0.10), 10) 
+			hard_cap = min(round(max_integrity * 0.10), 10)
 
-	var/total_damage = round(CLAMP(brute_loss + extra_integrity, 0, hard_cap)) 
+	var/total_damage = round(CLAMP(brute_loss + extra_integrity, 0, hard_cap))
 	if(total_damage > 0 && !QDELETED(src))
 		take_damage(total_damage, BRUTE, "blunt", 0)
 
@@ -208,9 +209,10 @@
 	adjusted_climb_time = max(adjusted_climb_time, 0)
 //	if(adjusted_climb_time)
 //		user.visible_message(span_warning("[user] starts climbing onto [src]."), span_warning("I start climbing onto [src]..."))
+	if(!user.start_climb())
+		return
 	structureclimber = user
-	user.mid_climb = TRUE
-	if(do_mob(user, user, adjusted_climb_time))
+	if(do_mob(user, user, adjusted_climb_time, extra_checks = user.climb_check_callback()))
 		if(src.loc) //Checking if structure has been destroyed
 			if(do_climb(user))
 				user.visible_message(span_warning("[user] climbs onto [src]."), \
@@ -225,7 +227,7 @@
 				. = 1
 			else
 				to_chat(user, span_warning("I fail to climb onto [src]."))
-	user.mid_climb = FALSE
+	user.end_climb()
 	structureclimber = null
 
 // You can path over a dense structure if it's climbable.

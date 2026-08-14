@@ -1,4 +1,5 @@
 /datum/action/cooldown/spell/cataclysm
+	source_aspect = /datum/magic_aspect/pseudo/spellblade
 	name = "Cataclysm"
 	desc = "Let the mountain fall. Conjure a hammer of pure arcyne force and hurl it at a target area. \
 		On impact it explodes, crushing everyone in a 5x5 area for 75 blunt damage and leaving them Vulnerable. \
@@ -96,7 +97,7 @@
 	for(var/turf/affected_turf in get_hear(area_of_effect, T))
 		new /obj/effect/temp_visual/blade_storm_telegraph(affected_turf)
 
-	log_combat(H, cast_on, "used Cataclysm on")
+	log_combat(H, cast_on, "used Cataclysm on", zone=H.zone_selected)
 
 	addtimer(CALLBACK(src, PROC_REF(do_hammer_throw), H, held_weapon, T, final_damage, def_zone, empowered), delay)
 	. = ..()

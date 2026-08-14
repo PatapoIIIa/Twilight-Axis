@@ -3,12 +3,12 @@
 	tutorial = "Psydonite knights, clad in fluted chainmaille and blessed with the capacity to invoke lesser \
 	miracles. In lieu of greater miracles and rituals, they compensate through martial discipline and blessed weaponry."
 	allowed_sexes = list(MALE, FEMALE)
-	
+
 	outfit = /datum/outfit/job/roguetown/psydoniantemplar
 	category_tags = list(CTAG_ORTHODOXIST)
 	subclass_languages = list(/datum/language/otavan)
 	cmode_music = 'sound/music/templarofpsydonia.ogg'
-	traits_applied = list(TRAIT_HEAVYARMOR, TRAIT_STEELHEARTED, TRAIT_INQUISITION)
+	traits_applied = list(TRAIT_HEAVYARMOR)
 	subclass_stats = list(
 		STATKEY_WIL = 3,
 		STATKEY_CON = 3,
@@ -63,7 +63,7 @@
 
 /datum/outfit/job/roguetown/psydoniantemplar/choose_loadout(mob/living/carbon/human/H)
 	. = ..()
-	var/helmets = list("Barbute", "Sallet", "Armet", "Bucket Helm", "Greatplumed Armet")
+	var/helmets = list("Barbute", "Sallet", "Armet", "Bucket Helm", "Greatplumed Armet", "Volfskulle Bascinet")
 	var/helmet_choice = input(H,"Choose your HELMET.", "TAKE UP PSYDON'S HELMS.") as anything in helmets
 	switch(helmet_choice)
 		if("Barbute")
@@ -76,6 +76,8 @@
 			H.equip_to_slot_or_del(new /obj/item/clothing/head/roguetown/helmet/heavy/psybucket, SLOT_HEAD, TRUE)
 		if("Greatplumed Armet")
 			H.equip_to_slot_or_del(new /obj/item/clothing/head/roguetown/helmet/heavy/knight/psy/greatplume, SLOT_HEAD, TRUE)
+		if("Volfskulle Bascinet")
+			H.equip_to_slot_or_del(new /obj/item/clothing/head/roguetown/helmet/heavy/volfplate/psydonic, SLOT_HEAD, TRUE)
 
 	var/armors = list("Adjudicator - Mailled Hauberk, +II CON / +II WIL", "Justicar - Cuirass, +II INT / +II PER")
 	var/armor_choice = input(H, "Choose your OATH.", "TAKE UP PSYDON'S MANTLE.") as anything in armors

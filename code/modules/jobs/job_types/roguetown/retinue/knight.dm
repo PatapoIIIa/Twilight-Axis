@@ -101,7 +101,7 @@
 		/datum/skill/combat/swords = SKILL_LEVEL_EXPERT,
 		/datum/skill/combat/axes = SKILL_LEVEL_EXPERT,
 		/datum/skill/combat/maces = SKILL_LEVEL_EXPERT,
-		/datum/skill/misc/riding = SKILL_LEVEL_NOVICE,	//Too heavy for horses.
+		/datum/skill/misc/riding = SKILL_LEVEL_APPRENTICE,
 		/datum/skill/combat/wrestling = SKILL_LEVEL_EXPERT,
 		/datum/skill/combat/unarmed = SKILL_LEVEL_JOURNEYMAN,
 		/datum/skill/misc/climbing = SKILL_LEVEL_JOURNEYMAN,
@@ -164,19 +164,23 @@
 			"Knight's Helmet"	= /obj/item/clothing/head/roguetown/helmet/heavy/knight/old,
 			"Knight's Greatplumed Armet"		= /obj/item/clothing/head/roguetown/helmet/heavy/knight/greatplume,
 			"Visored Sallet"	= /obj/item/clothing/head/roguetown/helmet/sallet/visored,
+			"Snouted Visored Sallet"	= /obj/item/clothing/head/roguetown/helmet/sallet/visored/snouted,
 			"Armet"				= /obj/item/clothing/head/roguetown/helmet/heavy/knight/armet,
+			"Snouted Armet"				= /obj/item/clothing/head/roguetown/helmet/heavy/knight/armet/snouted,
 			"Hounskull Bascinet" = /obj/item/clothing/head/roguetown/helmet/bascinet/pigface/hounskull,
 			"Klappvisier Bascinet" = /obj/item/clothing/head/roguetown/helmet/bascinet/etruscan,
 			"Slitted Kettle" = /obj/item/clothing/head/roguetown/helmet/heavy/knight/skettle,
 			"Visored Barbute" = /obj/item/clothing/head/roguetown/helmet/heavy/barbute/visor,
 			"Great Barbute" = /obj/item/clothing/head/roguetown/helmet/heavy/barbute/great,
 			"Volfskulle Bascinet"		= /obj/item/clothing/head/roguetown/helmet/heavy/volfplate,
+			"Roundface Bascinet"	= /obj/item/clothing/head/roguetown/helmet/bascinet/pigface/roundface,
+			"Snouted Roundface Bascinet"	= /obj/item/clothing/head/roguetown/helmet/bascinet/pigface/roundface/snouted,
 			"None"
 		)
 		var/helmchoice = input(H, "Choose your Helm.", "TAKE UP HELMS") as anything in helmets
 		if(helmchoice != "None")
 			head = helmets[helmchoice]
-    
+
 		var/armors = list(
 			"Brigandine"		= /obj/item/clothing/suit/roguetown/armor/brigandine/retinue,
 			"Coat of Plates"	= /obj/item/clothing/suit/roguetown/armor/brigandine/heavy,
@@ -211,7 +215,7 @@
 			)
 		var/onhelmchoice = input(H, "Choose your decor.", "RAISE UP THE SYMBOL") as anything in onhelm
 		l_hand = onhelm[onhelmchoice]
- 
+
 	backpack_contents = list(
 		/obj/item/rogueweapon/huntingknife/idagger/steel/special = 1,
 		/obj/item/rope/chain = 1,
@@ -288,13 +292,17 @@
 			"Knight's Helmet"	= /obj/item/clothing/head/roguetown/helmet/heavy/knight/old,
 			"Knight's Greatplumed Armet"		= /obj/item/clothing/head/roguetown/helmet/heavy/knight/greatplume,
 			"Visored Sallet"	= /obj/item/clothing/head/roguetown/helmet/sallet/visored,
+			"Snouted Visored Sallet"	= /obj/item/clothing/head/roguetown/helmet/sallet/visored/snouted,
 			"Armet"				= /obj/item/clothing/head/roguetown/helmet/heavy/knight/armet,
+			"Snouted Armet"				= /obj/item/clothing/head/roguetown/helmet/heavy/knight/armet/snouted,
 			"Hounskull Bascinet" = /obj/item/clothing/head/roguetown/helmet/bascinet/pigface/hounskull,
 			"Klappvisier Bascinet" = /obj/item/clothing/head/roguetown/helmet/bascinet/etruscan,
 			"Slitted Kettle"	= /obj/item/clothing/head/roguetown/helmet/heavy/knight/skettle,
 			"Visored Barbute" = /obj/item/clothing/head/roguetown/helmet/heavy/barbute/visor,
 			"Great Barbute" = /obj/item/clothing/head/roguetown/helmet/heavy/barbute/great,
 			"Volfskulle Bascinet"		= /obj/item/clothing/head/roguetown/helmet/heavy/volfplate,
+			"Roundface Bascinet"	= /obj/item/clothing/head/roguetown/helmet/bascinet/pigface/roundface,
+			"Snouted Roundface Bascinet"	= /obj/item/clothing/head/roguetown/helmet/bascinet/pigface/roundface/snouted,
 			"None"
 		)
 		var/helmchoice = input(H, "Choose your Helm.", "TAKE UP HELMS") as anything in helmets
@@ -309,7 +317,7 @@
 		)
 		var/armorchoice = input(H, "Choose your armor.", "TAKE UP ARMOR") as anything in armors
 		armor = armors[armorchoice]
-    
+
 		var/heraldy = list(
 				"Surcoat" 	= /obj/item/clothing/cloak/tabard/stabard/guard,
 				"Tabard"		= /obj/item/clothing/cloak/tabard/knight,
@@ -367,7 +375,7 @@
 		/datum/skill/combat/polearms = SKILL_LEVEL_EXPERT,
 		/datum/skill/combat/swords = SKILL_LEVEL_EXPERT,
 		/datum/skill/combat/maces = SKILL_LEVEL_EXPERT,
-		/datum/skill/misc/riding = SKILL_LEVEL_JOURNEYMAN,
+		/datum/skill/misc/riding = SKILL_LEVEL_JOURNEYMAN, //Gets expert due to saddleborn.
 		/datum/skill/combat/crossbows = SKILL_LEVEL_EXPERT,
 		/datum/skill/combat/bows = SKILL_LEVEL_EXPERT,
 		/datum/skill/combat/wrestling = SKILL_LEVEL_EXPERT,
@@ -448,13 +456,17 @@
 			"Froggemund Helmet"	= /obj/item/clothing/head/roguetown/helmet/heavy/frogmouth,
 			"Froggemund Helmet With Greatplume" = /obj/item/clothing/head/roguetown/helmet/heavy/frogmouth/greatplume,
 			"Visored Sallet"	= /obj/item/clothing/head/roguetown/helmet/sallet/visored,
+			"Snouted Visored Sallet"	= /obj/item/clothing/head/roguetown/helmet/sallet/visored/snouted,
 			"Armet"				= /obj/item/clothing/head/roguetown/helmet/heavy/knight/armet,
+			"Snouted Armet"				= /obj/item/clothing/head/roguetown/helmet/heavy/knight/armet/snouted,
 			"Hounskull Bascinet" = /obj/item/clothing/head/roguetown/helmet/bascinet/pigface/hounskull,
 			"Klappvisier Bascinet" = /obj/item/clothing/head/roguetown/helmet/bascinet/etruscan,
 			"Slitted Kettle"	= /obj/item/clothing/head/roguetown/helmet/heavy/knight/skettle,
 			"Visored Barbute" = /obj/item/clothing/head/roguetown/helmet/heavy/barbute/visor,
 			"Great Barbute" = /obj/item/clothing/head/roguetown/helmet/heavy/barbute/great,
 			"Volfskulle Bascinet"		= /obj/item/clothing/head/roguetown/helmet/heavy/volfplate,
+			"Roundface Bascinet"	= /obj/item/clothing/head/roguetown/helmet/bascinet/pigface/roundface,
+			"Snouted Roundface Bascinet"	= /obj/item/clothing/head/roguetown/helmet/bascinet/pigface/roundface/snouted,
 			"None"
 		)
 		var/helmchoice = input(H, "Choose your Helm.", "TAKE UP HELMS") as anything in helmets
@@ -469,7 +481,7 @@
 		)
 		var/armorchoice = input(H, "Choose your armor.", "TAKE UP ARMOR") as anything in armors
 		armor = armors[armorchoice]
-    
+
 		var/heraldy = list(
 				"Surcoat" 	= /obj/item/clothing/cloak/tabard/stabard/guard,
 				"Tabard"		= /obj/item/clothing/cloak/tabard/knight,
@@ -644,20 +656,24 @@
 			"Knight's Helmet"	= /obj/item/clothing/head/roguetown/helmet/heavy/knight/old,
 			"Knight's Greatplumed Armet"		= /obj/item/clothing/head/roguetown/helmet/heavy/knight/greatplume,
 			"Visored Sallet"	= /obj/item/clothing/head/roguetown/helmet/sallet/visored,
+			"Snouted Visored Sallet"	= /obj/item/clothing/head/roguetown/helmet/sallet/visored/snouted,
 			"Armet"				= /obj/item/clothing/head/roguetown/helmet/heavy/knight/armet,
+			"Snouted Armet"				= /obj/item/clothing/head/roguetown/helmet/heavy/knight/armet/snouted,
 			"Hounskull Bascinet" = /obj/item/clothing/head/roguetown/helmet/bascinet/pigface/hounskull,
 			"Klappvisier Bascinet" = /obj/item/clothing/head/roguetown/helmet/bascinet/etruscan,
 			"Slitted Kettle" = /obj/item/clothing/head/roguetown/helmet/heavy/knight/skettle,
 			"Visored Barbute" = /obj/item/clothing/head/roguetown/helmet/heavy/barbute/visor,
 			"Great Barbute" = /obj/item/clothing/head/roguetown/helmet/heavy/barbute/great,
 			"Volfskulle Bascinet"		= /obj/item/clothing/head/roguetown/helmet/heavy/volfplate,
+			"Roundface Bascinet"	= /obj/item/clothing/head/roguetown/helmet/bascinet/pigface/roundface,
+			"Snouted Roundface Bascinet"	= /obj/item/clothing/head/roguetown/helmet/bascinet/pigface/roundface/snouted,
 			"None"
 		)
 
 		var/helmchoice = input(H, "Choose your Helm.", "TAKE UP HELMS") as anything in helmets
 		if(helmchoice != "None")
 			head = helmets[helmchoice]
-    
+
 		var/heraldy = list( //Champions get lord's heraldy with a bit more variety, due to their unusual equipment
 				"Surcoat" 	= /obj/item/clothing/cloak/tabard/stabard/guard,
 				"Tabard"		= /obj/item/clothing/cloak/tabard/knight,
@@ -870,10 +886,18 @@
 		if("Champion's Plate")
 			armor = /obj/item/clothing/suit/roguetown/armor/brigandine/banneret
 			pants = /obj/item/clothing/under/roguetown/chainlegs/banneret
-			head = /obj/item/clothing/head/roguetown/helmet/heavy/banneret
 
 	if(armorchoice == "Champion's Plate")
-		return // Get helmet from armor selection
+		var/bannerethelms = list(
+			"Banneret's Barbute"			= /obj/item/clothing/head/roguetown/helmet/heavy/banneret,
+			"Banneret's Snouted Sallet"		= /obj/item/clothing/head/roguetown/helmet/heavy/banneret/sallet,
+			"Banneret's Snouted Bascinet"	= /obj/item/clothing/head/roguetown/helmet/heavy/banneret/bascinet,
+			"None"
+		)
+		var/bannerethelmchoice = input(H, "Choose your Helm.", "TAKE UP HELMS") as anything in bannerethelms
+		if(bannerethelmchoice != "None")
+			head = bannerethelms[bannerethelmchoice]
+		return
 
 	var/helmets = list(
 		"Pigface Bascinet" 	= /obj/item/clothing/head/roguetown/helmet/bascinet/pigface,
@@ -887,7 +911,9 @@
 		"Froggemund Helmet"	= /obj/item/clothing/head/roguetown/helmet/heavy/frogmouth,
 		"Froggemund Helmet With Greatplume" = /obj/item/clothing/head/roguetown/helmet/heavy/frogmouth/greatplume,
 		"Visored Sallet"	= /obj/item/clothing/head/roguetown/helmet/sallet/visored,
+		"Snouted Visored Sallet"	= /obj/item/clothing/head/roguetown/helmet/sallet/visored/snouted,
 		"Armet"				= /obj/item/clothing/head/roguetown/helmet/heavy/knight/armet,
+		"Snouted Armet"				= /obj/item/clothing/head/roguetown/helmet/heavy/knight/armet/snouted,
 		"Hounskull Bascinet" = /obj/item/clothing/head/roguetown/helmet/bascinet/pigface/hounskull,
 		"Klappvisier Bascinet" = /obj/item/clothing/head/roguetown/helmet/bascinet/etruscan,
 		"Etruscan Bascinet" = /obj/item/clothing/head/roguetown/helmet/bascinet/etruscan,
@@ -895,6 +921,8 @@
 		"Visored Barbute" = /obj/item/clothing/head/roguetown/helmet/heavy/barbute/visor,
 		"Great Barbute" = /obj/item/clothing/head/roguetown/helmet/heavy/barbute/great,
 		"Volfskulle Bascinet"		= /obj/item/clothing/head/roguetown/helmet/heavy/volfplate,
+		"Roundface Bascinet"	= /obj/item/clothing/head/roguetown/helmet/bascinet/pigface/roundface,
+		"Snouted Roundface Bascinet"	= /obj/item/clothing/head/roguetown/helmet/bascinet/pigface/roundface/snouted,
 		"None"
 	)
 	var/helmchoice = input(H, "Choose your Helm.", "TAKE UP HELMS") as anything in helmets

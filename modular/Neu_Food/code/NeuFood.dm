@@ -245,7 +245,7 @@
 	. += span_info("Many foodstuffs can be sliced into smaller portions by left-clicking them with a knife on the 'CUT' or 'CHOP' intents. This includes most meats, vegetables, fruits, bread, pies, cakes, saloumi, butter, salo, and more.")
 	. += span_info("Most food will eventually rot, if left out for long enough. Storing food in a closed chest or atop a platter will effectively prevent it from rotting.")
 	. += span_info("Rarer foods and drinks, or those made from more expensive recipes, can provide increased bonuses to the indulger's mood and health.")
-	. += span_info("Everyone has a favorite meal and drink to indulge in - and, conversely, a hated meal and drink that they absolutely despise. Serve them right, and their mood will greatly improve.")
+	. += span_info("Everyone favours a certain cuisine, dish, and drink. Serving someone Fine or better food or a Nice or better drink that matches one of their tastes lifts their mood.")
 	. += span_info("Those of nobility have much higher standards, when it comes to what - and how - they eat. They prefer to eat plattered meals with proper utensils, while disliking plainer and cheaper food.")
 	. += span_info("Set a recipe on accident? middleclick the item to reset the recipe back to nothing and pick a different one.")
 
@@ -455,7 +455,7 @@
 	to_chat(user, "<span class='notice'>Adding water, now it's time to hand wash it...</span>")
 	playsound(get_turf(user), 'modular/Neu_Food/sound/splishy.ogg', 100, TRUE, -1)
 	if(do_after(user,2 SECONDS, target = src))
-		user.adjust_experience(/datum/skill/craft/cooking, user.STAINT * 0.8)
+		add_sleep_experience(user, /datum/skill/craft/cooking, user.STAINT * 0.8)
 		name = "wet rice"
 		if(is_container)
 			R.reagents.remove_reagent(/datum/reagent/water, 10)
@@ -467,7 +467,7 @@
 	if(water_added)
 		playsound(get_turf(user), 'modular/Neu_Food/sound/kneading_alt.ogg', 90, TRUE, -1)
 		if(do_after(user,3 SECONDS, target = src))
-			user.adjust_experience(/datum/skill/craft/cooking, user.STAINT * 0.8)
+			add_sleep_experience(user, /datum/skill/craft/cooking, user.STAINT * 0.8)
 			new /obj/item/reagent_containers/food/snacks/rogue/ricewet(loc)
 			qdel(src)
 	else ..()

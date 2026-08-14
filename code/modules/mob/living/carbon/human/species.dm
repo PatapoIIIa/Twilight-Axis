@@ -704,6 +704,11 @@ GLOBAL_LIST_EMPTY(roundstart_races)
 				if(istype(H.cloak, I.type))
 					return FALSE
 			if(H.wear_shirt)
+				var/obj/item/clothing/incoming_armor = I
+				if((H.wear_shirt.blocking_behavior & BLOCKARMOR) && istype(incoming_armor) && (incoming_armor.armor_class != ARMOR_CLASS_NONE) && !((I.blocking_behavior & SAMEWEAR) && (H.wear_shirt.blocking_behavior & SAMEWEAR)))
+					return FALSE
+				if((I.blocking_behavior & BLOCKSHIRT) && (H.wear_shirt.armor_class != ARMOR_CLASS_NONE) && !((I.blocking_behavior & SAMEWEAR) && (H.wear_shirt.blocking_behavior & SAMEWEAR)))
+					return FALSE
 				if(H.wear_shirt.blocking_behavior & BULKYBLOCKS)
 					return FALSE
 				if(istype(H.wear_shirt, I.type))
@@ -796,6 +801,11 @@ GLOBAL_LIST_EMPTY(roundstart_races)
 				if(H.wear_armor)
 					return FALSE
 			if(H.wear_armor)
+				var/obj/item/clothing/incoming_shirt = I
+				if((H.wear_armor.blocking_behavior & BLOCKSHIRT) && istype(incoming_shirt) && (incoming_shirt.armor_class != ARMOR_CLASS_NONE) && !((I.blocking_behavior & SAMEWEAR) && (H.wear_armor.blocking_behavior & SAMEWEAR)))
+					return FALSE
+				if((I.blocking_behavior & BLOCKARMOR) && (H.wear_armor.armor_class != ARMOR_CLASS_NONE) && !((I.blocking_behavior & SAMEWEAR) && (H.wear_armor.blocking_behavior & SAMEWEAR)))
+					return FALSE
 				if(istype(H.wear_armor, I.type))
 					if(!(I.blocking_behavior & SAMEWEAR))
 						return FALSE
@@ -1312,7 +1322,7 @@ GLOBAL_LIST_EMPTY(roundstart_races)
 			SEND_SIGNAL(target, COMSIG_ATOM_ATTACK_HAND, user)
 			if(affecting.body_zone == BODY_ZONE_HEAD)
 				SEND_SIGNAL(user, COMSIG_HEAD_PUNCHED, target)
-		log_combat(user, target, "punched")
+		log_combat(user, target, "punched", zone=selzone)
 		if(ishuman(user))
 			user.resolve_combataware(target, "[bodyzone2readablezone(selzone)]...", "[bodyzone2readablezone(user.zone_selected)]...")
 
@@ -1375,7 +1385,7 @@ GLOBAL_LIST_EMPTY(roundstart_races)
 				user.changeMaxDodge(3)
 			if(target.mind)
 				target.dodgetime = (clamp(target.dodgetime - 8, 0, CLICK_CD_DODGE))	//We reset the dodgetime after getting struck directly in the body.
-				target.changeMaxDodge(5)
+				target.changeMaxDodge(5, clamp = TRUE)
 
 
 /datum/species/proc/spec_unarmedattacked(mob/living/carbon/human/user, mob/living/carbon/human/target)
@@ -1902,6 +1912,7 @@ GLOBAL_LIST_EMPTY(roundstart_races)
 				user.changeMaxDodge(1)
 		if(!nodmg)
 			post_reduction_dmg = (post_weakness_dmg - armor_block)
+			var/has_vuln_or_exposed = (H.has_status_effect(/datum/status_effect/debuff/exposed) || H.has_status_effect(/datum/status_effect/debuff/vulnerable))
 			var/datum/wound/crit_wound = affecting.bodypart_attacked_by(user.used_intent.blade_class, post_reduction_dmg, user, selzone, crit_message = TRUE, weapon = I, pen_info = pen_info_check)
 			if(should_embed_weapon(crit_wound, I))
 				var/can_impale = TRUE
@@ -1927,7 +1938,9 @@ GLOBAL_LIST_EMPTY(roundstart_races)
 				user.changeMaxDodge(3)
 			if(H.mind)
 				H.dodgetime = (clamp(H.dodgetime - 8, 0, CLICK_CD_DODGE))	//We reset the dodgetime after getting struck directly in the body.
-				H.changeMaxDodge(5)
+				if(!has_vuln_or_exposed)
+					H.changeMaxDodge(5, clamp = TRUE)
+					
 //		if(H.used_intent.blade_class == BCLASS_BLUNT && I.force >= 15 && affecting.body_zone == "chest")
 //			var/turf/target_shove_turf = get_step(H.loc, get_dir(user.loc,H.loc))
 //			H.throw_at(target_shove_turf, 1, 1, H, spin = FALSE)
@@ -2071,11 +2084,11 @@ GLOBAL_LIST_EMPTY(roundstart_races)
 							H.emote("painscream")
 						else
 							H.emote("pain")
-				if(damage_amount > (H.STACON * 3.5) && (!HAS_TRAIT(H, TRAIT_NOPAINSTUN) || !HAS_TRAIT(H, TRAIT_IRONMAN))) //We want this effect only on heavy hits.
+				if(damage_amount > (H.STACON * 3.5) && !HAS_TRAIT(H, TRAIT_NOPAINSTUN) && !HAS_TRAIT(H, TRAIT_IRONMAN)) //We want this effect only on heavy hits.
 					H.Immobilize(5) //The fastest you can swing a weapon is once each 0.6 seconds, anything higher than 0.5 Immob. opens the door for stunlocking (see: katar).
 					shake_camera(H, 2, 2)
 					H.stuttering += 5
-				if(damage_amount > 10 && (!HAS_TRAIT(H, TRAIT_NOPAINSTUN) || !HAS_TRAIT(H, TRAIT_IRONMAN)))
+				if(damage_amount > 10 && !HAS_TRAIT(H, TRAIT_NOPAINSTUN) && !HAS_TRAIT(H, TRAIT_IRONMAN))
 					H.Slowdown(clamp(damage_amount/10, 1, 5))
 					shake_camera(H, 1, 1)
 				if(H.show_redflash())

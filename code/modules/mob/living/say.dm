@@ -97,6 +97,11 @@ GLOBAL_LIST_INIT(department_radio_keys, list(
 		message = trim(copytext(sanitize(message), 1, MAX_MESSAGE_LEN))
 	if(!message || message == "")
 		return
+	//TA edit - Bard chages start
+	if(!forced && is_blocked_by_auto_song())
+		to_chat(src, span_warning("I can't speak freely while performing the song."))
+		return
+	//TA edit - Bard chages end
 
 	if(ic_blocked)
 		//The filter warning message shows the sanitized message though.
@@ -536,7 +541,7 @@ GLOBAL_LIST_INIT(department_radio_keys, list(
 			AM.Hear(eavesrendered, src, message_language, eavesdropping, , spans, message_mode, original_message)
 		else
 			AM.Hear(rendered, src, message_language, (highlighted_message ? highlighted_message : message), , spans, message_mode, original_message)
-			
+
 
 	SEND_GLOBAL_SIGNAL(COMSIG_GLOB_LIVING_SAY_SPECIAL, src, message)
 
@@ -587,7 +592,7 @@ GLOBAL_LIST_INIT(department_radio_keys, list(
 
 /mob/living/proc/get_message_language(message)
 	if(copytext(message, 1, 2) == ",")
-		var/key = copytext(message, 2, 3)
+		var/key = lowertext(copytext(message, 2, 3))
 		for(var/ld in GLOB.all_languages)
 			var/datum/language/LD = ld
 			if(initial(LD.key) == key)

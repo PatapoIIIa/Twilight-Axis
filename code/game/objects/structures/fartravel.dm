@@ -62,13 +62,13 @@
 		for(var/datum/bounty/removing_bounty in GLOB.head_bounties)
 			if(removing_bounty.target == departing_mob.real_name)
 				GLOB.head_bounties -= removing_bounty
+	GLOB.dominant_faith_tracker.handle_removal(departing_mob)
 	if(SSticker.rulermob == departing_mob)
 		SSticker.rulermob = null
 	if(SSticker.regentmob == departing_mob)
 		SSticker.regentmob = null
 	GLOB.chosen_names -= departing_mob.real_name
 	LAZYREMOVE(GLOB.actors_list[SSjob.bitflag_to_department(mob_job.department_flag, mob_job.obsfuscated_job)], departing_mob.mobid)
-	LAZYREMOVE(GLOB.roleplay_ads, departing_mob.mobid)
 	// Keep insiders' bank balance forfeits to the Crown's Purse on far-travel (silent OOC).
 	// Day 0 is a grace window so roundstart bailouts don't accidentally hand the Crown a
 	// windfall from a player who never had time to act in role. Loose mammon is tallied

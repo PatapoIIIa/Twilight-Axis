@@ -37,18 +37,18 @@
 #define LEGSLEEVE_LAYER			36
 #define SHOES_LAYER				35
 #define SHOESLEEVE_LAYER		34
-#define SHIRT_LAYER				33
-#define WRISTS_LAYER			32
-#define ARMOR_LAYER				31
-#define TABARD_LAYER			30
-#define BELT_LAYER				29		//only when looking south
-#define UNDER_CLOAK_LAYER		28
-#define HANDS_PART_LAYER		27
-#define GLOVES_LAYER			26
-#define ARM_DAMAGE_LAYER		25
-#define SHIRTSLEEVE_LAYER		24
-#define WRISTSLEEVE_LAYER		23
-#define ARMORSLEEVE_LAYER		22
+#define HANDS_PART_LAYER		33		//hand skin (bodypart aux sprite). torso+arms ends here.
+#define ARM_DAMAGE_LAYER		32
+#define SHIRT_LAYER				31
+#define SHIRTSLEEVE_LAYER		30
+#define WRISTS_LAYER			29
+#define WRISTSLEEVE_LAYER		28
+#define ARMOR_LAYER				27
+#define TABARD_LAYER			26
+#define ARMORSLEEVE_LAYER		25
+#define BELT_LAYER				24		//only when looking south
+#define UNDER_CLOAK_LAYER		23
+#define GLOVES_LAYER			22		// torso+arms start here
 #define GLOVESLEEVE_LAYER		21
 #define RING_LAYER				20
 #define GLASSES_LAYER			19
@@ -56,6 +56,7 @@
 #define CLOAK_LAYER				17		//only when looking north or west/east
 #define HOOD_LAYER				16
 #define HAIR_LAYER				15		//TODO: make part of head layer?
+#define CUSTOM_HAIR_COVERED_LAYER 14.9  // WHY ARE TOP SNOUTS LIKE THIS I HATE FURRIES
 #define MASK_LAYER				14
 #define HAIREXTRA_LAYER			13
 #define MOUTH_LAYER				12
@@ -65,6 +66,7 @@
 #define HANDCUFF_LAYER			8
 #define LEGCUFF_LAYER			7
 #define BODY_FRONT_LAYER		6
+#define CUSTOM_HAIR_LAYER		5.9
 #define BODY_FRONT_FRONT_LAYER	5
 #define HALO_LAYER				4		//blood cult ascended halo, because there's currently no better solution for adding/removing
 #define SUNDER_LAYER			3
@@ -77,12 +79,16 @@
 //Human Overlay Index Shortcuts for alternate_worn_layer, layers
 //Because I *KNOW* somebody will think layer+1 means "above"
 //IT DOESN'T OK, IT MEANS "UNDER"
-#define UNDER_ARMOR_LAYER			(ARMOR_LAYER+1)
+
+//^^^ whatever bro fractional layer is the only way now :/
+//this means under armour needs to stick with sleeves
+#define UNDER_ARMOR_LAYER			(ARMOR_LAYER+0.5)	//behind the armor and its pauldrons, in front of the bracers and the shirt, sleeves included
 #define UNDER_HAT_LAYER			(HEAD_LAYER+1)
 
 //AND -1 MEANS "ABOVE", OK?, OK!?!
 #define ABOVE_SHOES_LAYER			(SHOES_LAYER-1)
 #define ABOVE_BODY_FRONT_LAYER		(BODY_FRONT_LAYER-1)
+#define OVER_GLOVES_LAYER			(GLOVESLEEVE_LAYER-0.5)
 
 //Security levels
 #define SEC_LEVEL_GREEN	0
@@ -390,6 +396,7 @@ GLOBAL_LIST_INIT(pda_styles, sortList(list(MONO, VT, ORBITRON, SHARE)))
 #define DUMMY_HUMAN_SLOT_PREFERENCES "dummy_preference_preview"
 #define DUMMY_HUMAN_SLOT_ADMIN "admintools"
 #define DUMMY_HUMAN_SLOT_MANIFEST "dummy_manifest_generation"
+#define DUMMY_HUMAN_SLOT_CREDITS "dummy_credits_generation"
 
 #define PR_ANNOUNCEMENTS_PER_ROUND 5 //The number of unique PR announcements allowed per round
 									//This makes sure that a single person can only spam 3 reopens and 3 closes before being ignored
@@ -506,3 +513,7 @@ GLOBAL_LIST_INIT(pda_styles, sortList(list(MONO, VT, ORBITRON, SHARE)))
 // Zombie infection defines
 #define ZOMBIE_INFECTION_PROBABILITY 20 	/// Zombie infection probability for bites on a wound
 #define ZOMBIE_INFECTION_TIME 2 MINUTES	/// Time taken until zombie infection kicks in (unit wakes up as a zombie)
+#define DEAD_TO_ZOMBIE_TIME 7 MINUTES	/// Time spent dead before rising as a deadite.
+#define REVIVED_DEBUFF_DURATION 15 MINUTES	/// Revival Sickness.
+#define DEATHMARK_GRACE_PERIOD 5 MINUTES	/// Grace after a chair revival before the deathmark is checked for and applied.
+#define PERMADEATH_DURATION 60 MINUTES	/// How long the deathmark lasts once it lands. Dying inside it is permanent for the round.

@@ -1,4 +1,5 @@
 /datum/action/cooldown/spell/storm_of_psydon
+	source_aspect = /datum/magic_aspect/pseudo/spellfist
 	button_icon = 'icons/mob/actions/classuniquespells/spellfist.dmi'
 	button_icon_state = "storm_of_psydon"
 	name = "Storm of Psydon"
@@ -299,7 +300,7 @@
 			target.throw_at(throw_target, 3, 4)
 
 	combo_cleanup(shadow_left, shadow_right)
-	log_combat(user, target, "used Storm of Psydon (full)")
+	log_combat(user, target, "used Storm of Psydon (full)", zone=user.zone_selected)
 
 /datum/action/cooldown/spell/storm_of_psydon/proc/oraora_lame(mob/living/carbon/human/user, mob/living/target)
 	user.changeNext_move(CLICK_CD_MELEE * 2)
@@ -330,4 +331,4 @@
 			var/atom/throw_target = get_edge_target_turf(user, get_dir(user, target))
 			target.throw_at(throw_target, 3, 4)
 
-	log_combat(user, target, "used Storm of Psydon (lame)")
+	log_combat(user, target, "used Storm of Psydon (lame)", zone=user.zone_selected)
