@@ -53,8 +53,6 @@ GLOBAL_LIST_EMPTY(bonds_debug_rows)
 	forced_profiler = force_profiler
 	SSbonds.instrumented = TRUE
 	SSbonds.tallies = list()
-	// Never stomp a server that is already profiling: PROFILE_CLEAR would throw away SSprofiler's
-	// accumulated round data, and PROFILE_REFRESH drains what it reads.
 	owns_profiler = forced_profiler || !CONFIG_GET(flag/auto_profile)
 	SSbonds.bondlog("BENCH|run=[label]|event=begin|profiler=[owns_profiler ? "ours" : "shared, left alone"]", BONDLOG_INFO)
 	if(owns_profiler)
@@ -70,9 +68,6 @@ GLOBAL_LIST_EMPTY(bonds_debug_rows)
 	wall_start = world.timeofday
 	tally_mark = SSbonds.tallies.Copy()
 
-// Wrap every single operation, not the whole phase: world.timeofday only resolves to 100ms, while
-// TICK_USAGE_TO_MS resolves to a fraction of a tick. A negative delta means the op ran across a tick
-// boundary, which is itself the interesting signal - those are counted rather than silently dropped.
 /datum/bonds_bench/proc/op_begin()
 	op_start = TICK_USAGE_REAL
 
@@ -119,9 +114,17 @@ GLOBAL_LIST_EMPTY(bonds_debug_rows)
 	SSbonds.instrumented = FALSE
 	SSbonds.bondlog("BENCH|run=[label]|event=end", BONDLOG_INFO)
 
-// The built-in profiler is the only thing that can say WHICH proc ate the time. The column order of
-// BYOND's json rows is not documented here, so the filtered rows are written out verbatim rather than
-// interpreted - the reader parses the file, and nothing is silently mislabelled.
+/datum/controller/subsystem/bonds/proc/profile_row_is_ours(list/row)
+	for(var/entry in row)
+		if(!istext(entry))
+			continue
+		if(findtext(entry, "bond") || findtext(entry, "familytree"))
+			return TRUE
+		var/value = row[entry]
+		if(istext(value) && (findtext(value, "bond") || findtext(value, "familytree")))
+			return TRUE
+	return FALSE
+
 /datum/controller/subsystem/bonds/proc/debug_dump_profile(label)
 	var/raw = world.Profile(PROFILE_REFRESH, format = "json")
 	if(!length(raw))
@@ -133,8 +136,6 @@ GLOBAL_LIST_EMPTY(bonds_debug_rows)
 	catch
 		bondlog("PROFILE|run=[label]|error=undecodable", BONDLOG_WARN)
 		return FALSE
-	// Measured shape on 516: the decode is already the array of rows, not an object with a "data"
-	// key. Both are handled so a future BYOND change cannot silently produce an empty dump.
 	var/list/rows
 	if(islist(decoded))
 		if(islist(decoded["data"]))
@@ -148,10 +149,11 @@ GLOBAL_LIST_EMPTY(bonds_debug_rows)
 	for(var/list/row as anything in rows)
 		if(!islist(row) || !length(row))
 			continue
-		var/name = "[row[1]]"
-		if(!findtext(name, "bond") && !findtext(name, "familytree"))
-			continue
-		keep += list(row)
+		if(profile_row_is_ours(row))
+			keep += list(row)
+	if(!length(keep) && length(rows))
+		var/list/sample = rows[1]
+		bondlog("PROFILE|run=[label]|nothing matched|row_shape=[sample.Join(",")]", BONDLOG_WARN)
 	var/directory = GLOB.log_directory || "data/logs"
 	var/path = "[directory]/bonds_profile-[label].json"
 	var/payload = json_encode(list(
@@ -167,8 +169,6 @@ GLOBAL_LIST_EMPTY(bonds_debug_rows)
 	bondlog("PROFILE|run=[label]|matched=[length(keep)]|of=[length(rows)]|file=[path]", BONDLOG_INFO)
 	return TRUE
 
-// Timings say how fast; these say what the run actually produced. A run where every dream landed on
-// one person, or where one event type crowded out the rest, looks fine on timings and is useless.
 /datum/controller/subsystem/bonds/proc/debug_report_distribution(label)
 	var/list/stages = list()
 	var/list/warmth_buckets = list("hostile" = 0, "cold" = 0, "neutral" = 0, "warm" = 0)
@@ -358,8 +358,6 @@ GLOBAL_LIST_EMPTY(bonds_debug_rows)
 			paired++
 	return paired
 
-// One combined number cannot say which of the three builders is growing, and that was exactly the
-// question the last run left open. Each is timed as its own phase.
 /datum/controller/subsystem/bonds/proc/debug_panel_pass(list/pool, samples, datum/bonds_bench/bench, mode = "all")
 	var/built = 0
 	for(var/i in 1 to samples)

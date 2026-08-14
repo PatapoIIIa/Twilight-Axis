@@ -8,9 +8,10 @@
 // bonds_config_roles.dm - TUNING: how loudly each job echoes between factions, plus the
 //                         archetype masks that decide which dream may name which pair of jobs
 // bonds_config_gods.dm  - TUNING: storyteller gods bending faction relations
-// bonds_config_stances.dm - TUNING: the declared standing of every one of the 91 mortal faction
-//                         pairs. Leaving a pair out is not neutrality, it is a hole: an undeclared
-//                         pair sits at flat zero and the first brawl decides it, so keep it complete
+// bonds_stance_file.dm - the reader for strings/bonds/*.txt, where the declared standing of every
+//                         one of the 91 mortal and 15 clan pairs actually lives. Leaving a pair out
+//                         is not neutrality, it is a hole: an undeclared pair sits at flat zero and
+//                         the first brawl decides it, so keep the tables complete
 // bonds_config_vices.dm - TUNING: how a recipient's vices reshape what was done to them
 // bonds_core.dm       - the graph itself: /datum/bond_actor identity, /datum/bond_node buckets,
 //                       /datum/social_bond axes and history, /datum/social_bond/kin kinship, graph API
@@ -145,6 +146,8 @@
 // each faction points at one GLOB.*_positions list. Bathhouse and tavern are deliberately NOT
 // factions - they are venues, and treating them as factions was the sole source of title
 // collisions (Bathmaster, Innkeeper, Bathhouse Attendant, Cook, Tapster).
+#define BOND_STANCE_DIRECTORY "strings/bonds"
+
 #define BOND_FACTION_NOBLE "noble"
 #define BOND_FACTION_COURT "court"
 #define BOND_FACTION_RETINUE "retinue"
@@ -224,10 +227,10 @@
 #include "bonds_config_maps.dm"
 #include "bonds_config_roles.dm"
 #include "bonds_config_gods.dm"
-#include "bonds_config_stances.dm"
 #include "bonds_config_vices.dm"
 #include "bonds_core.dm"
 #include "bonds_events.dm"
+#include "bonds_stance_file.dm"
 #include "bonds_factions.dm"
 #include "bonds_context.dm"
 #include "bonds_round.dm"

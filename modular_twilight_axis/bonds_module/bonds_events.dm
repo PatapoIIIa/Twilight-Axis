@@ -346,7 +346,6 @@
 	priority = 20
 	weight_min = 15
 	warmth_min = 15
-	warmth_max = 39
 
 /datum/bond_stage/friend
 	label = "Друг"
@@ -374,7 +373,6 @@
 	accent = "#a08a6a"
 	priority = 20
 	weight_min = 15
-	warmth_min = -39
 	warmth_max = -15
 
 /datum/bond_stage/rival

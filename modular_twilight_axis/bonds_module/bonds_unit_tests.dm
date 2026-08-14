@@ -441,8 +441,6 @@
 	BD_ASSERT_EQUAL(SSbonds.stance_warmth(BOND_FACTION_NOBLE, BOND_FACTION_NOBLE), BOND_STANCE_SAME_FACTION_WARMTH, "same faction resolves without a stored pair")
 
 /datum/unit_test/bonds/stance_nudge_clamps/Run()
-	// Must use a pair the baseline table does NOT declare, or the cleanup below would delete a
-	// seeded stance and leave a hole for whatever test runs next. Clan-to-mortal is never declared.
 	BD_ASSERT_NULL(SSbonds.get_stance(BOND_CLAN_CAITIFF, BOND_FACTION_WANDERER), "this pair must start undeclared for the test to mean anything")
 	SSbonds.nudge_stance(BOND_CLAN_CAITIFF, BOND_FACTION_WANDERER, 500, 500, "unit test")
 	var/datum/faction_stance/stance = SSbonds.get_stance(BOND_CLAN_CAITIFF, BOND_FACTION_WANDERER)
@@ -613,16 +611,32 @@
 
 /datum/unit_test/bonds/baseline_table_is_well_formed/Run()
 	var/list/seen = list()
-	for(var/list/row as anything in GLOB.bond_faction_baselines)
-		BD_ASSERT_EQUAL(length(row), 4, "every baseline row is (faction, faction, warmth, weight)")
-		BD_ASSERT(istext(row[1]) && istext(row[2]), "both ends of a baseline row must be faction ids")
-		BD_ASSERT(row[1] != row[2], "a faction cannot hold a standing with itself")
-		BD_ASSERT(isnum(row[3]) && isnum(row[4]), "warmth and weight must be numbers")
-		BD_ASSERT(row[3] >= BOND_WARMTH_MIN && row[3] <= BOND_WARMTH_MAX, "[row[1]]|[row[2]] declares warmth outside the axis")
-		BD_ASSERT(row[4] >= BOND_WEIGHT_MIN && row[4] <= BOND_WEIGHT_MAX, "[row[1]]|[row[2]] declares weight outside the axis")
-		var/key = bonds_stance_key(row[1], row[2])
-		BD_ASSERT_NULL(seen[key], "[key] is declared twice: the later row silently wins and the earlier one is a lie")
-		seen[key] = TRUE
+	for(var/list/block as anything in SSbonds.stance_blocks())
+		var/list/axis = block[1]
+		var/list/warmth_rows = block[2]
+		var/list/weight_rows = block[3]
+		var/count = length(axis)
+		BD_ASSERT(count > 0, "a stance block must name its axis, or the whole block silently seeds nothing")
+		BD_ASSERT_EQUAL(length(warmth_rows), count, "the warmth matrix must carry one row per faction on the axis")
+		BD_ASSERT_EQUAL(length(weight_rows), count, "the weight matrix must carry one row per faction on the axis")
+		for(var/i in 1 to count)
+			BD_ASSERT(istext(axis[i]), "every axis entry must be a faction id")
+			var/list/warmth_row = warmth_rows[i]
+			var/list/weight_row = weight_rows[i]
+			BD_ASSERT_EQUAL(length(warmth_row), count - i, "warmth row [axis[i]] must hold exactly the columns to its right; a short row shifts every later faction's standing onto the wrong pair")
+			BD_ASSERT_EQUAL(length(weight_row), count - i, "weight row [axis[i]] must hold exactly the columns to its right")
+			for(var/j in (i + 1) to count)
+				var/warmth = warmth_row[j - i]
+				var/weight = weight_row[j - i]
+				var/key = bonds_stance_key(axis[i], axis[j])
+				BD_ASSERT_NULL(seen[key], "[key] is reachable from two cells: one of them is a lie")
+				seen[key] = TRUE
+				BD_ASSERT_EQUAL(isnull(warmth), isnull(weight), "[axis[i]]|[axis[j]] carries one axis and not the other, so the cell was half-parsed")
+				if(isnull(warmth))
+					continue
+				BD_ASSERT(isnum(warmth) && isnum(weight), "[axis[i]]|[axis[j]] must declare numbers on both axes")
+				BD_ASSERT(warmth >= BOND_WARMTH_MIN && warmth <= BOND_WARMTH_MAX, "[axis[i]]|[axis[j]] declares warmth outside the axis")
+				BD_ASSERT(weight >= BOND_WEIGHT_MIN && weight <= BOND_WEIGHT_MAX, "[axis[i]]|[axis[j]] declares weight outside the axis")
 
 /datum/unit_test/bonds/every_faction_pair_is_declared/Run()
 	var/list/mortal = list()
@@ -633,11 +647,16 @@
 		mortal += faction_id
 	BD_ASSERT(length(mortal) >= 14, "the mortal faction roster shrank below the fourteen the matrix was written for")
 
-	// Read the declaration, not the live matrix: faction_stances is round state that other tests
-	// legitimately nudge and clear, and completeness is a property of the table.
 	var/list/declared = list()
-	for(var/list/row as anything in GLOB.bond_faction_baselines)
-		declared[bonds_stance_key(row[1], row[2])] = TRUE
+	for(var/list/block as anything in SSbonds.stance_blocks())
+		var/list/axis = block[1]
+		var/list/warmth_rows = block[2]
+		for(var/i in 1 to length(axis))
+			var/list/warmth_row = warmth_rows[i]
+			for(var/j in (i + 1) to length(axis))
+				if(j - i > length(warmth_row) || isnull(warmth_row[j - i]))
+					continue
+				declared[bonds_stance_key(axis[i], axis[j])] = TRUE
 	var/list/missing = list()
 	for(var/i in 1 to length(mortal))
 		for(var/j in (i + 1) to length(mortal))
@@ -688,8 +707,6 @@
 /datum/unit_test/bonds/cap_holds_when_every_bond_is_tagged/Run()
 	var/datum/mind/owner = bd_make_mind()
 	var/datum/bond_node/node = SSbonds.get_or_create_node(owner)
-	// A fighter tags almost every bond they make. Measured on the bench: with an untagged-only
-	// filter a node reached 78 bonds against a cap of 40, and the panel cost grew with it.
 	for(var/i in 1 to BOND_MAX_PER_MIND * 2)
 		var/datum/mind/target = bd_make_mind()
 		var/datum/social_bond/bond = SSbonds.get_or_create_bond(owner, target)
@@ -714,6 +731,22 @@
 	BD_ASSERT_NOTNULL(SSbonds.get_bond(owner, killer), "being killed by someone is the one memory the cap may never take, even as the lightest bond on the node")
 	var/datum/bond_node/node = SSbonds.get_node(owner)
 	BD_ASSERT(length(node.bonds) <= BOND_MAX_PER_MIND, "and the cap must still hold around it")
+
+/datum/unit_test/bonds/every_point_of_the_axes_has_a_stage/Run()
+	var/list/holes = list()
+	var/datum/mind/owner = bd_make_mind()
+	var/datum/mind/target = bd_make_mind()
+	var/datum/social_bond/probe = SSbonds.get_or_create_bond(owner, target)
+	for(var/warmth in BOND_WARMTH_MIN to BOND_WARMTH_MAX step 5)
+		for(var/weight in BOND_WEIGHT_MIN to BOND_WEIGHT_MAX step 5)
+			probe.warmth = warmth
+			probe.weight = weight
+			if(SSbonds.resolve_stage(probe))
+				continue
+			holes += "([warmth],[weight])"
+			if(length(holes) >= 8)
+				break
+	BD_ASSERT_EQUAL(length(holes), 0, "every warmth/weight coordinate must land on a stage: [holes.Join(" ")]")
 
 #undef BD_SOURCE
 #undef BD_ASSERT

@@ -31,6 +31,7 @@ SUBSYSTEM_DEF(bonds)
 	var/share_map = 0
 	var/list/map_rosters = list()
 	var/list/faction_stances = list()
+	var/list/stance_blocks_cache
 	var/list/house_stances = list()
 	var/list/storyteller_lenses = list()
 	var/storyteller_lens_applied = FALSE
@@ -41,8 +42,6 @@ SUBSYSTEM_DEF(bonds)
 	var/stance_revision = 0
 	var/list/zone_lens_cache = list()
 	var/map_weight_cache
-	/// Kill switch for a live test. Leaves the graph and the panels intact and stops the module
-	/// reacting to anything new, so a bad round can be defused without a restart.
 	var/reacting = TRUE
 	var/instrumented = FALSE
 	var/list/tallies = list()

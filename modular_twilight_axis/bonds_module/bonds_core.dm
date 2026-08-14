@@ -157,9 +157,6 @@
 		removed = TRUE
 	return removed
 
-// Evicts until the node is back under the cap, in two passes: plain bonds first, then anything that
-// is not a death between the two of you. One removal per call and an untagged-only filter is what let
-// a measured node reach 78 bonds against a cap of 40 - combat tags almost everything it touches.
 /datum/bond_node/proc/enforce_cap(datum/bond_actor/newcomer)
 	while(length(bonds) > BOND_MAX_PER_MIND)
 		if(evict_weakest(newcomer, TRUE))

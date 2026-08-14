@@ -265,15 +265,33 @@
 		return 0
 	return stance_warmth(id_a, id_b)
 
+/datum/controller/subsystem/bonds/proc/seed_stance_block(list/axis, list/warmth_rows, list/weight_rows)
+	var/count = length(axis)
+	if(length(warmth_rows) != count || length(weight_rows) != count)
+		bondlog("stance block of [count] factions has [length(warmth_rows)] warmth rows and [length(weight_rows)] weight rows", BONDLOG_WARN)
+		return
+	for(var/i in 1 to count)
+		var/list/warmth_row = warmth_rows[i]
+		var/list/weight_row = weight_rows[i]
+		if(length(warmth_row) != count - i || length(weight_row) != count - i)
+			bondlog("stance row [axis[i]] is [length(warmth_row)]/[length(weight_row)] wide, expected [count - i]", BONDLOG_WARN)
+			continue
+		for(var/j in (i + 1) to count)
+			var/warmth = warmth_row[j - i]
+			var/weight = weight_row[j - i]
+			if(isnull(warmth) || isnull(weight))
+				continue
+			var/datum/faction_stance/stance = get_or_create_stance(axis[i], axis[j])
+			if(!stance)
+				bondlog("stance row [axis[i]] names an unknown faction [axis[j]]", BONDLOG_WARN)
+				continue
+			stance.warmth = warmth
+			stance.weight = weight
+
 /datum/controller/subsystem/bonds/proc/build_faction_stances()
 	faction_stances = list()
-	for(var/list/row as anything in GLOB.bond_faction_baselines)
-		var/datum/faction_stance/stance = get_or_create_stance(row[1], row[2])
-		if(!stance)
-			bondlog("baseline row [row[1]]|[row[2]] references an unknown faction pair", BONDLOG_WARN)
-			continue
-		stance.warmth = row[3]
-		stance.weight = row[4]
+	for(var/list/block as anything in stance_blocks())
+		seed_stance_block(block[1], block[2], block[3])
 	stance_revision++
 	bondlog("faction stances seeded: [faction_stances.len] pairs", BONDLOG_INFO)
 
