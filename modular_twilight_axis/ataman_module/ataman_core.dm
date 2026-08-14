@@ -123,10 +123,8 @@ GLOBAL_VAR_INIT(ataman_ai_log_file, null)
 	var/area/spot_area = get_area(target_turf)
 	if(istype(spot_area, /area/rogue/under))
 		return "I cannot set this underground!"
-	for(var/obj/structure/dungeon_entry/entry as anything in GLOB.dungeon_entries)
-		var/turf/entry_turf = get_turf(entry)
-		if(entry_turf && entry_turf.z == target_turf.z && get_dist(entry_turf, target_turf) <= ATAMAN_TRAP_TOMB_EXCLUSION)
-			return "too close to the tomb!"
+	if(locate(/obj/structure/fluff/traveltile/dungeon) in range(ATAMAN_TRAP_TOMB_EXCLUSION, target_turf))
+		return "too close to the tomb!"
 	for(var/mob/living/bystander in range(ATAMAN_TRAP_PLAYER_EXCLUSION_RANGE, target_turf))
 		if(bystander == user || !bystander.client)
 			continue

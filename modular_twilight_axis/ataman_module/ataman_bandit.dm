@@ -105,9 +105,6 @@
 	)
 	planning_subtrees = list(
 		/datum/ai_planning_subtree/generic_break_restraints,
-		/datum/ai_planning_subtree/use_powder,
-		/datum/ai_planning_subtree/use_bandage,
-		/datum/ai_planning_subtree/use_healing_drink,
 		/datum/ai_planning_subtree/generic_resist,
 		/datum/ai_planning_subtree/generic_stand,
 		/datum/ai_planning_subtree/tree_climb,
@@ -156,9 +153,6 @@
 /datum/ai_controller/human_npc/ataman_bandit/grabber
 	planning_subtrees = list(
 		/datum/ai_planning_subtree/generic_break_restraints,
-		/datum/ai_planning_subtree/use_powder,
-		/datum/ai_planning_subtree/use_bandage,
-		/datum/ai_planning_subtree/use_healing_drink,
 		/datum/ai_planning_subtree/generic_resist,
 		/datum/ai_planning_subtree/generic_stand,
 		/datum/ai_planning_subtree/tree_climb,
