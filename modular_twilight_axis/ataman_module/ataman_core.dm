@@ -368,11 +368,14 @@ SUBSYSTEM_DEF(ataman_deathmark)
 	associated_stat = null
 	spell_requirements = SPELL_REQUIRES_HUMAN | SPELL_REQUIRES_SAME_Z
 
+/proc/ataman_is_loot_sack(atom/thing)
+	return istype(thing, /obj/item/storage/roguebag) || istype(thing, /obj/item/storage/backpack/rogue)
+
 /datum/action/cooldown/spell/ataman_exchange/is_valid_target(atom/cast_on)
 	. = ..()
 	if(!.)
 		return FALSE
-	if(!istype(cast_on, /obj/item/storage/rogue))
+	if(!ataman_is_loot_sack(cast_on))
 		owner.balloon_alert(owner, "that is not a bag of goods!")
 		return FALSE
 	if(!locate(/obj/structure/roguemachine/goldface/public/wretch_cat) in range(2, owner))
@@ -386,9 +389,9 @@ SUBSYSTEM_DEF(ataman_deathmark)
 	if(!istype(H))
 		return FALSE
 	var/obj/item/storage/sack = target
-	if(!istype(sack))
+	if(!ataman_is_loot_sack(sack))
 		return FALSE
-	var/obj/structure/roguemachine/blackmarket/fence = locate(/obj/structure/roguemachine/blackmarket) in range(2, H)
+	var/obj/structure/roguemachine/goldface/public/wretch_cat/fence = locate(/obj/structure/roguemachine/goldface/public/wretch_cat) in range(2, H)
 	if(!fence)
 		return FALSE
 
