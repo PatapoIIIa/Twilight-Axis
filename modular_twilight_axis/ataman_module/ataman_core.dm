@@ -212,31 +212,42 @@ GLOBAL_VAR_INIT(ataman_ai_log_file, null)
 	return list(3, 4)
 
 /proc/ataman_apply_bandit_gear(mob/living/carbon/human/npc/ataman_bandit/bandit, tier)
+	var/list/kit
 	switch(tier)
 		if(2)
-			bandit.equip_to_slot_or_del(new /obj/item/clothing/suit/roguetown/armor/leather/heavy, SLOT_ARMOR, TRUE)
-			bandit.equip_to_slot_or_del(new /obj/item/clothing/gloves/roguetown/plate/iron, SLOT_GLOVES, TRUE)
-			bandit.equip_to_slot_or_del(new /obj/item/clothing/shoes/roguetown/boots/armor/iron, SLOT_SHOES, TRUE)
-			bandit.equip_to_slot_or_del(new /obj/item/clothing/wrists/roguetown/bracers/iron, SLOT_WRISTS, TRUE)
-			bandit.equip_to_slot_or_del(new /obj/item/clothing/neck/roguetown/chaincoif/iron, SLOT_NECK, TRUE)
+			kit = list(
+				/obj/item/clothing/suit/roguetown/armor/leather/heavy = SLOT_ARMOR,
+				/obj/item/clothing/gloves/roguetown/plate/iron = SLOT_GLOVES,
+				/obj/item/clothing/shoes/roguetown/boots/armor/iron = SLOT_SHOES,
+				/obj/item/clothing/wrists/roguetown/bracers/iron = SLOT_WRISTS,
+				/obj/item/clothing/neck/roguetown/chaincoif/iron = SLOT_NECK,
+			)
 		if(3, 4)
-			bandit.equip_to_slot_or_del(new /obj/item/clothing/suit/roguetown/armor/plate/iron, SLOT_ARMOR, TRUE)
-			bandit.equip_to_slot_or_del(new /obj/item/clothing/gloves/roguetown/plate/iron, SLOT_GLOVES, TRUE)
-			bandit.equip_to_slot_or_del(new /obj/item/clothing/shoes/roguetown/boots/armor/iron, SLOT_SHOES, TRUE)
-			bandit.equip_to_slot_or_del(new /obj/item/clothing/wrists/roguetown/bracers/iron, SLOT_WRISTS, TRUE)
-			bandit.equip_to_slot_or_del(new /obj/item/clothing/neck/roguetown/chaincoif/iron, SLOT_NECK, TRUE)
+			kit = list(
+				/obj/item/clothing/suit/roguetown/armor/plate/iron = SLOT_ARMOR,
+				/obj/item/clothing/gloves/roguetown/plate/iron = SLOT_GLOVES,
+				/obj/item/clothing/shoes/roguetown/boots/armor/iron = SLOT_SHOES,
+				/obj/item/clothing/wrists/roguetown/bracers/iron = SLOT_WRISTS,
+				/obj/item/clothing/neck/roguetown/chaincoif/iron = SLOT_NECK,
+			)
 		if(5 to INFINITY)
-			bandit.equip_to_slot_or_del(new /obj/item/clothing/suit/roguetown/armor/plate, SLOT_ARMOR, TRUE)
-			bandit.equip_to_slot_or_del(new /obj/item/clothing/gloves/roguetown/plate, SLOT_GLOVES, TRUE)
-			bandit.equip_to_slot_or_del(new /obj/item/clothing/shoes/roguetown/boots/armor, SLOT_SHOES, TRUE)
-			bandit.equip_to_slot_or_del(new /obj/item/clothing/wrists/roguetown/bracers, SLOT_WRISTS, TRUE)
-			bandit.equip_to_slot_or_del(new /obj/item/clothing/neck/roguetown/chaincoif, SLOT_NECK, TRUE)
+			kit = list(
+				/obj/item/clothing/suit/roguetown/armor/plate = SLOT_ARMOR,
+				/obj/item/clothing/gloves/roguetown/plate = SLOT_GLOVES,
+				/obj/item/clothing/shoes/roguetown/boots/armor = SLOT_SHOES,
+				/obj/item/clothing/wrists/roguetown/bracers = SLOT_WRISTS,
+				/obj/item/clothing/neck/roguetown/chaincoif = SLOT_NECK,
+			)
 		else
-			bandit.equip_to_slot_or_del(new /obj/item/clothing/suit/roguetown/armor/leather, SLOT_ARMOR, TRUE)
-			bandit.equip_to_slot_or_del(new /obj/item/clothing/gloves/roguetown/leather, SLOT_GLOVES, TRUE)
-			bandit.equip_to_slot_or_del(new /obj/item/clothing/shoes/roguetown/boots/leather/reinforced, SLOT_SHOES, TRUE)
-			bandit.equip_to_slot_or_del(new /obj/item/clothing/wrists/roguetown/bracers/leather, SLOT_WRISTS, TRUE)
-			bandit.equip_to_slot_or_del(new /obj/item/clothing/neck/roguetown/leather, SLOT_NECK, TRUE)
+			kit = list(
+				/obj/item/clothing/suit/roguetown/armor/leather = SLOT_ARMOR,
+				/obj/item/clothing/gloves/roguetown/leather = SLOT_GLOVES,
+				/obj/item/clothing/shoes/roguetown/boots/leather/reinforced = SLOT_SHOES,
+				/obj/item/clothing/wrists/roguetown/bracers/leather = SLOT_WRISTS,
+				/obj/item/clothing/neck/roguetown/leather = SLOT_NECK,
+			)
+	for(var/piece in kit)
+		bandit.equip_to_slot_or_del(new piece(), kit[piece], TRUE)
 
 #define ATAMAN_DEATH_MARK_WINDOW 15
 #define ATAMAN_DEATH_MARK_MAX_WITNESSES 6
