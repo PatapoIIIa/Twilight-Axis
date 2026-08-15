@@ -372,10 +372,10 @@ SUBSYSTEM_DEF(ataman_deathmark)
 	. = ..()
 	if(!.)
 		return FALSE
-	if(!istype(cast_on, /obj/item/storage))
+	if(!istype(cast_on, /obj/item/storage/rogue))
 		owner.balloon_alert(owner, "that is not a bag of goods!")
 		return FALSE
-	if(!locate(/obj/structure/roguemachine/blackmarket) in range(2, owner))
+	if(!locate(/obj/structure/roguemachine/goldface/public/wretch_cat) in range(2, owner))
 		owner.balloon_alert(owner, "there is no fence nearby!")
 		return FALSE
 	return TRUE
