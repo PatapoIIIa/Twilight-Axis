@@ -11,7 +11,7 @@
 	cmode_music = 'sound/music/cmode/antag/combat_cutpurse.ogg'
 	class_select_category = CLASS_CAT_WARRIOR
 	category_tags = list(CTAG_WRETCH)
-	traits_applied = list(TRAIT_MEDIUMARMOR, TRAIT_PERFECT_TRACKER, TRAIT_CICERONE, TRAIT_ALCHEMY_EXPERT, TRAIT_SMITHING_EXPERT, TRAIT_MEDICINE_EXPERT, TRAIT_KEENEARS)
+	traits_applied = list(TRAIT_MEDIUMARMOR, TRAIT_PERFECT_TRACKER, TRAIT_CICERONE, TRAIT_ALCHEMY_EXPERT, TRAIT_SMITHING_EXPERT, TRAIT_MEDICINE_EXPERT, TRAIT_KEENEARS, TRAIT_SEEPRICES)
 	maximum_possible_slots = 1
 	extra_context = "Ты ведёшь собственную небольшую банду дорогой славы. Грабь, то, что можно награбить, а неограбляемое делай ограбляемым"
 	subclass_stats = list(
