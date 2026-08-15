@@ -21,10 +21,11 @@
 	if(pawn.Adjacent(target))
 		squad.release_interceptor(pawn)
 		return
-	if(!squad.claim_interceptor(pawn) && !squad.aim_chain_held)
-		return
 	var/turf/intercept_point = squad.get_intercept_point()
 	if(!intercept_point)
+		squad.release_interceptor(pawn)
+		return
+	if(!squad.claim_interceptor(pawn))
 		squad.release_interceptor(pawn)
 		return
 	ataman_ai_log(pawn, "INTERCEPT: cutting off [target] toward [intercept_point]")
@@ -38,32 +39,31 @@
 	if(!istype(pawn) || pawn.ataman_disbanding)
 		return
 	var/mob/living/hunted = controller.blackboard[BB_ATAMAN_TARGET]
-	if(istype(hunted) && hunted.stat != DEAD && !pawn.ataman_gave_up)
-		pawn.ataman_idle_until = 0
-	else
+	if(!istype(hunted) || hunted.stat == DEAD || pawn.ataman_gave_up)
 		if(!pawn.ataman_idle_until)
 			pawn.ataman_idle_until = world.time + rand(ATAMAN_IDLE_DESPAWN_MIN, ATAMAN_IDLE_DESPAWN_MAX)
 		else if(world.time >= pawn.ataman_idle_until)
 			ataman_ai_log(pawn, "IDLE: nothing left to hunt, breaking off for good")
 			ataman_disband(controller, pawn)
 			return SUBTREE_RETURN_FINISH_PLANNING
+		return
 
+	pawn.ataman_idle_until = 0
 	var/turf/spawn_turf = controller.blackboard[BB_ATAMAN_SPAWN_TURF]
-	if(!spawn_turf)
+	var/target_gap = get_dist(pawn, hunted)
+	var/spawn_gap = spawn_turf ? get_dist(pawn, spawn_turf) : 0
+	if(target_gap <= ATAMAN_GIVEUP_RANGE && spawn_gap <= ATAMAN_LEASH_RANGE)
 		return
-	if(get_dist(pawn, spawn_turf) <= ATAMAN_LEASH_RANGE)
-		return
-	var/atom/target = controller.blackboard[BB_ATAMAN_TARGET]
-	if(target)
-		ataman_ai_log(pawn, "LEASH: giving up on [target] - [get_dist(pawn, spawn_turf)] tiles from spawn (limit [ATAMAN_LEASH_RANGE]), heading home")
-		if(pawn.pulling == target)
-			pawn.stop_pulling()
-		pawn.cmode = FALSE
-		pawn.ataman_gave_up = TRUE
-		controller.clear_blackboard_key(BB_ATAMAN_TARGET)
-		controller.clear_blackboard_key(BB_BASIC_MOB_CURRENT_TARGET)
-		controller.clear_blackboard_key(BB_HIGHEST_THREAT_MOB)
-	controller.queue_behavior(/datum/ai_behavior/travel_towards/stop_on_arrival, BB_ATAMAN_SPAWN_TURF)
+
+	ataman_ai_log(pawn, "LEASH: [hunted] broke away - [target_gap] tiles between us, [spawn_gap] from spawn, melting into the treeline")
+	if(pawn.pulling == hunted)
+		pawn.stop_pulling()
+	pawn.cmode = FALSE
+	pawn.ataman_gave_up = TRUE
+	controller.clear_blackboard_key(BB_ATAMAN_TARGET)
+	controller.clear_blackboard_key(BB_BASIC_MOB_CURRENT_TARGET)
+	controller.clear_blackboard_key(BB_HIGHEST_THREAT_MOB)
+	ataman_disband(controller, pawn)
 	return SUBTREE_RETURN_FINISH_PLANNING
 
 /datum/ai_planning_subtree/ataman_disarm_restrain/SelectBehaviors(datum/ai_controller/controller, delta_time)
@@ -107,8 +107,10 @@
 				controller.queue_behavior(/datum/ai_behavior/ataman_hold, BB_ATAMAN_TARGET)
 			return SUBTREE_RETURN_FINISH_PLANNING
 		if(ATAMAN_ROLE_BINDER)
-			if(target.stat == CONSCIOUS && (target_is_armed || (target.mobility_flags & MOBILITY_STAND)))
-				ataman_ai_log(pawn, "CAPTURE: binder not ready (armed=[target_is_armed ? "yes" : "no"] standing=[(target.mobility_flags & MOBILITY_STAND) ? "yes" : "no"]) - falling back to attacking")
+			var/standing = target.mobility_flags & MOBILITY_STAND
+			var/pinned = length(target.grabbedby) && (target.IsOffBalanced() || ataman_target_under_debuff(target))
+			if(target.stat == CONSCIOUS && standing && (target_is_armed || !pinned))
+				ataman_ai_log(pawn, "CAPTURE: binder not ready (armed=[target_is_armed ? "yes" : "no"] standing=yes pinned=[pinned ? "yes" : "no"]) - falling back to attacking")
 				return
 			ataman_ai_log(pawn, "CAPTURE: binder -> restrain")
 			controller.queue_behavior(/datum/ai_behavior/ataman_restrain, BB_ATAMAN_TARGET)
@@ -401,9 +403,10 @@
 		return SUBTREE_RETURN_FINISH_PLANNING
 
 	if(role == ATAMAN_ROLE_ENFORCER && pawn.pulling != target && (pawn.mobility_flags & MOBILITY_STAND) && !pawn.IsOffBalanced() && pawn.get_num_legs() >= 2 && (target.mobility_flags & MOBILITY_STAND))
-		var/walled_kick = length(target.grabbedby) >= 2 && ataman_target_is_walled(pawn, target)
-		if(walled_kick || target.IsOffBalanced())
-			ataman_ai_log(pawn, "TACTICS: kicking [target] ([walled_kick ? "held and walled" : "off balance"])")
+		var/held = length(target.grabbedby) >= 1
+		var/walled_kick = held && ataman_target_is_walled(pawn, target)
+		if(walled_kick || target.IsOffBalanced() || (held && ataman_target_under_debuff(target)))
+			ataman_ai_log(pawn, "TACTICS: kicking [target] ([walled_kick ? "held and walled" : target.IsOffBalanced() ? "off balance" : "held and debuffed"])")
 			controller.set_blackboard_key(BB_ATAMAN_TACTICS_COOLDOWN, world.time + 1 SECONDS)
 			controller.queue_behavior(/datum/ai_behavior/npc_kick_attack/ataman_low, BB_ATAMAN_TARGET)
 			return SUBTREE_RETURN_FINISH_PLANNING

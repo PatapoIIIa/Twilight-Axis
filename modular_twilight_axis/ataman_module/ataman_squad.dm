@@ -157,6 +157,9 @@
 	var/turf/last_target_turf
 	var/last_target_check = 0
 	var/intercept_dir = 0
+	var/intercept_dir_at = 0
+	var/intercept_until = 0
+	var/intercept_cooldown_until = 0
 	var/datum/weakref/interceptor_ref
 	var/aim_zone
 	var/aim_chain_held = FALSE
@@ -276,29 +279,39 @@
 /datum/ataman_squad/proc/on_target_armed_swing(mob/living/source, mob/living/victim, mob/living/attacker, obj/item/weapon)
 	SIGNAL_HANDLER
 	if(note_target_zone(source.zone_selected))
-		ataman_ai_log(source, "INTEL: they committed a swing at [aim_zone] - the gang reads their aim")
+		ataman_ai_log(source, "INTEL: they swung at [aim_zone] - the gang reads their aim")
+	else
+		ataman_ai_log(source, "INTEL: they swung at [source.zone_selected] - useless to bait against")
 
 /datum/ataman_squad/proc/on_target_unarmed_swing(mob/living/source, atom/victim, proximity)
 	SIGNAL_HANDLER
 	if(note_target_zone(source.zone_selected))
-		ataman_ai_log(source, "INTEL: they committed an unarmed strike at [aim_zone] - the gang reads their aim")
+		ataman_ai_log(source, "INTEL: they struck at [aim_zone] - the gang reads their aim")
+	else
+		ataman_ai_log(source, "INTEL: they struck at [source.zone_selected] - useless to bait against")
 
 /datum/ataman_squad/Destroy()
 	stop_watching_target()
 	return ..()
 
 /datum/ataman_squad/proc/claim_interceptor(mob/living/bandit)
+	if(world.time < intercept_cooldown_until)
+		return FALSE
 	var/mob/living/current = interceptor_ref?.resolve()
 	if(current == bandit)
-		return TRUE
-	if(istype(current) && !QDELETED(current) && current.stat != DEAD)
+		return world.time < intercept_until
+	if(istype(current) && !QDELETED(current) && current.stat != DEAD && world.time < intercept_until)
 		return FALSE
 	interceptor_ref = WEAKREF(bandit)
+	intercept_until = world.time + ATAMAN_INTERCEPT_WINDOW
 	return TRUE
 
 /datum/ataman_squad/proc/release_interceptor(mob/living/bandit)
-	if(interceptor_ref?.resolve() == bandit)
-		interceptor_ref = null
+	if(interceptor_ref?.resolve() != bandit)
+		return
+	interceptor_ref = null
+	intercept_until = 0
+	intercept_cooldown_until = world.time + ATAMAN_INTERCEPT_COOLDOWN
 
 /datum/ataman_squad/proc/get_intercept_point()
 	var/mob/living/target = get_target()
@@ -307,12 +320,13 @@
 	var/turf/current_turf = get_turf(target)
 	if(!current_turf)
 		return null
-	if(world.time >= last_target_check + 2 SECONDS)
+	if(world.time >= last_target_check + 1 SECONDS)
 		if(last_target_turf && last_target_turf != current_turf)
 			intercept_dir = get_dir(last_target_turf, current_turf)
+			intercept_dir_at = world.time
 		last_target_turf = current_turf
 		last_target_check = world.time
-	if(!intercept_dir)
+	if(!intercept_dir || world.time > intercept_dir_at + ATAMAN_INTERCEPT_STALE)
 		return null
 	var/turf/ahead = current_turf
 	for(var/i in 1 to 6)
@@ -344,6 +358,8 @@
 		return FALSE
 	var/zone = squad.get_aim_zone()
 	if(!zone)
+		if(squad.aim_chain_held)
+			ataman_ai_log(pawn, "AIM: chain is held, waiting for [target] to commit a hit")
 		return FALSE
 	if(!squad.claim_aim(pawn))
 		return FALSE
