@@ -158,6 +158,10 @@
 	var/last_target_check = 0
 	var/intercept_dir = 0
 	var/datum/weakref/interceptor_ref
+	var/aim_zone
+	var/aim_chain_held = FALSE
+	var/aim_claim_until = 0
+	var/datum/weakref/watched_ref
 
 /datum/ataman_squad/proc/get_target()
 	return target_ref?.resolve()
@@ -208,8 +212,6 @@
 /datum/ataman_squad/proc/consider_feint(mob/living/carbon/human/attacker, mob/living/target, emergency = FALSE)
 	if(!istype(attacker) || attacker.has_status_effect(/datum/status_effect/debuff/feintcd))
 		return FALSE
-	if(!istype(attacker.rmb_intent, /datum/rmb_intent/feint))
-		return FALSE
 	if(emergency)
 		return TRUE
 	if(feints_used == 0)
@@ -221,6 +223,69 @@
 /datum/ataman_squad/proc/register_feint()
 	feints_used++
 	last_feint_at = world.time
+
+/datum/ataman_squad/proc/note_target_zone(zone)
+	if(!zone || zone == BODY_ZONE_CHEST)
+		return FALSE
+	aim_zone = zone
+	aim_chain_held = FALSE
+	return TRUE
+
+/datum/ataman_squad/proc/get_aim_zone()
+	if(aim_chain_held)
+		return null
+	return aim_zone
+
+/datum/ataman_squad/proc/hold_aim_chain()
+	aim_zone = null
+	aim_chain_held = TRUE
+	aim_claim_until = 0
+	feints_used = 0
+	last_feint_at = 0
+	watch_target()
+
+/datum/ataman_squad/proc/claim_aim(mob/living/bandit)
+	if(world.time < aim_claim_until)
+		return FALSE
+	aim_claim_until = world.time + 3 SECONDS
+	return TRUE
+
+/datum/ataman_squad/proc/refresh_aim_intel(mob/living/target)
+	if(!istype(target))
+		return
+	watch_target()
+
+/datum/ataman_squad/proc/watch_target()
+	if(watched_ref)
+		return
+	var/mob/living/target = get_target()
+	if(!istype(target) || QDELETED(target))
+		return
+	watched_ref = WEAKREF(target)
+	RegisterSignal(target, COMSIG_MOB_ITEM_ATTACK_POST_SWINGDELAY, PROC_REF(on_target_armed_swing))
+	RegisterSignal(target, COMSIG_HUMAN_EARLY_UNARMED_ATTACK, PROC_REF(on_target_unarmed_swing))
+
+/datum/ataman_squad/proc/stop_watching_target()
+	if(!watched_ref)
+		return
+	var/mob/living/watched = watched_ref.resolve()
+	watched_ref = null
+	if(!QDELETED(watched))
+		UnregisterSignal(watched, list(COMSIG_MOB_ITEM_ATTACK_POST_SWINGDELAY, COMSIG_HUMAN_EARLY_UNARMED_ATTACK))
+
+/datum/ataman_squad/proc/on_target_armed_swing(mob/living/source, mob/living/victim, mob/living/attacker, obj/item/weapon)
+	SIGNAL_HANDLER
+	if(note_target_zone(source.zone_selected))
+		ataman_ai_log(source, "INTEL: they committed a swing at [aim_zone] - the gang reads their aim")
+
+/datum/ataman_squad/proc/on_target_unarmed_swing(mob/living/source, atom/victim, proximity)
+	SIGNAL_HANDLER
+	if(note_target_zone(source.zone_selected))
+		ataman_ai_log(source, "INTEL: they committed an unarmed strike at [aim_zone] - the gang reads their aim")
+
+/datum/ataman_squad/Destroy()
+	stop_watching_target()
+	return ..()
 
 /datum/ataman_squad/proc/claim_interceptor(mob/living/bandit)
 	var/mob/living/current = interceptor_ref?.resolve()

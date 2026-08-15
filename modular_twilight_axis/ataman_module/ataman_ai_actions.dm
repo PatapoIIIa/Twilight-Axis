@@ -6,75 +6,6 @@
 		pawn.zone_selected = pick(BODY_ZONE_L_LEG, BODY_ZONE_R_LEG)
 	return ..()
 
-/datum/ai_planning_subtree/ataman_squad_tactics/SelectBehaviors(datum/ai_controller/controller, delta_time)
-	. = ..()
-	var/mob/living/carbon/human/npc/ataman_bandit/pawn = controller.pawn
-	if(!istype(pawn))
-		return
-	var/datum/ataman_squad/squad = controller.blackboard[BB_ATAMAN_SQUAD]
-	if(!squad)
-		return
-	ataman_recover_target(controller, pawn)
-	var/mob/living/carbon/target = controller.blackboard[BB_ATAMAN_TARGET]
-	if(!istype(target) || target.stat == DEAD || ataman_target_is_secured(target) || !pawn.Adjacent(target))
-		return
-
-	var/role = controller.blackboard[BB_ATAMAN_ROLE]
-	if(role != ATAMAN_ROLE_GRABBER && ishuman(target) && target.stat == CONSCIOUS)
-		var/capture_zone = ataman_pick_capture_zone(pawn, target)
-		if(capture_zone)
-			controller.set_blackboard_key(BB_HUMAN_NPC_WEAKPOINT, list(capture_zone, world.time + 3 SECONDS, target))
-
-	if(world.time < (controller.blackboard[BB_ATAMAN_TACTICS_COOLDOWN] || 0))
-		return
-
-	if(squad.target_channeling_escape_spell())
-		if(squad.consider_feint(pawn, target, emergency = TRUE))
-			squad.register_feint()
-			ataman_ai_log(pawn, "TACTICS: [target] is casting an escape spell - emergency feint (squad feints_used=[squad.feints_used])")
-			controller.set_blackboard_key(BB_ATAMAN_TACTICS_COOLDOWN, world.time + 1 SECONDS)
-			controller.ai_interact(target, TRUE, TRUE, list(RIGHT_CLICK = TRUE))
-		else
-			ataman_ai_log(pawn, "TACTICS: [target] casting an escape spell but I can't feint right now (feintcd/rmb_intent)")
-		return SUBTREE_RETURN_FINISH_PLANNING
-
-	if(role == ATAMAN_ROLE_ENFORCER && pawn.pulling != target && (pawn.mobility_flags & MOBILITY_STAND) && !pawn.IsOffBalanced() && pawn.get_num_legs() >= 2 && (target.mobility_flags & MOBILITY_STAND))
-		var/walled_kick = length(target.grabbedby) >= 2 && ataman_target_is_walled(pawn, target)
-		if(walled_kick || target.IsOffBalanced())
-			ataman_ai_log(pawn, "TACTICS: kicking [target] ([walled_kick ? "held and walled" : "off balance"])")
-			controller.set_blackboard_key(BB_ATAMAN_TACTICS_COOLDOWN, world.time + 1 SECONDS)
-			controller.queue_behavior(/datum/ai_behavior/npc_kick_attack/ataman_low, BB_ATAMAN_TARGET)
-			return SUBTREE_RETURN_FINISH_PLANNING
-		else if(length(target.grabbedby) >= 2)
-			ataman_ai_log(pawn, "TACTICS: [target] held by [length(target.grabbedby)] grabs but nothing solid behind them - kick would whiff, skipping")
-
-	if(role == ATAMAN_ROLE_BINDER && squad.is_target_caster(target) && ataman_try_mouth_grab(controller, pawn, target, squad))
-		controller.set_blackboard_key(BB_ATAMAN_TACTICS_COOLDOWN, world.time + 1 SECONDS)
-		return SUBTREE_RETURN_FINISH_PLANNING
-
-	if(squad.target_channeling_spell())
-		if(!pawn.has_status_effect(/datum/status_effect/buff/clash) && squad.claim_guard())
-			ataman_ai_log(pawn, "TACTICS: [target] is casting - guarding")
-			controller.set_blackboard_key(BB_ATAMAN_TACTICS_COOLDOWN, world.time + 1 SECONDS)
-			pawn.try_guard()
-		return SUBTREE_RETURN_FINISH_PLANNING
-
-	if(role == ATAMAN_ROLE_ENFORCER && pawn.pulling != target && ataman_last_feint_landed(target) && squad.bites_used < 2 && get_location_accessible(target, BODY_ZONE_PRECISE_L_EYE))
-		squad.bites_used++
-		ataman_ai_log(pawn, "TACTICS: [target] is feinted and exposed - taking bite #[squad.bites_used]")
-		controller.set_blackboard_key(BB_ATAMAN_TACTICS_COOLDOWN, world.time + 1 SECONDS)
-		target.onbite(pawn)
-		return SUBTREE_RETURN_FINISH_PLANNING
-
-	if(squad.consider_feint(pawn, target))
-		squad.register_feint()
-		ataman_ai_log(pawn, "TACTICS: staged feint #[squad.feints_used] on [target]")
-		controller.set_blackboard_key(BB_ATAMAN_TACTICS_COOLDOWN, world.time + 1 SECONDS)
-		controller.ai_interact(target, TRUE, TRUE, list(RIGHT_CLICK = TRUE))
-		return SUBTREE_RETURN_FINISH_PLANNING
-
-	return
-
 /datum/ai_planning_subtree/ataman_intercept/SelectBehaviors(datum/ai_controller/controller, delta_time)
 	. = ..()
 	var/mob/living/carbon/human/npc/ataman_bandit/pawn = controller.pawn
@@ -90,7 +21,7 @@
 	if(pawn.Adjacent(target))
 		squad.release_interceptor(pawn)
 		return
-	if(!squad.claim_interceptor(pawn))
+	if(!squad.claim_interceptor(pawn) && !squad.aim_chain_held)
 		return
 	var/turf/intercept_point = squad.get_intercept_point()
 	if(!intercept_point)
@@ -103,11 +34,22 @@
 
 /datum/ai_planning_subtree/ataman_leash/SelectBehaviors(datum/ai_controller/controller, delta_time)
 	. = ..()
+	var/mob/living/carbon/human/npc/ataman_bandit/pawn = controller.pawn
+	if(!istype(pawn) || pawn.ataman_disbanding)
+		return
+	var/mob/living/hunted = controller.blackboard[BB_ATAMAN_TARGET]
+	if(istype(hunted) && hunted.stat != DEAD && !pawn.ataman_gave_up)
+		pawn.ataman_idle_until = 0
+	else
+		if(!pawn.ataman_idle_until)
+			pawn.ataman_idle_until = world.time + rand(ATAMAN_IDLE_DESPAWN_MIN, ATAMAN_IDLE_DESPAWN_MAX)
+		else if(world.time >= pawn.ataman_idle_until)
+			ataman_ai_log(pawn, "IDLE: nothing left to hunt, breaking off for good")
+			ataman_disband(controller, pawn)
+			return SUBTREE_RETURN_FINISH_PLANNING
+
 	var/turf/spawn_turf = controller.blackboard[BB_ATAMAN_SPAWN_TURF]
 	if(!spawn_turf)
-		return
-	var/mob/living/carbon/human/npc/ataman_bandit/pawn = controller.pawn
-	if(!istype(pawn))
 		return
 	if(get_dist(pawn, spawn_turf) <= ATAMAN_LEASH_RANGE)
 		return

@@ -12,6 +12,7 @@
 	var/datum/ataman_squad/ataman_squad
 	var/ataman_gave_up = FALSE
 	var/ataman_disbanding = FALSE
+	var/ataman_idle_until = 0
 
 /mob/living/carbon/human/npc/ataman_bandit/Initialize(mapload)
 	. = ..()

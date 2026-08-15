@@ -8,3 +8,4 @@
 #include "ataman_bandit.dm"
 #include "ataman_squad.dm"
 #include "ataman_ai_actions.dm"
+#include "ataman_debuff_tactics.dm"
