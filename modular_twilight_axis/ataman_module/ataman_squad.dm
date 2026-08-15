@@ -323,3 +323,79 @@
 	if(ahead == current_turf)
 		return null
 	return ahead
+
+/proc/ataman_target_sees(mob/living/pawn, mob/living/target)
+	if(!istype(target) || !target.mind)
+		return TRUE
+	if(!target.get_tempo_bonus(TEMPO_TAG_FEINTBAIT_FOV))
+		return TRUE
+	return target.can_see_cone(pawn)
+
+/proc/ataman_target_baited(mob/living/target)
+	return istype(target) && target.has_status_effect(/datum/status_effect/debuff/baited)
+
+/proc/ataman_target_under_debuff(mob/living/target)
+	return ataman_last_feint_landed(target) || ataman_target_baited(target)
+
+/proc/ataman_try_bait(datum/ai_controller/controller, mob/living/carbon/human/pawn, mob/living/carbon/human/target, datum/ataman_squad/squad)
+	if(!ishuman(pawn) || !ishuman(target) || !squad)
+		return FALSE
+	if(pawn.has_status_effect(/datum/status_effect/debuff/baitcd) || ataman_target_baited(target))
+		return FALSE
+	var/zone = squad.get_aim_zone()
+	if(!zone)
+		return FALSE
+	if(!squad.claim_aim(pawn))
+		return FALSE
+	pawn.swap_rmb_intent(type = /datum/rmb_intent/aimed)
+	if(!istype(pawn.rmb_intent, /datum/rmb_intent/aimed))
+		return FALSE
+	pawn.zone_selected = zone
+	ataman_ai_log(pawn, "AIM: baiting [target] on [zone]")
+	if(!controller.ai_interact(target, TRUE, TRUE, list(RIGHT_CLICK = TRUE)))
+		return FALSE
+	if(QDELETED(pawn) || QDELETED(target))
+		return TRUE
+	if(ataman_target_baited(target))
+		ataman_ai_log(pawn, "AIM: bait landed on [target] - they are exposed")
+		return TRUE
+	ataman_ai_log(pawn, "AIM: bait missed on [target] - dropping the whole debuff chain until they commit to a hit")
+	squad.hold_aim_chain()
+	return TRUE
+
+/proc/ataman_try_feint(datum/ai_controller/controller, mob/living/carbon/human/pawn, mob/living/target, datum/ataman_squad/squad, emergency = FALSE)
+	if(!istype(pawn) || !istype(target) || !squad)
+		return FALSE
+	if(!emergency && target.has_status_effect(/datum/status_effect/debuff/feinted))
+		return FALSE
+	if(!ataman_target_sees(pawn, target))
+		ataman_ai_log(pawn, "FEINT: [target] cannot see me, a feint would be wasted")
+		return FALSE
+	if(!squad.consider_feint(pawn, target, emergency))
+		return FALSE
+	pawn.swap_rmb_intent(type = /datum/rmb_intent/feint)
+	if(!istype(pawn.rmb_intent, /datum/rmb_intent/feint))
+		return FALSE
+	if(!controller.ai_interact(target, TRUE, TRUE, list(RIGHT_CLICK = TRUE)))
+		return FALSE
+	squad.register_feint()
+	ataman_ai_log(pawn, "FEINT: staged feint #[squad.feints_used] on [target][emergency ? " (emergency, they are casting an escape)" : ""]")
+	return TRUE
+
+/proc/ataman_try_bite(datum/ai_controller/controller, mob/living/carbon/human/pawn, mob/living/carbon/target, datum/ataman_squad/squad)
+	if(!istype(pawn) || !istype(target) || !squad)
+		return FALSE
+	if(pawn.pulling == target || squad.bites_used >= 2)
+		return FALSE
+	if(!ataman_last_feint_landed(target))
+		return FALSE
+	var/zone = squad.get_aim_zone()
+	if(!zone || !check_face_subzone(zone))
+		zone = BODY_ZONE_PRECISE_L_EYE
+	if(!get_location_accessible(target, zone))
+		return FALSE
+	squad.bites_used++
+	pawn.zone_selected = zone
+	ataman_ai_log(pawn, "BITE: [target] is debuffed and open - taking bite #[squad.bites_used] at [zone]")
+	target.onbite(pawn)
+	return TRUE

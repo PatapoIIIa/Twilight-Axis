@@ -369,3 +369,69 @@
 		qdel(binding)
 	ataman_ai_log(pawn, "RESTRAIN: result on [target] - handcuffed=[target.handcuffed ? "yes" : "no"] legcuffed=[target.legcuffed ? "yes" : "no"]")
 	finish_action(controller, target.handcuffed, target_key)
+
+/datum/ai_planning_subtree/ataman_squad_tactics/SelectBehaviors(datum/ai_controller/controller, delta_time)
+	. = ..()
+	var/mob/living/carbon/human/npc/ataman_bandit/pawn = controller.pawn
+	if(!istype(pawn))
+		return
+	var/datum/ataman_squad/squad = controller.blackboard[BB_ATAMAN_SQUAD]
+	if(!squad)
+		return
+	ataman_recover_target(controller, pawn)
+	var/mob/living/carbon/target = controller.blackboard[BB_ATAMAN_TARGET]
+	if(!istype(target) || target.stat == DEAD || ataman_target_is_secured(target))
+		return
+	squad.refresh_aim_intel(target)
+	if(!pawn.Adjacent(target))
+		return
+
+	var/role = controller.blackboard[BB_ATAMAN_ROLE]
+	if(role != ATAMAN_ROLE_GRABBER && ishuman(target) && target.stat == CONSCIOUS)
+		var/capture_zone = ataman_pick_capture_zone(pawn, target)
+		if(capture_zone)
+			controller.set_blackboard_key(BB_HUMAN_NPC_WEAKPOINT, list(capture_zone, world.time + 3 SECONDS, target))
+
+	if(world.time < (controller.blackboard[BB_ATAMAN_TACTICS_COOLDOWN] || 0))
+		return
+
+	if(squad.target_channeling_escape_spell())
+		if(ataman_try_feint(controller, pawn, target, squad, TRUE))
+			controller.set_blackboard_key(BB_ATAMAN_TACTICS_COOLDOWN, world.time + 1 SECONDS)
+		return SUBTREE_RETURN_FINISH_PLANNING
+
+	if(role == ATAMAN_ROLE_ENFORCER && pawn.pulling != target && (pawn.mobility_flags & MOBILITY_STAND) && !pawn.IsOffBalanced() && pawn.get_num_legs() >= 2 && (target.mobility_flags & MOBILITY_STAND))
+		var/walled_kick = length(target.grabbedby) >= 2 && ataman_target_is_walled(pawn, target)
+		if(walled_kick || target.IsOffBalanced())
+			ataman_ai_log(pawn, "TACTICS: kicking [target] ([walled_kick ? "held and walled" : "off balance"])")
+			controller.set_blackboard_key(BB_ATAMAN_TACTICS_COOLDOWN, world.time + 1 SECONDS)
+			controller.queue_behavior(/datum/ai_behavior/npc_kick_attack/ataman_low, BB_ATAMAN_TARGET)
+			return SUBTREE_RETURN_FINISH_PLANNING
+
+	if(role == ATAMAN_ROLE_BINDER && squad.is_target_caster(target) && ataman_try_mouth_grab(controller, pawn, target, squad))
+		controller.set_blackboard_key(BB_ATAMAN_TACTICS_COOLDOWN, world.time + 1 SECONDS)
+		return SUBTREE_RETURN_FINISH_PLANNING
+
+	if(squad.target_channeling_spell())
+		if(!pawn.has_status_effect(/datum/status_effect/buff/clash) && squad.claim_guard())
+			ataman_ai_log(pawn, "TACTICS: [target] is casting - guarding")
+			controller.set_blackboard_key(BB_ATAMAN_TACTICS_COOLDOWN, world.time + 1 SECONDS)
+			pawn.try_guard()
+		return SUBTREE_RETURN_FINISH_PLANNING
+
+	if(role == ATAMAN_ROLE_ENFORCER && ataman_try_bite(controller, pawn, target, squad))
+		controller.set_blackboard_key(BB_ATAMAN_TACTICS_COOLDOWN, world.time + 1 SECONDS)
+		return SUBTREE_RETURN_FINISH_PLANNING
+
+	if(ataman_target_under_debuff(target))
+		return
+
+	if(ataman_try_bait(controller, pawn, target, squad))
+		controller.set_blackboard_key(BB_ATAMAN_TACTICS_COOLDOWN, world.time + 1 SECONDS)
+		return SUBTREE_RETURN_FINISH_PLANNING
+
+	if(ataman_try_feint(controller, pawn, target, squad))
+		controller.set_blackboard_key(BB_ATAMAN_TACTICS_COOLDOWN, world.time + 1 SECONDS)
+		return SUBTREE_RETURN_FINISH_PLANNING
+
+	return

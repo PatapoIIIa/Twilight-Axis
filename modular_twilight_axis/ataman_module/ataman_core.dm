@@ -200,3 +200,195 @@ GLOBAL_VAR_INIT(ataman_ai_log_file, null)
 
 	bounty.banner = null
 	compose_bounty(bounty)
+
+/proc/ataman_squad_size_for_tier(tier)
+	switch(tier)
+		if(3)
+			return list(3, 5)
+		if(4)
+			return list(4, 6)
+		if(5 to INFINITY)
+			return list(5, 6)
+	return list(3, 4)
+
+/proc/ataman_apply_bandit_gear(mob/living/carbon/human/npc/ataman_bandit/bandit, tier)
+	switch(tier)
+		if(2)
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/suit/roguetown/armor/leather/heavy, SLOT_ARMOR, TRUE)
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/gloves/roguetown/plate/iron, SLOT_GLOVES, TRUE)
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/shoes/roguetown/boots/armor/iron, SLOT_SHOES, TRUE)
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/wrists/roguetown/bracers/iron, SLOT_WRISTS, TRUE)
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/neck/roguetown/chaincoif/iron, SLOT_NECK, TRUE)
+		if(3, 4)
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/suit/roguetown/armor/plate/iron, SLOT_ARMOR, TRUE)
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/gloves/roguetown/plate/iron, SLOT_GLOVES, TRUE)
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/shoes/roguetown/boots/armor/iron, SLOT_SHOES, TRUE)
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/wrists/roguetown/bracers/iron, SLOT_WRISTS, TRUE)
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/neck/roguetown/chaincoif/iron, SLOT_NECK, TRUE)
+		if(5 to INFINITY)
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/suit/roguetown/armor/plate, SLOT_ARMOR, TRUE)
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/gloves/roguetown/plate, SLOT_GLOVES, TRUE)
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/shoes/roguetown/boots/armor, SLOT_SHOES, TRUE)
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/wrists/roguetown/bracers, SLOT_WRISTS, TRUE)
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/neck/roguetown/chaincoif, SLOT_NECK, TRUE)
+		else
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/suit/roguetown/armor/leather, SLOT_ARMOR, TRUE)
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/gloves/roguetown/leather, SLOT_GLOVES, TRUE)
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/shoes/roguetown/boots/leather/reinforced, SLOT_SHOES, TRUE)
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/wrists/roguetown/bracers/leather, SLOT_WRISTS, TRUE)
+			bandit.equip_to_slot_or_del(new /obj/item/clothing/neck/roguetown/leather, SLOT_NECK, TRUE)
+
+#define ATAMAN_DEATH_MARK_WINDOW 15
+#define ATAMAN_DEATH_MARK_MAX_WITNESSES 6
+#define ATAMAN_DEATH_MARK_BOUNTY 300
+
+SUBSYSTEM_DEF(ataman_deathmark)
+	name = "Ataman Death Mark"
+	flags = SS_NO_FIRE
+
+/datum/controller/subsystem/ataman_deathmark/Initialize()
+	RegisterSignal(SSdcs, COMSIG_GLOB_MOB_CREATED, PROC_REF(on_mob_created))
+	for(var/mob/living/carbon/human/H in GLOB.mob_list)
+		register_human(H)
+	return ..()
+
+/datum/controller/subsystem/ataman_deathmark/proc/on_mob_created(datum/source, mob/new_mob)
+	SIGNAL_HANDLER
+	if(!ishuman(new_mob))
+		return
+	register_human(new_mob)
+
+/datum/controller/subsystem/ataman_deathmark/proc/register_human(mob/living/carbon/human/H)
+	if(!H || H.ataman_deathmark_bound)
+		return
+	H.ataman_deathmark_bound = TRUE
+	RegisterSignal(H, COMSIG_MOB_APPLY_DAMGE, PROC_REF(on_damaged))
+	RegisterSignal(H, COMSIG_LIVING_DEATH, PROC_REF(on_death))
+
+/datum/controller/subsystem/ataman_deathmark/proc/on_damaged(mob/living/carbon/human/victim, damage, damagetype, def_zone)
+	SIGNAL_HANDLER
+	var/mob/living/attacker = victim.lastattacker_weakref?.resolve()
+	if(!attacker || attacker == victim)
+		return
+	victim.recent_attackers += WEAKREF(attacker)
+	var/excess = length(victim.recent_attackers) - ATAMAN_DEATH_MARK_WINDOW
+	if(excess > 0)
+		victim.recent_attackers.Cut(1, excess + 1)
+
+/datum/controller/subsystem/ataman_deathmark/proc/on_death(mob/living/carbon/human/victim, gibbed)
+	SIGNAL_HANDLER
+	check_ataman_death_mark(victim)
+	victim.recent_attackers = list()
+
+/proc/ataman_resolve_source(mob/living/attacker)
+	if(!istype(attacker))
+		return null
+	if(istype(attacker, /mob/living/carbon/human/npc/ataman_bandit))
+		var/mob/living/carbon/human/npc/ataman_bandit/bandit = attacker
+		return bandit.ataman_owner_ref?.resolve()
+	return attacker
+
+/proc/check_ataman_death_mark(mob/living/carbon/human/victim)
+	if(!victim?.client || !length(victim.recent_attackers))
+		return
+
+	var/mob/living/carbon/human/culprit
+	for(var/datum/weakref/ref as anything in victim.recent_attackers)
+		var/mob/living/carbon/human/source = ataman_resolve_source(ref?.resolve())
+		if(istype(source) && source.client && source.mind && source.advjob == "Атаман")
+			culprit = source
+			break
+
+	if(!culprit?.client)
+		return
+
+	var/nearby_players = 0
+	for(var/mob/living/witness in view(5, victim))
+		if(!witness.client)
+			continue
+		nearby_players++
+		if(nearby_players > ATAMAN_DEATH_MARK_MAX_WITNESSES)
+			return
+
+	var/list/d_list = culprit.get_mob_descriptors()
+	var/descriptor_height = build_coalesce_description_nofluff(d_list, culprit, list(MOB_DESCRIPTOR_SLOT_HEIGHT), "%DESC1%")
+	var/descriptor_body = build_coalesce_description_nofluff(d_list, culprit, list(MOB_DESCRIPTOR_SLOT_BODY), "%DESC1%")
+	var/descriptor_voice = build_coalesce_description_nofluff(d_list, culprit, list(MOB_DESCRIPTOR_SLOT_VOICE), "%DESC1%")
+
+	var/datum/bounty/bounty = ataman_find_bounty(culprit, ATAMAN_EXCIDIUM, ATAMAN_BOUNTY_CATEGORY_MURDER)
+	if(bounty)
+		bounty.ataman_victim_names += victim.real_name
+		bounty.amount += ATAMAN_DEATH_MARK_BOUNTY
+		bounty.reason = "Murder: [jointext(bounty.ataman_victim_names, ", ")]"
+		bounty.banner = null
+		compose_bounty(bounty)
+	else
+		bounty = ataman_create_bounty(culprit, ATAMAN_DEATH_MARK_BOUNTY, "Murder: [victim.real_name]", ATAMAN_EXCIDIUM, ATAMAN_BOUNTY_CATEGORY_MURDER, culprit.dna.species, culprit.gender, descriptor_height, descriptor_body, descriptor_voice)
+		bounty.ataman_victim_names = list(victim.real_name)
+
+	to_chat(culprit, span_danger("За мою голову назначена награда. Кто-то узнал о том, что я убил [victim.real_name]!"))
+
+#undef ATAMAN_DEATH_MARK_WINDOW
+#undef ATAMAN_DEATH_MARK_MAX_WITNESSES
+#undef ATAMAN_DEATH_MARK_BOUNTY
+
+/proc/ataman_appraise_loot(atom/movable/container)
+	var/total = 0
+	for(var/obj/item/I in container.contents)
+		if(length(I.contents))
+			total += ataman_appraise_loot(I)
+		var/price = I.get_real_price()
+		if(price > ATAMAN_TRADE_MIN_ITEM_VALUE)
+			total += price
+	return total
+
+/datum/action/cooldown/spell/ataman_exchange
+	name = "Honest Exchange"
+	desc = "Trade a bag of goods to a nearby fence. I receive 55% of their appraised value, while the duchy treasury takes the loss. Only items worth more than 25 mammons count, and the haul must total at least 200."
+	click_to_activate = TRUE
+	self_cast_possible = FALSE
+	primary_resource_type = SPELL_COST_STAMINA
+	primary_resource_cost = SPELLCOST_CANTRIP
+	invocation_type = INVOCATION_NONE
+	charge_required = FALSE
+	cooldown_time = 10 SECONDS
+	cast_range = 1
+	associated_skill = null
+	associated_stat = null
+	spell_requirements = SPELL_REQUIRES_HUMAN | SPELL_REQUIRES_SAME_Z
+
+/datum/action/cooldown/spell/ataman_exchange/is_valid_target(atom/cast_on)
+	. = ..()
+	if(!.)
+		return FALSE
+	if(!istype(cast_on, /obj/item/storage))
+		owner.balloon_alert(owner, "that is not a bag of goods!")
+		return FALSE
+	if(!locate(/obj/structure/roguemachine/blackmarket) in range(2, owner))
+		owner.balloon_alert(owner, "there is no fence nearby!")
+		return FALSE
+	return TRUE
+
+/datum/action/cooldown/spell/ataman_exchange/cast(atom/target)
+	. = ..()
+	var/mob/living/carbon/human/H = owner
+	if(!istype(H))
+		return FALSE
+	var/obj/item/storage/sack = target
+	if(!istype(sack))
+		return FALSE
+	var/obj/structure/roguemachine/blackmarket/fence = locate(/obj/structure/roguemachine/blackmarket) in range(2, H)
+	if(!fence)
+		return FALSE
+
+	var/appraised_value = round(ataman_appraise_loot(sack))
+	if(appraised_value < ATAMAN_TRADE_MIN_VALUE)
+		to_chat(H, span_warning("There is not enough in [sack] for a real exchange - [appraised_value] of the [ATAMAN_TRADE_MIN_VALUE] mammons a fence would bother with. Trinkets worth [ATAMAN_TRADE_MIN_ITEM_VALUE] mammons or less do not count."))
+		return FALSE
+	var/payout_value = round(appraised_value * ATAMAN_TRADE_PAYOUT_MULTIPLIER)
+
+	sack.forceMove(fence)
+	budget2change(payout_value, H)
+	ataman_process_honest_trade(H, appraised_value)
+	to_chat(H, span_notice("I hand [sack] to [fence] and receive [payout_value] mammons."))
+	return TRUE

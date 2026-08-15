@@ -1,11 +1,11 @@
+// Ataman - unique (1 slot) Wretch subclass: a bandit gang leader.
+// Lays hidden snares and ambush stones, marks whoever springs them, and finishes
+// marked prey with a prepared blow. Sprung ambushes spawn an AI gang that reads the
+// victim's aim, keeps them debuffed, then disarms, grabs and binds them alive.
+// Loot is fenced through the blackmarket for treasury damage and a rising bounty.
+
 #include "ataman_core.dm"
-#include "presets\ataman_presets.dm"
 #include "ataman_class.dm"
-#include "ataman_spells.dm"
-#include "ataman_execute.dm"
 #include "ataman_structures.dm"
-#include "ataman_deathmark.dm"
-#include "ataman_bandit.dm"
 #include "ataman_squad.dm"
-#include "ataman_ai_actions.dm"
-#include "ataman_debuff_tactics.dm"
+#include "ataman_tactics.dm"
