@@ -3737,6 +3737,7 @@
 #include "modular_twilight_axis\code\game\objects\items\rogueitems\magic.dm"
 #include "modular_twilight_axis\code\game\objects\items\rogueitems\util.dm"
 #include "modular_twilight_axis\code\game\objects\items\rogueitems\natural\zizobane.dm"
+#include "modular_twilight_axis\code\game\objects\items\rogueweapons\melee\flail.dm"
 #include "modular_twilight_axis\code\game\objects\items\rogueweapons\intents.dm"
 #include "modular_twilight_axis\code\game\objects\items\rogueweapons\rogueweapons.dm"
 #include "modular_twilight_axis\code\game\objects\items\rogueweapons\shields.dm"

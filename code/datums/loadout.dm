@@ -1263,6 +1263,11 @@ GLOBAL_LIST_EMPTY(loadout_items_by_category)
 	category = list("Аксессуары")
 	path = /obj/item/clothing/neck/roguetown/psicross/inhumen/gronn
 
+/datum/loadout_item/psicross/gronnspider
+	name = "Spider Talisman"
+	category = list("Аксессуары")
+	path = /obj/item/clothing/neck/roguetown/psicross/inhumen/gronn/spider
+
 /datum/loadout_item/psicross/gronnbaotha
 	name = "Leopard Talisman"
 	category = list("Аксессуары")
@@ -1980,7 +1985,7 @@ GLOBAL_LIST_EMPTY(loadout_items_by_category)
 	donatitem = TRUE
 
 /datum/loadout_item/donator_zydrashauberk
-	name = "Donator Kit - Iron Gardbrace & Fauld - Required: Iron Mailled Hauberk"
+	name = "Donator Kit - Mailled Cuirass - Required: iron plate-and-maille"
 	path = /obj/item/enchantingkit/zydrashauberk
 	category = list("Броня", "Донат")
 	donatitem = TRUE
@@ -3501,6 +3506,45 @@ GLOBAL_LIST_EMPTY(loadout_items_by_category)
 
 // Nightmare Kit End
 
+// COMMANDANT SET START
+
+/datum/loadout_item/donator_commandant_helmet
+	name = "Donator Kit - Commandant's Helmet - Required: Heavy Helmet"
+	category = list("Броня", "Донат")
+	path = /obj/item/enchantingkit/commandant_helmet
+	donatitem = TRUE
+	ckeywhitelist = list("alex23116571")
+
+/datum/loadout_item/donator_commandant_cloak
+	name = "Donator Kit - Commandant's Cloak"
+	category = list("Плащи", "Донат")
+	path = /obj/item/clothing/cloak/commandant
+	donatitem = TRUE
+	ckeywhitelist = list("alex23116571")
+
+/datum/loadout_item/donator_commandant_coat
+	name = "Donator Kit - Commandant's Coat - Required: Hardened Leather Coat/Lightweight Brigandine"
+	category = list("Броня", "Донат")
+	path = /obj/item/enchantingkit/commandant_coat
+	donatitem = TRUE
+	ckeywhitelist = list("alex23116571")
+
+/datum/loadout_item/donator_commandant_belt
+	name = "Donator Kit - Officer's Belt"
+	category = list("Одежда", "Донат")
+	path = /obj/item/storage/belt/rogue/leather/twilight_holsterbelt/commandant
+	donatitem = TRUE
+	ckeywhitelist = list("alex23116571")
+
+/datum/loadout_item/donator_commandant_pistol
+	name = "Donator Kit - Elegant Pistol - Required: Arquebus Pistol"
+	category = list("Оружие", "Донат")
+	path = /obj/item/enchantingkit/commandant_pistol
+	donatitem = TRUE
+	ckeywhitelist = list("alex23116571")
+
+// COMMANDANT SET END
+
 // Etruscan vol.3 Kit Start
 
 /datum/loadout_item/etrhat
@@ -4503,18 +4547,18 @@ GLOBAL_LIST_EMPTY(loadout_items_by_category)
 	donat_tier = 2
 
 /datum/loadout_item/donator/chivalre_aasimar
-	name = "Donator Kit - Aasimari Equipment - Required: Steel Cuirass or Fluted Steel Cuirass, Visored Sallet, Steel Boots, Plate Chausses, Steel Bracers, Plate Gauntlets, Bevor, Partizan, Boar Spear, Longsword or Steel Mace"
+	name = "Donator Kit - Aasimari Equipment(Only Female, No Small Races) - Required: Steel Cuirass or Fluted Steel Cuirass, Visored Sallet, Steel Boots, Plate Chausses, Steel Bracers, Plate Gauntlets, Bevor, Partizan, Boar Spear, Longsword or Steel Mace"
 	category = list("Броня", "Донат")
 	path = /obj/item/enchantingkit/chivalre_aasimar
 	donatitem = TRUE
-	donat_tier = 2
+	donat_tier = 1
 
 /datum/loadout_item/donator/chivalre_aasimar_sack
-	name = "Donator Kit - Aasimari Equipment, Sackful"
+	name = "Donator Kit - Aasimari Equipment(Only Female, No Small Races), Sackful"
 	category = list("Разное", "Донат")
 	path = /obj/item/storage/roguebag/donator_chivalre_elixirs
 	donatitem = TRUE
-	donat_tier = 1
+	donat_tier = 2
 
 /datum/loadout_item/donator/truill_flowerblade
 	name = "Donator Kit - Beflowered Longsword - Required: Enduring Longsword, Psydonic Longsword or Anointed Longsword"
