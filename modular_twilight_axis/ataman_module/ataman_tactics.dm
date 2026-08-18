@@ -299,7 +299,8 @@
 			qdel(rag)
 
 	if(!target.legcuffed && !(target.cmode && (target.mobility_flags & MOBILITY_STAND)))
-		var/obj/item/rope/binding = new(pawn)
+		var/binding_type = ataman_binding_type(squad)
+		var/obj/item/rope/binding = new binding_type(pawn)
 		if(pawn.put_in_hands(binding))
 			ataman_ai_log(pawn, "CUSTODY: tying [target]'s legs as well")
 			binding.try_cuff_legs(target, pawn)
@@ -309,6 +310,8 @@
 				qdel(binding)
 		else
 			qdel(binding)
+
+	ataman_patch_wounds(pawn, target)
 
 	if(pawn.pulling != target)
 		if(!ataman_free_hands_for_grabbing(controller))
@@ -355,8 +358,10 @@
 		finish_action(controller, FALSE, target_key)
 		return
 
-	ataman_ai_log(pawn, "RESTRAIN: attempting to bind [target]'s [target.handcuffed ? "legs" : "arms"]")
-	var/obj/item/rope/binding = new(pawn)
+	var/datum/ataman_squad/squad = controller.blackboard[BB_ATAMAN_SQUAD]
+	var/binding_type = ataman_binding_type(squad)
+	ataman_ai_log(pawn, "RESTRAIN: attempting to bind [target]'s [target.handcuffed ? "legs" : "arms"] with [binding_type == /obj/item/rope/chain ? "chain" : "rope"]")
+	var/obj/item/rope/binding = new binding_type(pawn)
 	if(!pawn.put_in_hands(binding))
 		qdel(binding)
 		finish_action(controller, FALSE, target_key)
@@ -420,10 +425,6 @@
 			ataman_ai_log(pawn, "TACTICS: [target] is casting - guarding")
 			controller.set_blackboard_key(BB_ATAMAN_TACTICS_COOLDOWN, world.time + 1 SECONDS)
 			pawn.try_guard()
-		return SUBTREE_RETURN_FINISH_PLANNING
-
-	if(role == ATAMAN_ROLE_ENFORCER && ataman_try_bite(controller, pawn, target, squad))
-		controller.set_blackboard_key(BB_ATAMAN_TACTICS_COOLDOWN, world.time + 1 SECONDS)
 		return SUBTREE_RETURN_FINISH_PLANNING
 
 	if(ataman_target_under_debuff(target))

@@ -52,10 +52,12 @@
 	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(ataman_finish_disband), pawn), travel_time + rand(2 SECONDS, 4 SECONDS))
 
 /proc/ataman_finish_disband(mob/living/carbon/human/npc/ataman_bandit/pawn)
-	if(QDELETED(pawn) || pawn.stat == DEAD)
+	if(QDELETED(pawn))
 		return
-	pawn.visible_message(span_warning("[pawn] slips away and fades into nothing."))
-	pawn.death(FALSE)
+	if(pawn.stat == DEAD)
+		return
+	pawn.visible_message(span_warning("[pawn] slips into the undergrowth and is gone."))
+	qdel(pawn)
 
 /proc/ataman_weapon_is_blunt(obj/item/weapon)
 	return !weapon || weapon.d_type == "blunt"
@@ -398,20 +400,20 @@
 	ataman_ai_log(pawn, "FEINT: staged feint #[squad.feints_used] on [target][emergency ? " (emergency, they are casting an escape)" : ""]")
 	return TRUE
 
-/proc/ataman_try_bite(datum/ai_controller/controller, mob/living/carbon/human/pawn, mob/living/carbon/target, datum/ataman_squad/squad)
-	if(!istype(pawn) || !istype(target) || !squad)
+/proc/ataman_binding_type(datum/ataman_squad/squad)
+	return (squad?.gear_tier >= 3) ? /obj/item/rope/chain : /obj/item/rope
+
+/proc/ataman_patch_wounds(mob/living/carbon/human/pawn, mob/living/carbon/human/target)
+	if(!istype(pawn) || !istype(target))
 		return FALSE
-	if(pawn.pulling == target || squad.bites_used >= 2)
-		return FALSE
-	if(!ataman_last_feint_landed(target))
-		return FALSE
-	var/zone = squad.get_aim_zone()
-	if(!zone || !check_face_subzone(zone))
-		zone = BODY_ZONE_PRECISE_L_EYE
-	if(!get_location_accessible(target, zone))
-		return FALSE
-	squad.bites_used++
-	pawn.zone_selected = zone
-	ataman_ai_log(pawn, "BITE: [target] is debuffed and open - taking bite #[squad.bites_used] at [zone]")
-	target.onbite(pawn)
-	return TRUE
+	for(var/obj/item/bodypart/part as anything in target.bodyparts)
+		if(part.bandage || part.bleeding <= 0)
+			continue
+		var/obj/item/natural/cloth/dressing = new(get_turf(target))
+		if(!part.try_bandage(dressing))
+			qdel(dressing)
+			continue
+		target.update_damage_overlays()
+		ataman_ai_log(pawn, "CUSTODY: dressed [target]'s bleeding [part.name] - a dead catch is worth nothing")
+		return TRUE
+	return FALSE
