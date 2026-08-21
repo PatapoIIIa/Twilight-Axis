@@ -212,3 +212,8 @@
 	else
 		out += "no faults"
 	return out.Join("\n")
+
+/datum/familytree_probe/proc/summary()
+	var/avg_hold = presses ? round(total_hold_ds / presses / 10, 0.1) : 0
+	var/window = min_window_ds < 0 ? "n/a" : "[min_window_ds / 10]s"
+	return "offers=[offers] pressed=[presses] ignored=[ignored] overlaps=[overlaps] peak=[peak_concurrent] hold_avg=[avg_hold]s hold_max=[max_hold_ds / 10]s window_min=[window] stuck=[pending_leaked] trees=[trees_built] relations=[relations_named] tiers=[tiers_resolved] faults=[length(violations)]"

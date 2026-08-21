@@ -6,6 +6,11 @@
 #define FT_ASSERT_NOTNULL(a, reason) if(isnull(a)) { return Fail("Expected non-null: [reason || "no reason"]", FT_SOURCE, __LINE__) }
 #define FT_ASSERT_NULL(a, reason) if(!isnull(a)) { return Fail("Expected null: [reason || "no reason"]", FT_SOURCE, __LINE__) }
 
+#define FT_DEEP_STORM_CAST 24
+#define FT_DEEP_STORM_ROUNDS 25
+#define FT_DEEP_TREE_CAST 14
+#define FT_DEEP_TREES 8
+
 /datum/unit_test/familytree
 	abstract_type = /datum/unit_test/familytree
 	var/static/ft_test_serial = 0
@@ -336,16 +341,17 @@
 
 /datum/unit_test/familytree/confirm_storm_light/Run()
 	var/list/cast = list()
-	for(var/i in 1 to 6)
+	for(var/i in 1 to FT_DEEP_STORM_CAST)
 		var/mob/living/carbon/human/body = ft_spawn_player()
 		if(body)
 			cast += body
-	FT_ASSERT_EQUAL(length(cast), 6, "the storm needs its whole cast to mean anything")
+	FT_ASSERT_EQUAL(length(cast), FT_DEEP_STORM_CAST, "the storm needs its whole cast to mean anything")
 
 	var/datum/familytree_probe/probe = new()
-	probe.run_confirm_storm(cast, 3, 115)
+	probe.run_confirm_storm(cast, FT_DEEP_STORM_ROUNDS, 115)
 	var/list/faults = probe.violations.Copy()
 	var/made = probe.offers
+	SSfamilytree.ftlog("PROBE storm: [probe.summary()]", FTLOG_INFO)
 	qdel(probe)
 	FT_ASSERT_EQUAL(length(faults), 0, "the confirmation storm found faults: [faults.Join(" | ")]")
 	FT_ASSERT(made > 0, "the storm made no offers at all")
@@ -381,16 +387,17 @@
 
 /datum/unit_test/familytree/deep_family_graph_stays_consistent/Run()
 	var/list/cast = list()
-	for(var/i in 1 to 7)
+	for(var/i in 1 to FT_DEEP_TREE_CAST)
 		var/mob/living/carbon/human/body = ft_spawn_player()
 		if(body)
 			cast += body
-	FT_ASSERT_EQUAL(length(cast), 7, "the family fuzz needs its whole cast")
+	FT_ASSERT_EQUAL(length(cast), FT_DEEP_TREE_CAST, "the family fuzz needs its whole cast")
 
 	var/datum/familytree_probe/probe = new()
-	probe.run_family_graph_fuzz(cast, 3)
+	probe.run_family_graph_fuzz(cast, FT_DEEP_TREES)
 	var/list/faults = probe.violations.Copy()
 	var/named = probe.relations_named
+	SSfamilytree.ftlog("PROBE trees: [probe.summary()]", FTLOG_INFO)
 	probe.drop_houses()
 	qdel(probe)
 	FT_ASSERT_EQUAL(length(faults), 0, "the family graph fuzz found faults: [faults.Join(" | ")]")
@@ -418,6 +425,10 @@
 	FT_ASSERT_EQUAL(length(faults), 0, "a tier rule names a job or title that does not exist: [faults.Join(" | ")]")
 	FT_ASSERT(checked > 0, "no tier rule was checked")
 
+#undef FT_DEEP_STORM_CAST
+#undef FT_DEEP_STORM_ROUNDS
+#undef FT_DEEP_TREE_CAST
+#undef FT_DEEP_TREES
 #undef FT_SOURCE
 #undef FT_ASSERT
 #undef FT_ASSERT_EQUAL

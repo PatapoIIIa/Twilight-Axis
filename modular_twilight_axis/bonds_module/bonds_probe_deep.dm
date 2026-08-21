@@ -202,3 +202,6 @@
 	else
 		out += "no faults"
 	return out.Join("\n")
+
+/datum/bond_probe/proc/summary()
+	return "events=[events_applied] dreams=[dreams_rendered] fuzz=[fuzz_steps]/[fuzz_bonds] kin=[kin_links] gates=[gates_checked] pairs=[stances_checked] faults=[length(violations)]"

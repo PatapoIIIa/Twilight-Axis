@@ -6,6 +6,10 @@
 #define BD_ASSERT_NOTNULL(a, reason) if(isnull(a)) { return Fail("Expected non-null: [reason || "no reason"]", BD_SOURCE, __LINE__) }
 #define BD_ASSERT_NULL(a, reason) if(!isnull(a)) { return Fail("Expected null: [reason || "no reason"]", BD_SOURCE, __LINE__) }
 
+#define BD_DEEP_EVENT_REPEATS 3
+#define BD_DEEP_FUZZ_SEQUENCES 80
+#define BD_DEEP_FUZZ_STEPS 25
+
 /datum/unit_test/bonds
 	abstract_type = /datum/unit_test/bonds
 	var/static/bd_test_serial = 0
@@ -816,9 +820,10 @@
 
 /datum/unit_test/bonds/ecosystem_every_event_survives_a_bond/Run()
 	var/datum/bond_probe/probe = new()
-	probe.run_event_sweep(1)
+	probe.run_event_sweep(BD_DEEP_EVENT_REPEATS)
 	var/list/faults = probe.violations.Copy()
 	var/applied = probe.events_applied
+	SSbonds.bondlog("PROBE sweep: [probe.summary()]", BONDLOG_INFO)
 	qdel(probe)
 	BD_ASSERT_EQUAL(length(faults), 0, "the event sweep found faults: [faults.Join(" | ")]")
 	BD_ASSERT(applied > 0, "the sweep applied no events at all, so it proved nothing")
@@ -848,12 +853,13 @@
 
 /datum/unit_test/bonds/deep_graph_survives_random_event_sequences/Run()
 	var/datum/bond_probe/probe = new()
-	probe.run_event_fuzz(8, 8)
+	probe.run_event_fuzz(BD_DEEP_FUZZ_SEQUENCES, BD_DEEP_FUZZ_STEPS)
 	probe.run_direction_probe()
 	probe.run_cap_probe()
 	probe.run_kin_probe()
 	var/list/faults = probe.violations.Copy()
 	var/steps = probe.fuzz_steps
+	SSbonds.bondlog("PROBE fuzz: [probe.summary()]", BONDLOG_INFO)
 	qdel(probe)
 	BD_ASSERT_EQUAL(length(faults), 0, "the graph fuzz found faults: [faults.Join(" | ")]")
 	BD_ASSERT(steps > 0, "the fuzz applied no events at all")
@@ -881,6 +887,9 @@
 	qdel(probe)
 	BD_ASSERT_EQUAL(length(faults), 0, "seeding the faction matrix twice does not land in the same place: [faults.Join(" | ")]")
 
+#undef BD_DEEP_EVENT_REPEATS
+#undef BD_DEEP_FUZZ_SEQUENCES
+#undef BD_DEEP_FUZZ_STEPS
 #undef BD_SOURCE
 #undef BD_ASSERT
 #undef BD_ASSERT_EQUAL
