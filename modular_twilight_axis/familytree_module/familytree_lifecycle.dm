@@ -204,6 +204,10 @@
 		addtimer(CALLBACK(src, PROC_REF(run_local_assignment), H, status), 60 SECONDS)
 
 #define MUTUAL_CONFIRM_TIMEOUT 2 MINUTES
+// The deadline above counts from the moment the notification is SENT, not from the moment it is
+// clicked. Once someone opens the prompt they get this window instead, or a player who noticed the
+// button late would be left with whatever seconds the original deadline had not yet burned.
+#define MUTUAL_CONFIRM_PROMPT_GRACE 75 SECONDS
 #define CONFIRM_PENDING 0
 #define CONFIRM_ACCEPTED 1
 #define CONFIRM_REJECTED 2
@@ -300,6 +304,13 @@
 	else
 		to_chat(idler, span_warning("Вы не ответили на предложение, и оно истекло. Система продолжит поиск."))
 	SSfamilytree.try_queue_assignment(idler)
+
+/datum/family_confirm_session/proc/extend_for_prompt()
+	if(resolved)
+		return
+	if(timerid)
+		deltimer(timerid)
+	timerid = addtimer(CALLBACK(src, PROC_REF(force_timeout)), MUTUAL_CONFIRM_PROMPT_GRACE, TIMER_STOPPABLE)
 
 /datum/family_confirm_session/proc/force_timeout()
 	if(resolved)
@@ -545,6 +556,7 @@
 	if(!person.client)
 		return
 
+	session.extend_for_prompt()
 	var/result = tgui_alert(person, body, "Семейная система", list("Да", "Нет"), 60 SECONDS)
 
 	if(!person || QDELETED(person))

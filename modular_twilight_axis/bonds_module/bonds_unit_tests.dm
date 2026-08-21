@@ -437,8 +437,19 @@
 	var/forward = SSbonds.stance_warmth(BOND_FACTION_CHURCH, BOND_FACTION_INQUISITION)
 	var/backward = SSbonds.stance_warmth(BOND_FACTION_INQUISITION, BOND_FACTION_CHURCH)
 	BD_ASSERT_EQUAL(forward, backward, "stance lookup must be order independent")
-	BD_ASSERT(forward < 0, "church and inquisition start tense")
 	BD_ASSERT_EQUAL(SSbonds.stance_warmth(BOND_FACTION_NOBLE, BOND_FACTION_NOBLE), BOND_STANCE_SAME_FACTION_WARMTH, "same faction resolves without a stored pair")
+
+	var/list/template = SSbonds.current_realm_template()
+	BD_ASSERT_NOTNULL(template, "the running map's realm has no template, so every faction pair sits at flat zero")
+	if(!template)
+		return
+	var/list/overrides = template["overrides"]
+	for(var/key in overrides)
+		var/list/declared = overrides[key]
+		var/list/sides = splittext(key, "|")
+		if(length(sides) != 2)
+			continue
+		BD_ASSERT_EQUAL(SSbonds.stance_warmth(sides[1], sides[2]), declared[1], "[key] is declared as an override but the live matrix disagrees, so the template never reached seeding")
 
 /datum/unit_test/bonds/stance_nudge_clamps/Run()
 	BD_ASSERT_NULL(SSbonds.get_stance(BOND_CLAN_CAITIFF, BOND_FACTION_WANDERER), "this pair must start undeclared for the test to mean anything")
