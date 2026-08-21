@@ -638,6 +638,62 @@
 				BD_ASSERT(warmth >= BOND_WARMTH_MIN && warmth <= BOND_WARMTH_MAX, "[axis[i]]|[axis[j]] declares warmth outside the axis")
 				BD_ASSERT(weight >= BOND_WEIGHT_MIN && weight <= BOND_WEIGHT_MAX, "[axis[i]]|[axis[j]] declares weight outside the axis")
 
+/datum/unit_test/bonds/realm_templates_are_well_formed/Run()
+	var/list/templates = SSbonds.realm_templates()
+	BD_ASSERT(length(templates) > 0, "no realm template parsed at all, so every map would run on flat zero")
+
+	for(var/realm in templates)
+		var/list/template = templates[realm]
+		var/list/blocs = template["blocs"]
+		var/list/inner = template["inner"]
+		var/list/bloc_axis = template["bloc_axis"]
+		var/list/between = template["between"]
+
+		BD_ASSERT(length(blocs) > 0, "[realm] declares no bloc")
+		BD_ASSERT_NOTNULL(template["default"], "[realm] declares no default, so any pair its blocs miss falls to flat zero")
+
+		var/list/claimed = list()
+		for(var/bloc_id in blocs)
+			for(var/faction_id in blocs[bloc_id])
+				BD_ASSERT_NULL(claimed[faction_id], "[realm] puts [faction_id] in both [claimed[faction_id]] and [bloc_id]; one of the two matrices would silently lose")
+				claimed[faction_id] = bloc_id
+				BD_ASSERT_NOTNULL(SSbonds.faction_prototypes[faction_id], "[realm] bloc [bloc_id] names [faction_id], which is not a faction")
+
+		for(var/bloc_id in blocs)
+			var/list/members = blocs[bloc_id]
+			if(length(members) < 2)
+				continue
+			var/list/triangle = inner[bloc_id]
+			BD_ASSERT_NOTNULL(triangle, "[realm] bloc [bloc_id] holds [length(members)] factions but declares no matrix")
+			if(!triangle)
+				continue
+			for(var/i in 1 to length(members))
+				var/list/row = triangle[1][i]
+				BD_ASSERT_EQUAL(length(row), length(members) - i, "[realm] matrix [bloc_id] row [members[i]] is the wrong width, so every later pair reads a neighbour's number")
+
+		if(length(bloc_axis) > 1)
+			BD_ASSERT_NOTNULL(between, "[realm] has [length(bloc_axis)] blocs but no 'matrix blocs', so nothing crosses a border")
+			if(between)
+				for(var/i in 1 to length(bloc_axis))
+					var/list/row = between[1][i]
+					BD_ASSERT_EQUAL(length(row), length(bloc_axis) - i, "[realm] matrix blocs row [bloc_axis[i]] is the wrong width")
+					for(var/j in (i + 1) to length(bloc_axis))
+						BD_ASSERT_NOTNULL(row[j - i], "[realm] never says how [bloc_axis[i]] stands to [bloc_axis[j]]")
+
+/datum/unit_test/bonds/every_map_realm_has_a_template/Run()
+	var/list/templates = SSbonds.realm_templates()
+	var/list/missing = list()
+	for(var/datum/map_adjustment/adjustment_type as anything in subtypesof(/datum/map_adjustment))
+		var/datum/map_adjustment/adjustment = new adjustment_type()
+		var/realm = adjustment.realm_name
+		var/map_file = adjustment.map_file_name
+		qdel(adjustment)
+		if(!realm || !map_file)
+			continue
+		if(!templates[realm])
+			missing += "[map_file] wants [realm]"
+	BD_ASSERT_EQUAL(length(missing), 0, "a map whose realm has no template runs its whole faction layer on the default: [missing.Join(", ")]")
+
 /datum/unit_test/bonds/every_faction_pair_is_declared/Run()
 	var/list/mortal = list()
 	for(var/faction_id in SSbonds.faction_prototypes)
@@ -645,24 +701,21 @@
 		if(istype(faction, /datum/bond_faction/clan))
 			continue
 		mortal += faction_id
-	BD_ASSERT(length(mortal) >= 14, "the mortal faction roster shrank below the fourteen the matrix was written for")
+	BD_ASSERT(length(mortal) >= 14, "the mortal faction roster shrank below the fourteen the matrices were written for")
 
-	var/list/declared = list()
-	for(var/list/block as anything in SSbonds.stance_blocks())
-		var/list/axis = block[1]
-		var/list/warmth_rows = block[2]
-		for(var/i in 1 to length(axis))
-			var/list/warmth_row = warmth_rows[i]
-			for(var/j in (i + 1) to length(axis))
-				if(j - i > length(warmth_row) || isnull(warmth_row[j - i]))
-					continue
-				declared[bonds_stance_key(axis[i], axis[j])] = TRUE
-	var/list/missing = list()
-	for(var/i in 1 to length(mortal))
-		for(var/j in (i + 1) to length(mortal))
-			if(!declared[bonds_stance_key(mortal[i], mortal[j])])
-				missing += "[mortal[i]]|[mortal[j]]"
-	BD_ASSERT_EQUAL(length(missing), 0, "an undeclared faction pair is not neutrality, it is a hole at flat zero that the first brawl decides: [missing.Join(", ")]")
+	var/list/templates = SSbonds.realm_templates()
+	for(var/realm in templates)
+		var/list/template = templates[realm]
+		var/list/blocs = template["blocs"]
+		var/list/bloc_of = list()
+		for(var/bloc_id in blocs)
+			for(var/faction_id in blocs[bloc_id])
+				bloc_of[faction_id] = bloc_id
+		var/list/unplaced = list()
+		for(var/faction_id in mortal)
+			if(!bloc_of[faction_id])
+				unplaced += faction_id
+		BD_ASSERT(length(unplaced) <= 3, "[realm] leaves [length(unplaced)] factions outside every bloc ([unplaced.Join(", ")]); each of them meets the whole map on the bare default")
 
 /datum/unit_test/bonds/faction_map_is_cached_until_a_stance_moves/Run()
 	var/list/first = SSbonds.faction_map_shape()

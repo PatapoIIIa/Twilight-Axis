@@ -6,6 +6,7 @@
 	var/positions_key = ""
 	var/icon_glyph = "users"
 	var/list/extra_positions
+	var/list/excluded_positions
 
 /datum/bond_faction/proc/titles()
 	RETURN_TYPE(/list)
@@ -16,6 +17,8 @@
 			collected += from_glob
 	if(length(extra_positions))
 		collected += extra_positions
+	if(length(excluded_positions))
+		collected -= excluded_positions
 	return collected
 
 /datum/controller/subsystem/bonds/proc/build_faction_index()
@@ -92,6 +95,7 @@
 	icon_glyph = "crown"
 	accent = "#b08d3f"
 	positions_key = "noble_positions"
+	excluded_positions = list("Harem Favorite")
 
 /datum/bond_faction/court
 	id = BOND_FACTION_COURT
@@ -99,6 +103,7 @@
 	icon_glyph = "scroll"
 	accent = "#9a7fb0"
 	positions_key = "courtier_positions"
+	excluded_positions = list("Head Slave")
 
 /datum/bond_faction/retinue
 	id = BOND_FACTION_RETINUE
@@ -151,7 +156,7 @@
 
 /datum/bond_faction/atc
 	id = BOND_FACTION_ATC
-	name = "Торговая Гильдия Астинии"
+	name = "Азурийская торговая компания"
 	icon_glyph = "coins"
 	accent = "#6fa090"
 	positions_key = "atc_positions"
@@ -162,6 +167,14 @@
 	icon_glyph = "wheat-awn"
 	accent = "#9a8f7a"
 	positions_key = "peasant_positions"
+	excluded_positions = list("Palace Slave")
+
+/datum/bond_faction/slave
+	id = BOND_FACTION_SLAVE
+	name = "Невольники"
+	icon_glyph = "link-slash"
+	accent = "#8a7a6a"
+	extra_positions = list("Palace Slave", "Head Slave", "Harem Favorite")
 
 /datum/bond_faction/sidefolk
 	id = BOND_FACTION_SIDEFOLK
@@ -288,12 +301,83 @@
 			stance.warmth = warmth
 			stance.weight = weight
 
+/datum/controller/subsystem/bonds/proc/seed_realm_template(list/template)
+	var/list/blocs = template["blocs"]
+	var/list/inner = template["inner"]
+	var/list/bloc_axis = template["bloc_axis"]
+	var/list/between = template["between"]
+	var/list/overrides = template["overrides"]
+	var/list/fallback = template["default"]
+
+	if(fallback)
+		var/list/mortal_ids = list()
+		for(var/faction_id in faction_prototypes)
+			var/datum/bond_faction/faction = faction_prototypes[faction_id]
+			if(istype(faction, /datum/bond_faction/clan))
+				continue
+			mortal_ids += faction_id
+		for(var/i in 1 to length(mortal_ids))
+			for(var/j in (i + 1) to length(mortal_ids))
+				var/datum/faction_stance/stance = get_or_create_stance(mortal_ids[i], mortal_ids[j])
+				if(!stance)
+					continue
+				stance.warmth = fallback[1]
+				stance.weight = fallback[2]
+
+	var/list/bloc_of = list()
+	for(var/bloc_id in blocs)
+		for(var/faction_id in blocs[bloc_id])
+			if(bloc_of[faction_id])
+				bondlog("[faction_id] is claimed by both [bloc_of[faction_id]] and [bloc_id]", BONDLOG_WARN)
+				continue
+			bloc_of[faction_id] = bloc_id
+
+	for(var/bloc_id in inner)
+		var/list/members = blocs[bloc_id]
+		var/list/triangle = inner[bloc_id]
+		seed_stance_block(members, triangle[1], triangle[2])
+
+	if(between)
+		var/list/warmth_rows = between[1]
+		var/list/weight_rows = between[2]
+		for(var/i in 1 to length(bloc_axis))
+			var/list/warmth_row = warmth_rows[i]
+			var/list/weight_row = weight_rows[i]
+			for(var/j in (i + 1) to length(bloc_axis))
+				var/warmth = warmth_row[j - i]
+				var/weight = weight_row[j - i]
+				if(isnull(warmth) || isnull(weight))
+					continue
+				for(var/faction_a in blocs[bloc_axis[i]])
+					for(var/faction_b in blocs[bloc_axis[j]])
+						var/datum/faction_stance/stance = get_or_create_stance(faction_a, faction_b)
+						if(!stance)
+							continue
+						stance.warmth = warmth
+						stance.weight = weight
+
+	for(var/key in overrides)
+		var/list/pair = overrides[key]
+		var/list/sides = splittext(key, "|")
+		if(length(sides) != 2)
+			continue
+		var/datum/faction_stance/stance = get_or_create_stance(sides[1], sides[2])
+		if(!stance)
+			bondlog("override names an unknown faction in [key]", BONDLOG_WARN)
+			continue
+		stance.warmth = pair[1]
+		stance.weight = pair[2]
+
 /datum/controller/subsystem/bonds/proc/build_faction_stances()
 	faction_stances = list()
 	for(var/list/block as anything in stance_blocks())
 		seed_stance_block(block[1], block[2], block[3])
-	stance_revision++
-	bondlog("faction stances seeded: [faction_stances.len] pairs", BONDLOG_INFO)
+	var/list/template = current_realm_template()
+	if(template)
+		seed_realm_template(template)
+	else
+		bondlog("no realm template for [current_realm_name() || "an unnamed realm"]; faction relations stay at flat zero", BONDLOG_WARN)
+	bondlog("faction stances seeded: [faction_stances.len]", BONDLOG_INFO)
 
 /datum/controller/subsystem/bonds/proc/apply_storyteller_lens()
 	if(storyteller_lens_applied)

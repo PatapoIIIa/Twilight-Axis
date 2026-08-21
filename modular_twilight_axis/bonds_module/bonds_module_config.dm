@@ -24,6 +24,9 @@
 //                       origins and their inherited lore, influence pool, the impact pipeline
 // bonds_round.dm      - SUBSYSTEM_DEF(bonds), rank hierarchy, character prefs and their savefile
 //                       hooks, per-ckey round prefs and ledger, roundstart seeding
+// bonds_dream_file.dm - the reader for strings/bonds/dreams_*.txt, where every memory's text,
+//                       numbers and archetype gates live. DM keeps only the type declarations,
+//                       because the engine keys events by type path and a config cannot mint types
 // bonds_dreams.dm     - role archetypes, the 20 baseline memories, echo application and the
 //                       sleep hook: one sleep rolls at most one memory, gated on what both
 //                       sides plausibly are; the sleeper gets it whole, the other side at half
@@ -161,6 +164,7 @@
 #define BOND_FACTION_PEASANT "peasant"
 #define BOND_FACTION_SIDEFOLK "sidefolk"
 #define BOND_FACTION_WANDERER "wanderer"
+#define BOND_FACTION_SLAVE "slave"
 #define BOND_FACTION_OUTLAW "outlaw"
 
 // Vampire clans: a second faction axis, indexed by clan type instead of job title, sharing
@@ -235,6 +239,7 @@
 #include "bonds_context.dm"
 #include "bonds_round.dm"
 #include "bonds_dreams.dm"
+#include "bonds_dream_file.dm"
 #include "bonds_dreams_gods.dm"
 #include "bonds_dreams_maps.dm"
 #include "bonds_panels.dm"

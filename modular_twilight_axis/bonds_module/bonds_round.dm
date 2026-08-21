@@ -32,6 +32,7 @@ SUBSYSTEM_DEF(bonds)
 	var/list/map_rosters = list()
 	var/list/faction_stances = list()
 	var/list/stance_blocks_cache
+	var/list/realm_templates_cache
 	var/list/house_stances = list()
 	var/list/storyteller_lenses = list()
 	var/storyteller_lens_applied = FALSE
@@ -61,6 +62,7 @@ SUBSYSTEM_DEF(bonds)
 	build_stage_prototypes()
 	build_faction_index()
 	build_archetype_index()
+	apply_dream_config()
 	build_dream_index()
 	build_clan_index()
 	build_origin_index()
