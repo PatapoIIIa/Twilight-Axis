@@ -65,7 +65,6 @@
 #define ROLE_TIER_LOW 2
 
 /datum/controller/subsystem/familytree
-	// Nobility and ducal family
 	var/list/high_tier_nobility_types = list(
 		/datum/job/roguetown/lord,
 		/datum/job/roguetown/lady,
@@ -75,7 +74,6 @@
 		/datum/job/roguetown/suitor,
 	)
 
-	// Church and inquisition
 	var/list/high_tier_church_types = list(
 		/datum/job/roguetown/priest,
 		/datum/job/roguetown/templar,
@@ -89,7 +87,6 @@
 		/datum/job/roguetown/absolver,
 	)
 
-	// Town military and garrison
 	var/list/high_tier_military_types = list(
 		/datum/job/roguetown/knight,
 		/datum/job/roguetown/marshal,
@@ -99,7 +96,6 @@
 		/datum/job/roguetown/manorguard,
 	)
 
-	// Key town professions (courtiers and administration)
 	var/list/high_tier_town_types = list(
 		/datum/job/roguetown/seneschal,
 		/datum/job/roguetown/councillor,
@@ -108,7 +104,6 @@
 		/datum/job/roguetown/adventurer/courtagent,
 	)
 
-	// Criminal and outlaw roles
 	var/list/low_tier_job_types = list(
 		/datum/job/roguetown/wretch,
 		/datum/job/roguetown/bandit,
@@ -118,7 +113,6 @@
 		/datum/job/roguetown/bathworker,
 	)
 
-	// Fallback title list for advclass-based roles without own job datums
 	var/list/low_tier_job_titles = list(
 		"Beggar",
 		"Excommunicado",

@@ -812,6 +812,38 @@
 				break
 	BD_ASSERT_EQUAL(length(holes), 0, "every warmth/weight coordinate must land on a stage: [holes.Join(" ")]")
 
+/datum/unit_test/bonds/ecosystem_every_event_survives_a_bond/Run()
+	var/datum/bond_probe/probe = new()
+	probe.run_event_sweep(1)
+	var/list/faults = probe.violations.Copy()
+	var/applied = probe.events_applied
+	qdel(probe)
+	BD_ASSERT_EQUAL(length(faults), 0, "the event sweep found faults: [faults.Join(" | ")]")
+	BD_ASSERT(applied > 0, "the sweep applied no events at all, so it proved nothing")
+
+/datum/unit_test/bonds/ecosystem_every_dream_renders/Run()
+	var/datum/bond_probe/probe = new()
+	probe.run_dream_sweep()
+	var/list/faults = probe.violations.Copy()
+	var/rendered = probe.dreams_rendered
+	qdel(probe)
+	BD_ASSERT_EQUAL(length(faults), 0, "the dream sweep found faults: [faults.Join(" | ")]")
+	BD_ASSERT_EQUAL(rendered, length(SSbonds.dream_prototypes), "every indexed dream must render both of its sides")
+
+/datum/unit_test/bonds/ecosystem_every_realm_is_coherent/Run()
+	var/datum/bond_probe/probe = new()
+	probe.run_stance_sweep()
+	var/list/faults = probe.violations.Copy()
+	qdel(probe)
+	BD_ASSERT_EQUAL(length(faults), 0, "the stance sweep found faults: [faults.Join(" | ")]")
+
+/datum/unit_test/bonds/ecosystem_roster_is_coherent/Run()
+	var/datum/bond_probe/probe = new()
+	probe.run_roster_sweep()
+	var/list/faults = probe.violations.Copy()
+	qdel(probe)
+	BD_ASSERT_EQUAL(length(faults), 0, "the roster sweep found faults: [faults.Join(" | ")]")
+
 #undef BD_SOURCE
 #undef BD_ASSERT
 #undef BD_ASSERT_EQUAL

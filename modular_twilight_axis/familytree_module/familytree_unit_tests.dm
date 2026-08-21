@@ -334,6 +334,51 @@
 	victim.stat = CONSCIOUS
 	FT_ASSERT(!SSbonds.mark_critical(victim), "once the window lapses and they are back up it is an ordinary strike again")
 
+/datum/unit_test/familytree/confirm_storm_light/Run()
+	var/list/cast = list()
+	for(var/i in 1 to 6)
+		var/mob/living/carbon/human/body = ft_spawn_player()
+		if(body)
+			cast += body
+	FT_ASSERT_EQUAL(length(cast), 6, "the storm needs its whole cast to mean anything")
+
+	var/datum/familytree_probe/probe = new()
+	probe.run_confirm_storm(cast, 3, 115)
+	var/list/faults = probe.violations.Copy()
+	var/made = probe.offers
+	qdel(probe)
+	FT_ASSERT_EQUAL(length(faults), 0, "the confirmation storm found faults: [faults.Join(" | ")]")
+	FT_ASSERT(made > 0, "the storm made no offers at all")
+
+/datum/unit_test/familytree/late_press_still_gets_a_full_window/Run()
+	var/mob/living/carbon/human/first = ft_spawn_player()
+	var/mob/living/carbon/human/second = ft_spawn_player()
+	FT_ASSERT_NOTNULL(first, "spawn failed")
+	FT_ASSERT_NOTNULL(second, "spawn failed")
+
+	var/datum/familytree_probe/probe = new()
+	probe.run_late_press_probe(first, second)
+	var/list/faults = probe.violations.Copy()
+	qdel(probe)
+	FT_ASSERT_EQUAL(length(faults), 0, "a player who notices the button at the last second must still get a full window to answer: [faults.Join(" | ")]")
+
+/datum/unit_test/familytree/an_offer_never_overlaps_another/Run()
+	var/mob/living/carbon/human/first = ft_spawn_player()
+	var/mob/living/carbon/human/second = ft_spawn_player()
+	var/mob/living/carbon/human/third = ft_spawn_player()
+	FT_ASSERT_NOTNULL(first, "spawn failed")
+	FT_ASSERT_NOTNULL(second, "spawn failed")
+	FT_ASSERT_NOTNULL(third, "spawn failed")
+
+	var/datum/familytree_probe/probe = new()
+	var/datum/family_confirm_session/live = probe.open_offer(first, second)
+	FT_ASSERT_NOTNULL(live, "the first offer must open")
+	probe.open_offer(first, third)
+	var/caught = probe.overlaps
+	probe.release()
+	qdel(probe)
+	FT_ASSERT(caught > 0, "offering a second confirmation to someone already holding one must be reported, or two buttons stack silently")
+
 #undef FT_SOURCE
 #undef FT_ASSERT
 #undef FT_ASSERT_EQUAL

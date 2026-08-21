@@ -159,4 +159,5 @@
 #include "familytree_graph_api.dm"
 #include "familytree_debug.dm"
 #include "familytree_debug_populate.dm"
+#include "familytree_probe.dm"
 #include "familytree_unit_tests.dm"

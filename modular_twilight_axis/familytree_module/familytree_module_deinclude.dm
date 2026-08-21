@@ -1,6 +1,3 @@
-// Undef point for familytree module macros.
-// Intended include target after the module's compile section:
-// #include "modular_twilight_axis\familytree_module\familytree_module_deinclude.dm"
 
 #ifdef FAMILYTREE_MODULE_DEFINED_FAMILY_NONE
 #undef FAMILY_NONE

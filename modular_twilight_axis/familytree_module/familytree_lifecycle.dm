@@ -3,11 +3,8 @@
 
 /datum/job/roguetown/suitor/special_check_latejoin(client/C)
 	return SSfamilytree.royal_partner_candidate_allowed(C, src)
-// DLC: Enigma roles integration for familytree tier system.
-// Appends enigma job types to existing tier lists at runtime.
 
 /datum/controller/subsystem/familytree/proc/load_enigma_roles()
-	// Garrison (military)
 	high_tier_military_types |= list(
 		/datum/job/roguetown/sheriff,
 		/datum/job/roguetown/royal_sergeant,
@@ -17,12 +14,10 @@
 		/datum/job/roguetown/overseer,
 	)
 
-	// Retinue (military)
 	high_tier_military_types |= list(
 		/datum/job/roguetown/knight_enigma,
 	)
 
-	// Town administration
 	high_tier_town_types |= list(
 		/datum/job/roguetown/mayor,
 		/datum/job/roguetown/bailiff,
@@ -49,7 +44,6 @@
 		/datum/job/roguetown/headslave,
 		/datum/job/roguetown/slave,
 		/datum/job/roguetown/freeman,
-	//	/datum/job/roguetown/lost_grenzel, // Lost Grenzel comment
 	)
 
 	low_tier_job_titles |= list(
@@ -57,7 +51,6 @@
 		"Palace Slave",
 		"Slave",
 		"Freeman",
-	//	"Lost Grenzel", // Lost Grenzel comment
 	)
 
 /datum/controller/subsystem/familytree/proc/ask_monarch_noble_permission(mob/living/carbon/human/monarch)
@@ -204,10 +197,8 @@
 		addtimer(CALLBACK(src, PROC_REF(run_local_assignment), H, status), 60 SECONDS)
 
 #define MUTUAL_CONFIRM_TIMEOUT 2 MINUTES
-// The deadline above counts from the moment the notification is SENT, not from the moment it is
-// clicked. Once someone opens the prompt they get this window instead, or a player who noticed the
-// button late would be left with whatever seconds the original deadline had not yet burned.
-#define MUTUAL_CONFIRM_PROMPT_GRACE 75 SECONDS
+#define MUTUAL_CONFIRM_ANSWER_WINDOW (60 SECONDS)
+#define MUTUAL_CONFIRM_PROMPT_GRACE (MUTUAL_CONFIRM_ANSWER_WINDOW + 15 SECONDS)
 #define CONFIRM_PENDING 0
 #define CONFIRM_ACCEPTED 1
 #define CONFIRM_REJECTED 2
@@ -224,6 +215,9 @@
 	var/result_b = CONFIRM_PENDING
 	var/resolved = FALSE
 	var/timerid
+	var/deadline = 0
+	var/opened_a = 0
+	var/opened_b = 0
 
 /datum/family_confirm_session/New(mob/living/carbon/human/a, mob/living/carbon/human/b, datum/callback/cb, ctype, role_text_a = null, role_text_b = null)
 	person_a = a
@@ -305,12 +299,21 @@
 		to_chat(idler, span_warning("Вы не ответили на предложение, и оно истекло. Система продолжит поиск."))
 	SSfamilytree.try_queue_assignment(idler)
 
-/datum/family_confirm_session/proc/extend_for_prompt()
+/datum/family_confirm_session/proc/extend_for_prompt(is_person_a)
 	if(resolved)
-		return
+		return FALSE
+	if(is_person_a)
+		opened_a = world.time
+	else
+		opened_b = world.time
 	if(timerid)
 		deltimer(timerid)
+	deadline = world.time + MUTUAL_CONFIRM_PROMPT_GRACE
 	timerid = addtimer(CALLBACK(src, PROC_REF(force_timeout)), MUTUAL_CONFIRM_PROMPT_GRACE, TIMER_STOPPABLE)
+	return TRUE
+
+/datum/family_confirm_session/proc/seconds_left()
+	return max(0, (deadline - world.time) / 10)
 
 /datum/family_confirm_session/proc/force_timeout()
 	if(resolved)
@@ -517,6 +520,7 @@
 	person_a.familytree_confirmation_pending = TRUE
 	person_b.familytree_confirmation_pending = TRUE
 	var/datum/family_confirm_session/session = new(person_a, person_b, on_both_accept, confirm_type, relation_text_a, relation_text_b)
+	session.deadline = world.time + MUTUAL_CONFIRM_TIMEOUT
 	session.timerid = addtimer(CALLBACK(session, TYPE_PROC_REF(/datum/family_confirm_session, force_timeout)), MUTUAL_CONFIRM_TIMEOUT, TIMER_STOPPABLE)
 
 	ftlog("MUTUAL CONFIRM: started type=[confirm_type] a=[person_a.real_name] b=[person_b.real_name]")
@@ -556,8 +560,8 @@
 	if(!person.client)
 		return
 
-	session.extend_for_prompt()
-	var/result = tgui_alert(person, body, "Семейная система", list("Да", "Нет"), 60 SECONDS)
+	session.extend_for_prompt(is_person_a)
+	var/result = tgui_alert(person, body, "Семейная система", list("Да", "Нет"), MUTUAL_CONFIRM_ANSWER_WINDOW)
 
 	if(!person || QDELETED(person))
 		return

@@ -1,4 +1,3 @@
-// Title prefixes that may be prepended to real_name
 GLOBAL_LIST_INIT(familytree_title_prefixes, list(
 	"Lord ", "Lady ", "Ser ", "Dame ",
 	"Sir ", "Brother ", "Sister ",
@@ -79,7 +78,6 @@ GLOBAL_LIST_INIT(familytree_title_prefixes, list(
 	if(!A || !B)
 		return "missing mob"
 
-	// Isolated group: gnolls and goblins can match with each other but not with outsiders
 	var/a_isolated = is_isolated(A)
 	var/b_isolated = is_isolated(B)
 	if(a_isolated || b_isolated)
@@ -179,10 +177,8 @@ GLOBAL_LIST_INIT(familytree_title_prefixes, list(
 /datum/controller/subsystem/familytree/proc/is_isolated(mob/living/carbon/human/H)
 	if(!H?.dna?.species)
 		return FALSE
-	// Gnolls are always isolated by species alone
 	if(istype(H.dna.species, /datum/species/gnoll))
 		return TRUE
-	// Antag goblins: species goblin + antagonist special_role
 	if(istype(H.dna.species, /datum/species/goblin))
 		if(H.mind?.special_role)
 			return TRUE
@@ -307,7 +303,6 @@ GLOBAL_LIST_INIT(familytree_title_prefixes, list(
 	H.familytree_confirmation_pending = FALSE
 	stop_tracking_human(H, reason)
 
-// Admin audit helpers are intentionally not guarded by FAMILYTREE_DEBUG_LOGGING.
 /datum/controller/subsystem/familytree/proc/familytree_pref_label(pref)
 	if(familytree_pref_mask(pref) == FAMILYTREE_MODE_ALL)
 		return "any family"

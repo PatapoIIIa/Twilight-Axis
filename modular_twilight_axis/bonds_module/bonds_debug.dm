@@ -563,3 +563,27 @@ GLOBAL_LIST_EMPTY(bonds_debug_rows)
 	SSbonds.debug_purge_population()
 	GLOB.bonds_debug_rows = list()
 	to_chat(src, span_notice("Снесено синтетических тел: [count]"))
+
+/client/proc/bonds_ecosystem_probe()
+	set name = "Bonds: Ecosystem Probe"
+	set category = "Debug"
+
+	if(!check_rights(R_DEBUG))
+		return
+	var/repeats = input(src, "Сколько проходов по каждому событию? Один проход открывает связь на каждое событие.", "Ecosystem Probe", 3) as num|null
+	if(isnull(repeats))
+		return
+	repeats = clamp(round(repeats), 1, 50)
+
+	var/datum/bond_probe/probe = new()
+	probe.run_roster_sweep()
+	probe.run_stance_sweep()
+	probe.run_event_sweep(repeats)
+	probe.run_dream_sweep()
+	var/text = probe.report()
+	var/faults = length(probe.violations)
+	qdel(probe)
+
+	to_chat(src, span_notice("<b>=== BONDS ECOSYSTEM PROBE ===</b><br><pre>[text]</pre>"))
+	SSbonds.bondlog("ecosystem probe by [key_name(mob)]: [faults] faults", faults ? BONDLOG_ERROR : BONDLOG_INFO)
+	log_admin("[key_name(mob)] ran the bonds ecosystem probe: [faults] faults")

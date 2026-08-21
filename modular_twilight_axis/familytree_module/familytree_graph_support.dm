@@ -1,6 +1,3 @@
-// Kinship itself now lives in SSbonds as /datum/social_bond/kin. What survives here is the
-// node: a per-person record of which house they belong to, used for house membership,
-// tree rendering and the display cache. It holds no relations.
 /datum/family_node
 	var/tmp/mob/living/carbon/human/person
 	var/datum/heritage/primary_house

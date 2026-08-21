@@ -2257,8 +2257,6 @@
 	if(LAZYLEN(known.mind.antag_datums))
 		info["FJOB"] = "Adventurer"
 
-// --- Reject-mask decoders (log-time only, not on hot path) ---
-
 /proc/ftreject_decode_house(mask)
 	if(!mask)
 		return "none"
