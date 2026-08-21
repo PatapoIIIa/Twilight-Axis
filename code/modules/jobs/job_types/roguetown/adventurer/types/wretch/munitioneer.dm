@@ -33,7 +33,7 @@
 		/datum/skill/misc/reading = SKILL_LEVEL_JOURNEYMAN,
 		/datum/skill/misc/medicine = SKILL_LEVEL_APPRENTICE,
 		/datum/skill/craft/sewing = SKILL_LEVEL_APPRENTICE,
-		/datum/skill/craft/tanning =  SKILL_LEVEL_APPRENTICE,
+		/datum/skill/craft/tanning =	SKILL_LEVEL_APPRENTICE,
 		/datum/skill/craft/armorsmithing = SKILL_LEVEL_EXPERT,
 		/datum/skill/craft/blacksmithing = SKILL_LEVEL_MASTER,
 		/datum/skill/craft/weaponsmithing = SKILL_LEVEL_EXPERT,
@@ -43,8 +43,8 @@
 		/datum/skill/craft/engineering = SKILL_LEVEL_JOURNEYMAN
 	)
 	subclass_stashed_items = list(
-        "Sewing Kit" =  /obj/item/repair_kit,
-    )
+		"Sewing Kit" =	/obj/item/repair_kit,
+	)
 /datum/outfit/job/roguetown/wretch/munitioneer/pre_equip(mob/living/carbon/human/H)
 	to_chat(H, span_warning("You are a passable warrior- though weak- but your true strength lies in your ability to bend the resources of Azuria to your will."))
 	has_loadout = TRUE
@@ -78,7 +78,7 @@
 	if(H.mind)
 		H.set_patron(/datum/patron/divine/malum)
 		H.AddComponent(/datum/component/ore_sight) // controversial, and powerful, but it means you're spending less Wretch Time just mining.
-	var/weapons = list("Path of the Hammer - Steel Warhammer", "Path of the Crossbow - Crossbow and Bolts", "Path of the Pick - Pulaski Axe", "Path of Artifice - Steel Wrench and Engineering")
+	var/weapons = list("Path of the Hammer - Steel Warhammer", "Path of the Crossbow - Crossbow and Bolts", "Path of the Pick - Pulaski Axe", "Path of Artifice - Steel Wrench and Engineering", "Path of the Powder - Handgonne")
 	var/weapon_choice = input(H, "Choose your weapon.", "HOT IS THE ANVYL") as anything in weapons
 	var/crimes = list("I'm nobody", "They fear me")
 	var/crimeschoice = input(H, "Who is me", "How much have I done?") as anything in crimes
@@ -116,5 +116,13 @@
 			H.adjust_skillrank_up_to(/datum/skill/combat/maces, SKILL_LEVEL_EXPERT, TRUE)
 			H.adjust_skillrank_up_to(/datum/skill/craft/engineering, SKILL_LEVEL_EXPERT, TRUE)
 			H.put_in_hands(new /obj/item/rogueweapon/contraption/linker/mace/big/steel/precharged)
+		if("Path of the Powder - Handgonne")
+			H.adjust_skillrank_up_to(/datum/skill/combat/twilight_firearms, SKILL_LEVEL_EXPERT, TRUE)
+			H.equip_to_slot_or_del(new /obj/item/gun/ballistic/twilight_firearm/handgonne, SLOT_BACK_R, TRUE)
+			H.put_in_hands(new /obj/item/quiver/twilight_bullet/cannonball/lead)
+			H.put_in_hands(new /obj/item/twilight_powderflask)
+			if(crimeschoice == "They fear me")
+				H.adjust_skillrank_up_to(/datum/skill/craft/engineering, SKILL_LEVEL_EXPERT, TRUE)
+
 	var/datum/devotion/C = new /datum/devotion(H, H.patron)
 	C.grant_miracles(H, cleric_tier = CLERIC_T4, passive_gain = CLERIC_REGEN_MINOR, devotion_limit = CLERIC_REQ_4)	//Minor regen, is pre-emptively leveled up to T4 to avoid grind and support.

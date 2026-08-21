@@ -7,7 +7,7 @@
 	spawn_positions = 0
 	antag_job = TRUE
 
-	tutorial = "Long ago you did a crime worthy of your bounty being hung on the wall outside of the local inn. You now live with your fellow freemen in the bog, and generally get up to no good."
+	tutorial = "Desertation, desperation, rebelious desires, unmeetable quotas, outcast from society or driven to greed, it matters not. In the teachings of Matthios you found solace; liberate yourself from your misfortunes of your past by taking from others."
 
 	outfit = null
 	outfit_female = null
@@ -177,16 +177,7 @@
 			slot_job.spawn_positions = 0
 			return
 
-		var/min_players = SSgamemode.story_antag_min_players(antag_path)
-		var/slot_scaling = SSgamemode.story_antag_scaling_step(antag_path)
-		slots = SSgamemode.storyteller_scale_slots(
-			max_slots,
-			player_count,
-			FALSE,
-			slot_scaling,
-			min_players,
-			SSgamemode.hard_antag_mult(),
-		)
+		slots = max_slots // TA EDIT
 
 	slots = SSgamemode.story_antag_slots(slots, antag_path, player_count)
 

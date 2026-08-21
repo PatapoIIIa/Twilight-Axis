@@ -122,10 +122,11 @@
 		zombie.update_a_intents()
 		for(var/datum/charflaw/cf in zombie.charflaws)
 			cf.ephemeral = FALSE
+		zombie.remove_status_effect(/datum/status_effect/debuff/rotted_zombie)
 		zombie.update_body()
 
 		GLOB.dead_mob_list -= zombie // Remove it from global dead/alive mob list here here, if they're a zombie they probably died.
-									 // There is a better way to maintain it but needs overhaul. Will cover the two methods of zombie
+										// There is a better way to maintain it but needs overhaul. Will cover the two methods of zombie
 		GLOB.alive_mob_list += zombie// in both cure rot and medicine.
 
 		zombie.cmode_music = cmode_music

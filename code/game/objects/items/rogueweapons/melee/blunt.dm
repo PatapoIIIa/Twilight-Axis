@@ -24,6 +24,8 @@
 	item_d_type = "blunt"
 	desc = "A powerful blow that delivers Strength-scaling knockback and slowdown to the target. The amount of inflicted knockback scales off your Strength, ranging from X (1 tile) to XIV (4 tiles). </br>Cannot inflict any knockback or slowdown if your Strength is below X. </br>Cannot be used consecutively more than every 5 seconds on the same target. </br>Prone targets halve the knockback distance. </br>Not fully charging the attack limits knockback to 1 tile."
 	var/maxrange = 4
+	var/list/smash_sound_listeners // TA EDIT
+	var/smash_sound_channel	// TA EDIT
 
 /datum/intent/mace/smash/spec_on_apply_effect(mob/living/H, mob/living/user, params)
 	var/chungus_khan_str = user.STASTR
@@ -50,9 +52,27 @@
 		force = H.move_force)
 // Do not call handle_knockback like in knockback cuz that means it will hardstun.
 
-/datum/intent/mace/smash/prewarning()
+/datum/intent/mace/smash/prewarning() // TA EDIT START
 	if(mastermob)
-		playsound(mastermob, pick('sound/combat/wooshes/blunt/wooshhuge (2).ogg'), 100, FALSE)
+		stop_smash_sound()
+		smash_sound_channel = SSsounds.random_available_channel()
+		smash_sound_listeners = playsound(mastermob, pick('sound/combat/wooshes/blunt/wooshhuge (2).ogg'), 100, FALSE, channel = smash_sound_channel)
+
+/datum/intent/mace/smash/proc/stop_smash_sound()
+	if(smash_sound_channel)
+		for(var/mob/listener as anything in smash_sound_listeners)
+			if(!QDELETED(listener))
+				listener.stop_sound_channel(smash_sound_channel)
+	smash_sound_listeners = null
+	smash_sound_channel = null
+
+/datum/intent/mace/smash/on_mouse_up()
+	stop_smash_sound()
+	return ..()
+
+/datum/intent/mace/smash/Destroy()
+	stop_smash_sound()
+	return ..() // TA EDIT START END
 
 /datum/intent/mace/smash/lesser
 	name = "one-handed smash" //Exclusive to Warhammers, and other mace-styled bludgeons that can only be wielded in one hand.
@@ -73,8 +93,19 @@
 	clickcd = CLICK_CD_HEAVY
 	swingdelay = 10
 
-/datum/intent/mace/demolish/lesser
-	demolition_mod = 2.5
+/datum/intent/mace/lesserdemolish
+	name = "break"
+	desc = "A deliberate structure-breaking blow. Deals triple the damage to structures"
+	icon_state = "incrush"
+	blade_class = BCLASS_SMASH
+	attack_verb = list("demolishes", "crushes", "wrecks")
+	animname = "strike"
+	hitsound = list('sound/combat/hits/blunt/metalblunt (1).ogg', 'sound/combat/hits/blunt/metalblunt (2).ogg', 'sound/combat/hits/blunt/metalblunt (3).ogg')
+	item_d_type = "blunt"
+	penfactor = PEN_NONE
+	demolition_mod = 3
+	clickcd = CLICK_CD_HEAVY
+	swingdelay = 10
 
 /datum/intent/mace/rangedthrust
 	name = "thrust"
@@ -328,7 +359,7 @@
 	name = "bogbark club"
 	desc = "A primitive cudgel carved of a stout piece of treefall, from the deepest parts of the Terrorbog. An unmistakable aura of power surrounds it. This thing looks dangerously strong."
 	aura_color = "#00ff00"
-	gripped_intents = list(/datum/intent/mace/strike/wood/, /datum/intent/mace/smash/wood, /datum/intent/effect/daze, /datum/intent/mace/demolish)
+	gripped_intents = list(/datum/intent/mace/strike/wood/, /datum/intent/mace/smash/wood, /datum/intent/effect/daze, /datum/intent/mace/lesserdemolish)
 	w_class = WEIGHT_CLASS_NORMAL // it's just a stick, can put it in your backpack
 
 /obj/item/rogueweapon/mace/woodclub
@@ -448,7 +479,7 @@
 /obj/item/rogueweapon/mace/cudgel/flanged/silver
 	name = "silver flanged mace"
 	desc = "A flanged mace of silver, fit for a holy paladin's grasp. The weight within your hand is not of silver, alone - but of the fate that you may yet avert; for yourself, and \
-    for the world you love. </br>'Please do not wait for me..' \ </br>'For though I depart, my magic will never die..' </br>'Listen to my laughter in the babbling brook..' \
+	for the world you love. </br>'Please do not wait for me..' \ </br>'For though I depart, my magic will never die..' </br>'Listen to my laughter in the babbling brook..' \
 	</br>'Hear my song being sung by the bards..' </br>'Feel my warmth in the rays of the morning sun..' </br>'See my light in the twinkling stars at night..' \
 	</br>'..and know that my spirit will always be with you..' </br>'..woven into the very fabric of the world we cherished together.'"
 	force = 30
@@ -481,7 +512,7 @@
 /obj/item/rogueweapon/mace/cudgel/flanged/psy
 	name = "psydonic flanged mace"
 	desc = "A flanged mace of blessed silver, wielded by His children. The rosewood handle's curved nature beckons your fingers to curl along its grooves, and to never let go; \
-    no matter the weather nor odds. </br>'Please do not wait for me..' \ </br>'For though I depart, my magic will never die..' </br>'Listen to my laughter in the babbling brook..' \
+	no matter the weather nor odds. </br>'Please do not wait for me..' \ </br>'For though I depart, my magic will never die..' </br>'Listen to my laughter in the babbling brook..' \
 	</br>'Hear my song being sung by the bards..' </br>'Feel my warmth in the rays of the morning sun..' </br>'See my light in the twinkling stars at night..' \
 	</br>'..and know that my spirit will always be with you..' </br>'..woven into the very fabric of the world we cherished together.'"
 	force = 30
@@ -1013,7 +1044,7 @@
 	smelt_bar_num = 3 //Please don't...
 	max_integrity = 370
 
-//Psydonite maul. Intended for FUCKING SHIT UP.
+//Psydonite reliquary maul. Intended for FUCKING SHIT UP.
 /obj/item/rogueweapon/mace/maul/grand/psy
 	name = "psydonic maul"
 	gripped_intents = list(/datum/intent/mace/strike/reach, /datum/intent/mace/sweep, /datum/intent/mace/demolish, /datum/intent/effect/hobble)
@@ -1147,10 +1178,10 @@
 	var/last_hit_time = 0
 	var/reset_timeout = 75 SECONDS
 
-/datum/component/mushroom_mace/Initialize()
+/datum/component/mushroom_mace/Initialize(mapload)
 	if(!isitem(parent))
 		return COMPONENT_INCOMPATIBLE
-	RegisterSignal(parent, COMSIG_ITEM_ATTACK_SUCCESS, .proc/on_attack)
+	RegisterSignal(parent, COMSIG_ITEM_ATTACK_SUCCESS, PROC_REF(on_attack))
 
 /datum/component/mushroom_mace/proc/on_attack(obj/item/source, mob/living/target, mob/living/user)
 	SIGNAL_HANDLER
@@ -1257,7 +1288,7 @@
 	gripped_intents = list(/datum/intent/mace/strike, /datum/intent/mace/boom, /datum/intent/mace/strike/dislocate, /datum/intent/mace/smash)
 	smeltresult = /obj/item/ingot/lithmyc
 
-/obj/item/rogueweapon/mace/mushroom/Initialize()
+/obj/item/rogueweapon/mace/mushroom/Initialize(mapload)
 	. = ..()
 	AddComponent(/datum/component/mushroom_mace)
 
@@ -1298,7 +1329,7 @@
 	force = 13
 	force_wielded = 25
 	possible_item_intents = list(/datum/intent/mace/strike, /datum/intent/mace/bash/ranged)
-	gripped_intents = list(/datum/intent/use, /datum/intent/mace/strike, /datum/intent/mace/strike/dislocate, /datum/intent/mace/demolish/lesser)
+	gripped_intents = list(/datum/intent/use, /datum/intent/mace/strike, /datum/intent/mace/strike/dislocate, /datum/intent/mace/lesserdemolish)
 	minstr = 8
 	max_integrity = 350
 	w_class = WEIGHT_CLASS_BULKY
@@ -1417,7 +1448,7 @@
 	force = 18
 	max_stored_charge = 40
 
-/obj/item/rogueweapon/contraption/linker/mace/decrepit/Initialize()
+/obj/item/rogueweapon/contraption/linker/mace/decrepit/Initialize(mapload)
 	. = ..()
 	current_charge = rand(0, max_stored_charge) // it's an ancient artifact, rather than crafted. might have some charge left
 
@@ -1431,6 +1462,6 @@
 	force_wielded = 21
 	max_stored_charge = 40
 
-/obj/item/rogueweapon/contraption/linker/mace/big/decrepit/Initialize()
+/obj/item/rogueweapon/contraption/linker/mace/big/decrepit/Initialize(mapload)
 	. = ..()
 	current_charge = rand(0, max_stored_charge) // it's an ancient artifact, rather than crafted. might have some charge left

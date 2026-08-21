@@ -45,7 +45,7 @@
 			if("onbelt")
 				return list("shrink" = 0.3,"sx" = -2,"sy" = -5,"nx" = 4,"ny" = -5,"wx" = 0,"wy" = -5,"ex" = 2,"ey" = -5,"nturn" = 0,"sturn" = 0,"wturn" = 0,"eturn" = 0,"nflip" = 0,"sflip" = 0,"wflip" = 0,"eflip" = 0,"northabove" = 0,"southabove" = 1,"eastabove" = 1,"westabove" = 0)
 
-/obj/item/rogue/instrument/Initialize()
+/obj/item/rogue/instrument/Initialize(mapload)
 	soundloop = new(src, FALSE)
 	//TA edit - Bard chages
 	ensure_timed_tracks()
@@ -61,7 +61,7 @@
 	stop_music(user)
 
 /obj/item/rogue/instrument/proc/check_file(infile, filename, user)
-	var/file_ext = lowertext(copytext(filename, -4))
+	var/file_ext = LOWER_TEXT(copytext(filename, -4))
 	var/file_size = length(infile)
 
 	if(file_ext != ".ogg")
@@ -80,6 +80,32 @@
 	//TA edit - Bard chages start
 	if(playing)
 		return
+	if(user.mind)
+		switch(user.get_skill_level(/datum/skill/misc/music))
+			if(1)
+				note_color = "#ffffff"
+				soundloop.stress2give = /datum/stressevent/music/novice
+			if(2)
+				note_color = "#ffffff"
+				soundloop.stress2give = /datum/stressevent/music/apprentice
+			if(3)
+				note_color = "#1eff00"
+				soundloop.stress2give = /datum/stressevent/music/journeyman
+			if(4)
+				note_color = "#0070dd"
+				soundloop.stress2give = /datum/stressevent/music/expert
+			if(5)
+				note_color = "#a335ee"
+				soundloop.stress2give = /datum/stressevent/music/master
+			if(6)
+				note_color = "#ff8000"
+				soundloop.stress2give = /datum/stressevent/music/legendary
+			else
+				note_color = initial(note_color)
+				soundloop.stress2give = /datum/stressevent/music
+	else
+		note_color = initial(note_color)
+		soundloop.stress2give = /datum/stressevent/music
 	ui_interact(user)
 	//TA edit - Bard chages end
 
