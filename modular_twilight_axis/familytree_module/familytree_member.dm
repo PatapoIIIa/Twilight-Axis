@@ -484,7 +484,7 @@
 /datum/family_member/proc/GetPreservedRelationshipTo(datum/family_member/other)
 	if(!person || !other?.person)
 		return null
-	return SSfamilytree.get_preserved_relationship(person, other)
+	return SSfamilytree.get_preserved_relationship(person, other.person)
 
 /datum/family_member/proc/AreFullSiblings(datum/family_member/other)
 	if(!other || other == src)

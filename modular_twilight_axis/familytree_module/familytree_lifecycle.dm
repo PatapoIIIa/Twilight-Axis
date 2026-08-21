@@ -49,7 +49,6 @@
 	low_tier_job_titles |= list(
 		"Head Slave",
 		"Palace Slave",
-		"Slave",
 		"Freeman",
 	)
 

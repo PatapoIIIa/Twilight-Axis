@@ -46,6 +46,7 @@
 	open_sessions = list()
 	live_by_person = list()
 	clear_cast()
+	drop_houses()
 
 /datum/familytree_probe/proc/open_offer(mob/living/carbon/human/first, mob/living/carbon/human/second)
 	RETURN_TYPE(/datum/family_confirm_session)

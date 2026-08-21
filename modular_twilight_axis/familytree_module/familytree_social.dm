@@ -113,12 +113,7 @@
 		/datum/job/roguetown/bathworker,
 	)
 
-	var/list/low_tier_job_titles = list(
-		"Beggar",
-		"Excommunicado",
-		"Thug",
-		"Doomsayer",
-	)
+	var/list/low_tier_job_titles = list()
 
 /proc/familytree_get_role_tier(mob/living/carbon/human/H)
 	if(!H)

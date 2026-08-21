@@ -580,7 +580,8 @@ GLOBAL_LIST_EMPTY(bonds_debug_rows)
 	probe.run_stance_sweep()
 	probe.run_event_sweep(repeats)
 	probe.run_dream_sweep()
-	var/text = probe.report()
+	probe.run_deep_sweep(repeats * 4, 10)
+	var/text = "[probe.report()]\n[probe.deep_report()]"
 	var/faults = length(probe.violations)
 	qdel(probe)
 

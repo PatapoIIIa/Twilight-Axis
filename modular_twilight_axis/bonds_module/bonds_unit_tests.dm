@@ -738,7 +738,9 @@
 	BD_ASSERT_EQUAL(present_first, SSbonds.present_faction_ids(), "faction presence is fixed for the round and must not be rescanned")
 
 	SSbonds.nudge_stance(BOND_FACTION_BURGHER, BOND_FACTION_ATC, 1, 0, "")
-	BD_ASSERT(SSbonds.faction_map_shape() != first, "moving a stance must invalidate the cached map, or the panel would show stale standings")
+	var/moved = SSbonds.faction_map_shape()
+	SSbonds.nudge_stance(BOND_FACTION_BURGHER, BOND_FACTION_ATC, -1, 0, "")
+	BD_ASSERT(moved != first, "moving a stance must invalidate the cached map, or the panel would show stale standings")
 
 /datum/unit_test/bonds/fast_blend_matches_the_general_one/Run()
 	BD_ASSERT_EQUAL(SSbonds.blend_impact(1, 1, 1, 1, 1), 1, "with every lens neutral the blend must be exactly 1")
@@ -843,6 +845,41 @@
 	var/list/faults = probe.violations.Copy()
 	qdel(probe)
 	BD_ASSERT_EQUAL(length(faults), 0, "the roster sweep found faults: [faults.Join(" | ")]")
+
+/datum/unit_test/bonds/deep_graph_survives_random_event_sequences/Run()
+	var/datum/bond_probe/probe = new()
+	probe.run_event_fuzz(8, 8)
+	probe.run_direction_probe()
+	probe.run_cap_probe()
+	probe.run_kin_probe()
+	var/list/faults = probe.violations.Copy()
+	var/steps = probe.fuzz_steps
+	qdel(probe)
+	BD_ASSERT_EQUAL(length(faults), 0, "the graph fuzz found faults: [faults.Join(" | ")]")
+	BD_ASSERT(steps > 0, "the fuzz applied no events at all")
+
+/datum/unit_test/bonds/deep_every_dream_gate_can_be_satisfied/Run()
+	var/datum/bond_probe/probe = new()
+	probe.run_dream_gate_probe()
+	var/list/faults = probe.violations.Copy()
+	var/checked = probe.gates_checked
+	qdel(probe)
+	BD_ASSERT_EQUAL(length(faults), 0, "a memory is gated on something nobody can ever be: [faults.Join(" | ")]")
+	BD_ASSERT(checked > 0, "no dream gates were checked")
+
+/datum/unit_test/bonds/deep_stance_layers_apply_in_order/Run()
+	var/datum/bond_probe/probe = new()
+	probe.run_stance_layering_probe()
+	var/list/faults = probe.violations.Copy()
+	qdel(probe)
+	BD_ASSERT_EQUAL(length(faults), 0, "the stance layers do not resolve in declared order: [faults.Join(" | ")]")
+
+/datum/unit_test/bonds/deep_seeding_is_idempotent/Run()
+	var/datum/bond_probe/probe = new()
+	probe.run_seeding_idempotence_probe()
+	var/list/faults = probe.violations.Copy()
+	qdel(probe)
+	BD_ASSERT_EQUAL(length(faults), 0, "seeding the faction matrix twice does not land in the same place: [faults.Join(" | ")]")
 
 #undef BD_SOURCE
 #undef BD_ASSERT

@@ -241,6 +241,7 @@
 #include "bonds_dreams.dm"
 #include "bonds_dream_file.dm"
 #include "bonds_probe.dm"
+#include "bonds_probe_deep.dm"
 #include "bonds_dreams_gods.dm"
 #include "bonds_dreams_maps.dm"
 #include "bonds_panels.dm"

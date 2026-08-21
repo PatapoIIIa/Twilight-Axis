@@ -1081,7 +1081,8 @@ GLOBAL_LIST_INIT(ftdebug_age_pool, list(
 		return
 
 	probe.run_confirm_storm(cast, rounds, max_hold)
-	var/text = probe.report()
+	probe.run_deep_sweep(cast, 3)
+	var/text = "[probe.report()]\n[probe.deep_report()]"
 	var/faults = length(probe.violations)
 	qdel(probe)
 

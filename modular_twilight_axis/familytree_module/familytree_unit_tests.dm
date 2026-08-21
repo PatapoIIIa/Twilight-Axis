@@ -379,6 +379,45 @@
 	qdel(probe)
 	FT_ASSERT(caught > 0, "offering a second confirmation to someone already holding one must be reported, or two buttons stack silently")
 
+/datum/unit_test/familytree/deep_family_graph_stays_consistent/Run()
+	var/list/cast = list()
+	for(var/i in 1 to 7)
+		var/mob/living/carbon/human/body = ft_spawn_player()
+		if(body)
+			cast += body
+	FT_ASSERT_EQUAL(length(cast), 7, "the family fuzz needs its whole cast")
+
+	var/datum/familytree_probe/probe = new()
+	probe.run_family_graph_fuzz(cast, 3)
+	var/list/faults = probe.violations.Copy()
+	var/named = probe.relations_named
+	probe.drop_houses()
+	qdel(probe)
+	FT_ASSERT_EQUAL(length(faults), 0, "the family graph fuzz found faults: [faults.Join(" | ")]")
+	FT_ASSERT(named > 0, "no relationship was ever named, so the walk proved nothing")
+
+/datum/unit_test/familytree/deep_acceptance_callback_fires_once/Run()
+	var/mob/living/carbon/human/first = ft_spawn_player()
+	var/mob/living/carbon/human/second = ft_spawn_player()
+	FT_ASSERT_NOTNULL(first, "spawn failed")
+	FT_ASSERT_NOTNULL(second, "spawn failed")
+
+	var/datum/familytree_probe/probe = new()
+	probe.run_confirmation_callback_probe(first, second)
+	probe.run_timeout_bookkeeping_probe(first, second)
+	var/list/faults = probe.violations.Copy()
+	qdel(probe)
+	FT_ASSERT_EQUAL(length(faults), 0, "the acceptance callback does not follow the answers: [faults.Join(" | ")]")
+
+/datum/unit_test/familytree/deep_tier_rules_name_things_that_exist/Run()
+	var/datum/familytree_probe/probe = new()
+	probe.run_role_tier_probe()
+	var/list/faults = probe.violations.Copy()
+	var/checked = probe.tiers_resolved
+	qdel(probe)
+	FT_ASSERT_EQUAL(length(faults), 0, "a tier rule names a job or title that does not exist: [faults.Join(" | ")]")
+	FT_ASSERT(checked > 0, "no tier rule was checked")
+
 #undef FT_SOURCE
 #undef FT_ASSERT
 #undef FT_ASSERT_EQUAL
