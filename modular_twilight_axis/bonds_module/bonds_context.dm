@@ -119,6 +119,18 @@
 	public_zone = TRUE
 	priority = 10
 
+/datum/bond_zone_lens/tavern
+	area_type = /area/rogue/indoors/town/tavern
+	weight = 1
+	public_zone = TRUE
+	priority = 20
+
+/datum/bond_zone_lens/chapel
+	area_type = /area/rogue/indoors/town/church/chapel
+	weight = 1
+	public_zone = TRUE
+	priority = 20
+
 /datum/bond_zone_lens/indoors
 	area_type = /area/rogue/indoors
 	weight = 1
@@ -214,31 +226,6 @@
 	map_weight_cache = (lens && lens.weight) ? lens.weight : 1
 	return map_weight_cache
 
-/datum/bond_map_roster
-	abstract_type = /datum/bond_map_roster
-	var/map_name = ""
-	var/list/absent_factions
-	var/list/extra_factions
-
-/datum/controller/subsystem/bonds/proc/build_map_rosters()
-	map_rosters = list()
-	for(var/datum/bond_map_roster/roster_type as anything in typesof(/datum/bond_map_roster))
-		if(IS_ABSTRACT(roster_type))
-			continue
-		var/datum/bond_map_roster/roster = new roster_type()
-		if(!roster.map_name)
-			qdel(roster)
-			continue
-		map_rosters[roster.map_name] = roster
-	bondlog("map rosters built: [map_rosters.len]", BONDLOG_INFO)
-
-/datum/controller/subsystem/bonds/proc/current_map_roster()
-	RETURN_TYPE(/datum/bond_map_roster)
-	var/current = SSmapping?.config?.map_name
-	if(!current)
-		return null
-	return map_rosters[current]
-
 /datum/controller/subsystem/bonds/proc/map_blacklist()
 	RETURN_TYPE(/list)
 	var/datum/map_adjustment/adjustment = SSmapping?.map_adjustment
@@ -252,9 +239,6 @@
 	var/datum/bond_faction/faction = faction_prototypes[faction_id]
 	if(!faction)
 		return FALSE
-	var/datum/bond_map_roster/roster = current_map_roster()
-	if(roster && length(roster.extra_factions) && (faction_id in roster.extra_factions))
-		return TRUE
 	var/list/blacklist = map_blacklist()
 	var/found_any = FALSE
 	for(var/job_type in faction_index)

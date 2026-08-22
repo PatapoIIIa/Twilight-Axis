@@ -208,7 +208,7 @@
 			return event_type
 	return pool[pool.len]
 
-/datum/controller/subsystem/bonds/proc/fire_dream(mob/living/carbon/human/dreamer, valence, scope)
+/datum/controller/subsystem/bonds/proc/fire_dream(mob/living/carbon/human/dreamer, valence, scope, forced = FALSE)
 	var/list/round_pool = round_dream_pool(valence, scope)
 	if(!length(round_pool))
 		BONDS_TALLY("dream.no_round_pool")
@@ -227,7 +227,10 @@
 			continue
 		if(!record(dreamer.mind, other.mind, event_type, other, TRUE))
 			continue
-		BONDS_TALLY("dream.fired")
+		if(forced)
+			BONDS_TALLY("dream.forced_fired")
+		else
+			BONDS_TALLY("dream.fired")
 		notify_dream(dreamer, other)
 		announce_echo(other, apply_echo(other.mind, dreamer.mind, event_type))
 		bondlog("dream [dreamer.ckey] -> [other.ckey] [event_type]")

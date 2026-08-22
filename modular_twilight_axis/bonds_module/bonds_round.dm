@@ -29,7 +29,6 @@ SUBSYSTEM_DEF(bonds)
 	var/share_teller = 0
 	var/share_zone = 0
 	var/share_map = 0
-	var/list/map_rosters = list()
 	var/list/faction_stances = list()
 	var/list/stance_blocks_cache
 	var/list/realm_templates_cache
@@ -73,7 +72,6 @@ SUBSYSTEM_DEF(bonds)
 	build_dispositions()
 	build_hierarchy()
 	build_weight_shares()
-	build_map_rosters()
 	build_storyteller_lenses()
 	build_faction_stances()
 	register_debug_verbs()

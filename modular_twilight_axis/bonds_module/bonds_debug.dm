@@ -395,7 +395,7 @@ GLOBAL_LIST_EMPTY(bonds_debug_rows)
 		if(QDELETED(dreamer))
 			continue
 		bench?.op_begin()
-		var/hit = fire_dream(dreamer, BOND_DREAM_POSITIVE, BOND_DREAM_SCOPE_FOREIGN)
+		var/hit = fire_dream(dreamer, BOND_DREAM_POSITIVE, BOND_DREAM_SCOPE_FOREIGN, TRUE)
 		bench?.op_end()
 		if(hit)
 			fired++

@@ -3,6 +3,8 @@
 	var/fuzz_bonds = 0
 	var/kin_links = 0
 	var/gates_checked = 0
+	var/memory_peak = 0
+	var/memory_committed = 0
 
 /datum/bond_probe/proc/check_bond_invariants(datum/social_bond/bond, tag)
 	if(!bond)
@@ -180,6 +182,44 @@
 		fault("re-seeding moved [length(drifted)] pairs, so seeding depends on prior state: [drifted.Join("; ")]")
 	return !length(violations)
 
+
+/datum/bond_probe/proc/run_memory_probe(events = 40)
+	var/list/event_types = list()
+	for(var/event_type in SSbonds.event_prototypes)
+		event_types += event_type
+	if(!length(event_types))
+		return fault("no events to accumulate")
+
+	var/datum/mind/subject = scratch_mind()
+	var/datum/mind/object = scratch_mind()
+	var/datum/social_bond/bond = SSbonds.get_or_create_bond(subject, object)
+	if(!bond || !bond.scored)
+		return fault("could not open a scored bond to accumulate against")
+
+	var/peak_history = 0
+	for(var/i in 1 to events)
+		bond.attach_event(pick(event_types))
+		peak_history = max(peak_history, LAZYLEN(bond.history))
+		if(LAZYLEN(bond.history) > BOND_MAX_HISTORY)
+			fault("history reached [LAZYLEN(bond.history)] entries after [i] events, over the cap of [BOND_MAX_HISTORY]")
+			break
+	memory_peak = peak_history
+
+	var/committed_before = bond.warmth_committed
+	for(var/category in bond.active_events)
+		var/datum/bond_event/live = bond.active_events[category]
+		live.bond = null
+		qdel(live)
+	bond.active_events = null
+	bond.recalculate()
+
+	if(bond.warmth_committed != committed_before)
+		fault("letting every transient expire moved the committed sum from [committed_before] to [bond.warmth_committed]; the accumulated past must survive forgetting")
+	if(bond.warmth != bond.warmth_committed)
+		fault("with no transients left the live warmth [bond.warmth] must equal the committed sum [bond.warmth_committed]")
+	memory_committed = bond.warmth_committed
+	return !length(violations)
+
 /datum/bond_probe/proc/run_deep_sweep(sequences = 12, steps = 10)
 	run_direction_probe()
 	run_kin_probe()
@@ -188,6 +228,7 @@
 	run_seeding_idempotence_probe()
 	run_event_fuzz(sequences, steps)
 	run_cap_probe()
+	run_memory_probe()
 	return !length(violations)
 
 /datum/bond_probe/proc/deep_report()

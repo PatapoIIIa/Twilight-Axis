@@ -887,6 +887,15 @@
 	qdel(probe)
 	BD_ASSERT_EQUAL(length(faults), 0, "seeding the faction matrix twice does not land in the same place: [faults.Join(" | ")]")
 
+/datum/unit_test/bonds/deep_attitude_is_the_sum_memory_is_only_part/Run()
+	var/datum/bond_probe/probe = new()
+	probe.run_memory_probe(40)
+	var/list/faults = probe.violations.Copy()
+	var/peak = probe.memory_peak
+	qdel(probe)
+	BD_ASSERT_EQUAL(length(faults), 0, "attitude must be the sum of what happened while memory keeps only part: [faults.Join(" | ")]")
+	BD_ASSERT(peak > 0 && peak <= BOND_MAX_HISTORY, "forty events must leave between one and [BOND_MAX_HISTORY] remembered entries, not [peak]")
+
 #undef BD_DEEP_EVENT_REPEATS
 #undef BD_DEEP_FUZZ_SEQUENCES
 #undef BD_DEEP_FUZZ_STEPS
