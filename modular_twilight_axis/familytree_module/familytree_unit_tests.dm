@@ -465,6 +465,32 @@
 	FT_ASSERT_EQUAL(length(faults), 0, "a confirmation type opens a blank prompt: [faults.Join(" | ")]")
 	FT_ASSERT(rendered > 0, "no confirmation text was rendered at all")
 
+/datum/unit_test/familytree/mutual_gate_answers_every_case/Run()
+	var/mob/living/carbon/human/first = ft_spawn_player()
+	var/mob/living/carbon/human/second = ft_spawn_player()
+	FT_ASSERT_NOTNULL(first, "spawn failed")
+	FT_ASSERT_NOTNULL(second, "spawn failed")
+
+	var/datum/familytree_probe/probe = new()
+	probe.run_gate_matrix_probe(first, second)
+	var/list/faults = probe.violations.Copy()
+	var/cases = probe.gate_outcomes
+	qdel(probe)
+	FT_ASSERT_EQUAL(length(faults), 0, "the mutual gate mis-answers: [faults.Join(" | ")]")
+	FT_ASSERT(cases >= 14, "the gate matrix must cover every outcome and their order, covered only [cases]")
+
+/datum/unit_test/familytree/an_accepted_offer_runs_the_whole_session/Run()
+	var/mob/living/carbon/human/first = ft_spawn_player()
+	var/mob/living/carbon/human/second = ft_spawn_player()
+	FT_ASSERT_NOTNULL(first, "spawn failed")
+	FT_ASSERT_NOTNULL(second, "spawn failed")
+
+	var/datum/familytree_probe/probe = new()
+	probe.run_open_session_probe(first, second)
+	var/list/faults = probe.violations.Copy()
+	qdel(probe)
+	FT_ASSERT_EQUAL(length(faults), 0, "the happy path does not carry an offer to its end: [faults.Join(" | ")]")
+
 #undef FT_DEEP_STORM_CAST
 #undef FT_DEEP_STORM_ROUNDS
 #undef FT_DEEP_TREE_CAST

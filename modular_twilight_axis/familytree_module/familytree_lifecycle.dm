@@ -465,67 +465,91 @@
 	if(!H.familytree_opted_out && !H.family_datum && !H.spouse_mob && familytree_pref_enabled(H.familytree_pref))
 		try_queue_assignment(H)
 
-/datum/controller/subsystem/familytree/proc/request_mutual_confirmation(mob/living/carbon/human/person_a, mob/living/carbon/human/person_b, datum/callback/on_both_accept, confirm_type = "family", relation_text_a = null, relation_text_b = null, busy_attempt = 0, busy_deferred = FALSE)
-	if(!person_a || QDELETED(person_a) || !person_b || QDELETED(person_b))
-		if(busy_deferred)
-			if(person_a && !QDELETED(person_a))
-				person_a.familytree_confirmation_pending = FALSE
-			if(person_b && !QDELETED(person_b))
-				person_b.familytree_confirmation_pending = FALSE
-		ftlog("MUTUAL SKIP: invalid participant a=[person_a?.real_name] b=[person_b?.real_name]")
-		return
-	if(person_a?.familytree_opted_out || person_b?.familytree_opted_out)
-		if(busy_deferred)
-			person_a.familytree_confirmation_pending = FALSE
-			person_b.familytree_confirmation_pending = FALSE
-		ftlog("MUTUAL SKIP: opted out a=[person_a?.real_name] b=[person_b?.real_name]")
-		return
-	if((person_a?.familytree_confirmation_pending || person_b?.familytree_confirmation_pending) && !busy_deferred)
-		ftlog("MUTUAL SKIP: pending confirmation a=[person_a?.real_name] b=[person_b?.real_name]")
-		return
+/datum/controller/subsystem/familytree/proc/mutual_gate(mob/living/carbon/human/person_a, mob/living/carbon/human/person_b, busy_deferred = FALSE, has_client_a = FALSE, has_client_b = FALSE, busy_a = null, busy_b = null)
+	if(!person_a || QDELETED(person_a) || !person_b || QDELETED(person_b) || person_a == person_b)
+		return MUTUAL_GATE_INVALID
+	if(person_a.familytree_opted_out || person_b.familytree_opted_out)
+		return MUTUAL_GATE_OPTED_OUT
+	if((person_a.familytree_confirmation_pending || person_b.familytree_confirmation_pending) && !busy_deferred)
+		return MUTUAL_GATE_PENDING
+	if(busy_a || busy_b)
+		return MUTUAL_GATE_BUSY
+	if(!has_client_a || !has_client_b)
+		return MUTUAL_GATE_NO_CLIENT
+	return MUTUAL_GATE_OK
 
-	var/busy_reason_a = person_a?.client ? is_familytree_player_busy(person_a) : null
-	var/busy_reason_b = person_b?.client ? is_familytree_player_busy(person_b) : null
-	if(busy_reason_a || busy_reason_b)
-		if(person_a.client)
-			person_a.familytree_confirmation_pending = TRUE
-		if(person_b.client)
-			person_b.familytree_confirmation_pending = TRUE
-		if(busy_attempt >= familytree_busy_retry_limit)
-			ftlog("MUTUAL SKIP: busy after [familytree_busy_retry_limit] retries type=[confirm_type] a=[person_a.real_name] busy=[busy_reason_a || "no"] b=[person_b.real_name] busy=[busy_reason_b || "no"]", "WARN")
-			person_a.familytree_confirmation_pending = FALSE
-			person_b.familytree_confirmation_pending = FALSE
-			try_queue_assignment(person_a)
-			try_queue_assignment(person_b)
-			return
-		ftlog("MUTUAL DEFER: type=[confirm_type] retry=[busy_attempt + 1]/[familytree_busy_retry_limit] a=[person_a.real_name] busy=[busy_reason_a || "no"] b=[person_b.real_name] busy=[busy_reason_b || "no"]")
-		addtimer(CALLBACK(src, PROC_REF(request_mutual_confirmation), person_a, person_b, on_both_accept, confirm_type, relation_text_a, relation_text_b, busy_attempt + 1, TRUE), familytree_busy_retry_delay)
-		return
-
-	if(!person_a.client || !person_b.client)
-		person_a.familytree_confirmation_pending = FALSE
-		person_b.familytree_confirmation_pending = FALSE
-		ftlog("MUTUAL CANCEL: participant without client type=[confirm_type] a=[person_a.real_name] b=[person_b.real_name]")
-		if(person_a.client)
-			try_queue_assignment(person_a)
-		else
-			pause_familytree_human(person_a, "no client at mutual confirmation")
-		if(person_b.client)
-			try_queue_assignment(person_b)
-		else
-			pause_familytree_human(person_b, "no client at mutual confirmation")
-		return
-
+/datum/controller/subsystem/familytree/proc/open_mutual_session(mob/living/carbon/human/person_a, mob/living/carbon/human/person_b, datum/callback/on_both_accept, confirm_type, relation_text_a, relation_text_b, ask = TRUE)
+	RETURN_TYPE(/datum/family_confirm_session)
 	person_a.familytree_confirmation_pending = TRUE
 	person_b.familytree_confirmation_pending = TRUE
 	var/datum/family_confirm_session/session = new(person_a, person_b, on_both_accept, confirm_type, relation_text_a, relation_text_b)
 	session.deadline = world.time + MUTUAL_CONFIRM_TIMEOUT
 	session.timerid = addtimer(CALLBACK(session, TYPE_PROC_REF(/datum/family_confirm_session, force_timeout)), MUTUAL_CONFIRM_TIMEOUT, TIMER_STOPPABLE)
-
 	ftlog("MUTUAL CONFIRM: started type=[confirm_type] a=[person_a.real_name] b=[person_b.real_name]")
+	if(ask)
+		INVOKE_ASYNC(src, PROC_REF(do_mutual_ask), session, person_a, TRUE)
+		INVOKE_ASYNC(src, PROC_REF(do_mutual_ask), session, person_b, FALSE)
+	return session
 
-	INVOKE_ASYNC(src, PROC_REF(do_mutual_ask), session, person_a, TRUE)
-	INVOKE_ASYNC(src, PROC_REF(do_mutual_ask), session, person_b, FALSE)
+/datum/controller/subsystem/familytree/proc/request_mutual_confirmation(mob/living/carbon/human/person_a, mob/living/carbon/human/person_b, datum/callback/on_both_accept, confirm_type = "family", relation_text_a = null, relation_text_b = null, busy_attempt = 0, busy_deferred = FALSE)
+	var/live = person_a && !QDELETED(person_a) && person_b && !QDELETED(person_b) && person_a != person_b
+	var/has_client_a = (live && person_a.client) ? TRUE : FALSE
+	var/has_client_b = (live && person_b.client) ? TRUE : FALSE
+	var/busy_reason_a = has_client_a ? is_familytree_player_busy(person_a) : null
+	var/busy_reason_b = has_client_b ? is_familytree_player_busy(person_b) : null
+
+	switch(mutual_gate(person_a, person_b, busy_deferred, has_client_a, has_client_b, busy_reason_a, busy_reason_b))
+		if(MUTUAL_GATE_INVALID)
+			if(busy_deferred)
+				if(person_a && !QDELETED(person_a))
+					person_a.familytree_confirmation_pending = FALSE
+				if(person_b && !QDELETED(person_b))
+					person_b.familytree_confirmation_pending = FALSE
+			ftlog("MUTUAL SKIP: invalid participant a=[person_a?.real_name] b=[person_b?.real_name]")
+			return
+
+		if(MUTUAL_GATE_OPTED_OUT)
+			if(busy_deferred)
+				person_a.familytree_confirmation_pending = FALSE
+				person_b.familytree_confirmation_pending = FALSE
+			ftlog("MUTUAL SKIP: opted out a=[person_a?.real_name] b=[person_b?.real_name]")
+			return
+
+		if(MUTUAL_GATE_PENDING)
+			ftlog("MUTUAL SKIP: pending confirmation a=[person_a?.real_name] b=[person_b?.real_name]")
+			return
+
+		if(MUTUAL_GATE_BUSY)
+			if(has_client_a)
+				person_a.familytree_confirmation_pending = TRUE
+			if(has_client_b)
+				person_b.familytree_confirmation_pending = TRUE
+			if(busy_attempt >= familytree_busy_retry_limit)
+				ftlog("MUTUAL SKIP: busy after [familytree_busy_retry_limit] retries type=[confirm_type] a=[person_a.real_name] busy=[busy_reason_a || "no"] b=[person_b.real_name] busy=[busy_reason_b || "no"]", "WARN")
+				person_a.familytree_confirmation_pending = FALSE
+				person_b.familytree_confirmation_pending = FALSE
+				try_queue_assignment(person_a)
+				try_queue_assignment(person_b)
+				return
+			ftlog("MUTUAL DEFER: type=[confirm_type] retry=[busy_attempt + 1]/[familytree_busy_retry_limit] a=[person_a.real_name] busy=[busy_reason_a || "no"] b=[person_b.real_name] busy=[busy_reason_b || "no"]")
+			addtimer(CALLBACK(src, PROC_REF(request_mutual_confirmation), person_a, person_b, on_both_accept, confirm_type, relation_text_a, relation_text_b, busy_attempt + 1, TRUE), familytree_busy_retry_delay)
+			return
+
+		if(MUTUAL_GATE_NO_CLIENT)
+			person_a.familytree_confirmation_pending = FALSE
+			person_b.familytree_confirmation_pending = FALSE
+			ftlog("MUTUAL CANCEL: participant without client type=[confirm_type] a=[person_a.real_name] b=[person_b.real_name]")
+			if(has_client_a)
+				try_queue_assignment(person_a)
+			else
+				pause_familytree_human(person_a, "no client at mutual confirmation")
+			if(has_client_b)
+				try_queue_assignment(person_b)
+			else
+				pause_familytree_human(person_b, "no client at mutual confirmation")
+			return
+
+	open_mutual_session(person_a, person_b, on_both_accept, confirm_type, relation_text_a, relation_text_b)
 
 /datum/controller/subsystem/familytree/proc/do_mutual_ask(datum/family_confirm_session/session, mob/living/carbon/human/person, is_person_a)
 	if(QDELETED(session) || session.resolved)

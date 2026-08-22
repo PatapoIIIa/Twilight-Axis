@@ -79,6 +79,13 @@
 // matching iterations of each side, then becomes available again.
 #define FAMILYTREE_TIMEOUT_BLOCK_ITERATIONS 3
 
+#define MUTUAL_GATE_OK 0
+#define MUTUAL_GATE_INVALID 1
+#define MUTUAL_GATE_OPTED_OUT 2
+#define MUTUAL_GATE_PENDING 3
+#define MUTUAL_GATE_BUSY 4
+#define MUTUAL_GATE_NO_CLIENT 5
+
 #define ANY_GENDER 1
 #define SAME_GENDER 2
 #define DIFFERENT_GENDER 3
