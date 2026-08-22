@@ -11,6 +11,8 @@
 	item_state = "ramrod"
 	slot_flags = ITEM_SLOT_HIP
 	w_class = WEIGHT_CLASS_SMALL
+	grid_width = 64
+	grid_height = 32
 
 /obj/item/twilight_powderflask_empty
 	name = "powderflask"

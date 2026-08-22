@@ -4186,7 +4186,7 @@ GLOBAL_LIST_EMPTY(loadout_items_by_category)
 /datum/loadout_item/triumph_winterdress
 	name = "Winter Dress"
 	category = list("Триумфы")
-	path = /obj/item/clothing/suit/roguetown/armor/armordress/winterdress/triumph
+	path = /obj/item/clothing/suit/roguetown/armor/armordress/winterdress
 	triumph_cost = 4
 
 /datum/loadout_item/triumph_steelbelt

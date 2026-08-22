@@ -387,8 +387,8 @@
 
 /datum/controller/subsystem/familytree/proc/familytree_confirmation_prompt_body(found_text, mob/living/carbon/human/person, mob/living/carbon/human/partner)
 	if(person?.know_your_fate && partner)
-		return "[found_text]\n\nХотите продолжить?\n\nЕсли вы не сделаете выбор — он будет засчитан как отказ.\nОтказавшись, вы больше не будете матчиться с этим персонажем в этом раунде."
-	return "[found_text]\n\nХотите продолжить?\n\nЕсли вы не сделаете выбор — он будет засчитан как отказ.\nОтказавшись, вы потеряете возможность найти семью в этом раунде."
+		return "[found_text]\n\nХотите продолжить?\n\nЕсли вы не сделаете выбор — предложение истечёт, а система продолжит поиск.\nОтказавшись, вы больше не будете матчиться с этим персонажем в этом раунде."
+	return "[found_text]\n\nХотите продолжить?\n\nЕсли вы не сделаете выбор — предложение истечёт, а система продолжит поиск.\nОтказавшись, вы потеряете возможность найти семью в этом раунде."
 
 /datum/controller/subsystem/familytree/proc/familytree_record_blocked_pair(mob/living/carbon/human/refuser, mob/living/carbon/human/other)
 	if(!refuser || !other || !other.ckey)
@@ -449,9 +449,13 @@
 	if(result == "Да")
 		ftlog("CONFIRM ACCEPT: [H.real_name] type=[confirm_type]")
 		on_accept.Invoke()
-	else
-		ftlog("CONFIRM REJECT: [H.real_name] type=[confirm_type] result=[result || "timeout"]")
+	else if(result == "Нет")
+		ftlog("CONFIRM REJECT: [H.real_name] type=[confirm_type]")
 		familytree_apply_refusal(H, context_person, confirm_type)
+	else
+		ftlog("CONFIRM TIMEOUT/CLOSED: [H.real_name] type=[confirm_type]")
+		if(!H.familytree_opted_out && !H.family_datum && !H.spouse_mob && familytree_pref_enabled(H.familytree_pref))
+			try_queue_assignment(H)
 
 /datum/controller/subsystem/familytree/proc/familytree_solo_confirm_expire(mob/living/carbon/human/H)
 	if(!H || QDELETED(H))
@@ -572,8 +576,7 @@
 		person.playsound_local(get_turf(person), 'sound/misc/bell_small.ogg', 50, FALSE, pressure_affected = FALSE)
 
 	var/body = familytree_confirmation_prompt_body(found_text, person, partner)
-	if(!person.familytree_show_confirm_button(found_text, CALLBACK(src, PROC_REF(do_mutual_prompt), session, person, is_person_a, body)))
-		do_mutual_prompt(session, person, is_person_a, body)
+	do_mutual_prompt(session, person, is_person_a, body)
 
 /datum/controller/subsystem/familytree/proc/do_mutual_prompt(datum/family_confirm_session/session, mob/living/carbon/human/person, is_person_a, body)
 	if(!person || QDELETED(person))
@@ -592,10 +595,15 @@
 		to_chat(person, span_warning("Это предложение уже неактуально."))
 		return
 
-	var/accepted = (result == "Да")
+	var/confirm_result = CONFIRM_TIMEOUT
+	if(result == "Да")
+		confirm_result = CONFIRM_ACCEPTED
+	else if(result == "Нет")
+		confirm_result = CONFIRM_REJECTED
+
 	if(is_person_a)
-		session.result_a = accepted ? CONFIRM_ACCEPTED : CONFIRM_REJECTED
+		session.result_a = confirm_result
 	else
-		session.result_b = accepted ? CONFIRM_ACCEPTED : CONFIRM_REJECTED
+		session.result_b = confirm_result
 
 	session.check_resolution()

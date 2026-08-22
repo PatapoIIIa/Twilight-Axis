@@ -1176,3 +1176,128 @@
   - rscdel: Removed chocolate halves we just quarter now
   zeskorion:
   - balance: nerfs bogbark club and battle-wrench demolition intent
+2026-08-20:
+  KatTheFox:
+  - rscdel: Removed vampire maidtosis.
+  Lamasmaster:
+  - bugfix: Economic Roleplay Action related to crashing the market with no survivors.
+  Ollanius:
+  - rscdel: Unnecessary color-picking code for Woodland Brigandine sets.
+  - rscdel: Shelves now-unused classic variant of the Woodland Brigandine.
+  - bugfix: Restores the original Shawl for the loadout and sewing recipes. Hijab-styled
+      shawls are now listed via '/shawlhood'.
+  - bugfix: Woodland Mantles and Brigandines now properly render their on-item detail
+      shades when spawned in.
+  - rscadd: Plackarted variants of Woodland Brigandine, and a new CKEY to their kit
+      access.
+  - rscadd: Updated sprites for the Woodland Mantle.
+  YakumoChen:
+  - balance: Murklings don't drown, since they're essentially sentient bog ooze anyway.
+  nauticall:
+  - bugfix: HERMES direct send (via the TGUI window you get when you put money into
+      the thing) now takes paper formatting the same way a normal bit of parchment
+      via the quill does. No more basic HTML filled with `##`, now your HERMES messages
+      look just like the real deal.
+  - qol: Swapped the parchment background to something cleaner to make the paper stuff
+      more readable, and altered the signature font to look more signature-y (done
+      via HTML fallback so it won't glitch out on some PCs).
+  racobio:
+  - rscadd: Adds a recipe to craft the thin winter dress
+  - bugfix: fixes an arcyne ward interaction with the thin winter dress by repathing
+      it
+2026-08-21:
+  Aeiraea:
+  - bugfix: Fixed the Scout Cloak not appearing as intended upon feminine characters
+      and short characters when facing any direction that is not south.
+  KatTheFox:
+  - bugfix: Fixed a runtime relating to throne announcements.
+  - bugfix: Fixed an exploit allowing enchantments to be stacked.
+  - bugfix: Fixed an oversight causing the decrepit kettle helm to smelt into steel
+      instead of glimmering slag
+  - bugfix: Fixed an issue where organs would be treated as sharp objects and embed,
+      particularly noticable as a gnoll devouring corpses
+  - bugfix: Fixed an issue where certain non-flora items (like skysugar slabs) would
+      claim you can crush them into seeds, despite that being untrue
+  - bugfix: Fixed an issue where rosa petals and their variants would be unable to
+      be crushed into seeds, forcing gardeners to make an alchemical mortar to plant
+      rosa
+  - bugfix: Fixed a runtime preventing noticeboard notices from being posted
+  - bugfix: Fixed most round statistics (such as gods' influences) being completely
+      untracked and therefore stuck at zero
+  - bugfix: Fixed conjured skeletons from being able to panel and be panelled
+  Lamasmaster:
+  - bugfix: Sergeant orders not working on Wardens
+  - refactor: Orders (Marshal/Sergeant/Disgraced MAA)
+  - balance: Standard Spear functions apply only to Standard Bearer again, it also
+      grants no bonus stats anymore besides stress relief. It lost 30 throwforce (so
+      10 now) and swapped 1 WIl for 1 CON on the statpack.
+  - image: Makes all bow and arrow sprites 64x64 to prevent flying arrows in UI and
+      onmob (this doesn't prevent weird offsets while dumping quiver or for fired
+      arrows)
+  - spellcheck: Selfbow > Yew Hunting Bow
+  OrbisAnima:
+  - balance: Buff the chance of flints working to 90% from 50%
+  RosySaturniidae:
+  - bugfix: the alloy-tipped triumph kit now has a blacksteel variant instead of downgrading
+      your 140 mammon whip
+  - rscadd: new dono ckey
+  SpartanBobby:
+  - rscadd: Added short skirt. A cut-down variation of the short jupon sprite that
+      you can wear on your legs
+  WeNeedMorePhoron:
+  - balance: Made NPC archers slower shooting and less accurate, again. Excluding
+      Conjured summons
+  - balance: Made a certain boss no longer spawn archers
+  - balance: Fixed an issue where broadhead and bodkin (baseline) arrows do not have
+      any damage falloff as intended.
+  mumblemancer:
+  - rscadd: seneschals now have a unique key to their door
+  radarseas:
+  - rscadd: Added TRAIT_NOVAMPMITOSIS, this prevents well, vampires from duplicating
+      via personal servantry, its only applied on basic VL servants/guards and thinbloods/thinnerbloods.
+      for now.
+  - rscdel: Removed zerobrine
+  - rscdel: Removed TRAIT_BLOODPOOL_BORN, into the pyres of hell with thee DAEMON!!
+      BEGONE!! THE POWER OF PSYDON REBUKES!!!
+  - bugfix: Fixed vamp mitosis + exploits for good
+  zeskorion:
+  - bugfix: wrenches with charges can now attack objects
+  - qol: battle-wrenches default to STRIKE instead of USE
+2026-08-22:
+  Aeiraea:
+  - rscadd: Added the new togas to Fortified Skeletons to replace their old Psydonic
+      "toga".
+  - bugfix: Fixed the dressier toga not appearing as it should upon feminine characters
+      and made its belt more dye-friendly.
+  FreeStylaLT:
+  - rscadd: Added a helmetless visor to loadout. Sprite courtesy of Ollanius!
+  - rscadd: Added 'small' elf ears. Sprite courtesy of Litepurple!
+  - bugfix: Fixed a few errant pixels on the Woodland cloak.
+  - bugfix: Fixed the loadout trophy robes having incorrect attributes.
+  KatTheFox:
+  - bugfix: You can no longer withdraw from stockpiles and vomitoriums at range.
+  - admin: Prayers from players with the devout follower vice are now tagged as "devout
+      follower of (patron)" instead of "follower of (patron)", making it easier to
+      distinguish them at a glance.
+  - bugfix: Fixed an issue where packages could be created from pouches, and then
+      several could be placed inside another pouch - allowing you to infinitely nest
+      packages and achieve exponentially dense (and annoying to access) storage.
+  - bugfix: Fixed an issue where ghosts could interact with any machine with a tgui
+      interface, allowing them to - among other things - purchase items and drop them
+      on peoples' heads. The core issue has been in this codebase since the initial
+      commit 2 years ago, by the way.
+  - bugfix: Fixed an issue where prayers would strip out all your punctuation, causing
+      them to look _really_ stupid on the round-end chronicle. They now use the normal
+      sanitize proc everything else does, and display how you'd expect in the chronicle.
+  - bugfix: Fixed an HTML injection exploit, the details of which will not be disclosed
+      here.
+  OrbisAnima:
+  - qol: Resident adventurers now show their job title in examine and when autoring
+      books (unless they use a pen name of course)
+  SomeDeviant:
+  - bugfix: fixed item path of Golden Jade Amulet
+  WeNeedMorePhoron:
+  - rscadd: Broom now cleans in a 3x3 AOE and its cleaning time scales inversely to
+      Cooking skills
+  kiwedespars:
+  - rscadd: gnolls no longer step on glass and get an owie
