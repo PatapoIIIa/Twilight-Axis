@@ -151,6 +151,8 @@
 // collisions (Bathmaster, Innkeeper, Bathhouse Attendant, Cook, Tapster).
 #define BOND_STANCE_DIRECTORY "strings/bonds"
 
+#define BOND_LOOSE_BLOC "loose"
+
 #define BOND_FACTION_NOBLE "noble"
 #define BOND_FACTION_COURT "court"
 #define BOND_FACTION_RETINUE "retinue"

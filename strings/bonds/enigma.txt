@@ -23,6 +23,13 @@ bloc town:burgher atc
 bloc free:sidefolk wanderer
 bloc outlaw:outlaw
 
+name enigma:  Королевство Энигма
+name valoria: Валорийская церковь
+name otava:   Отава
+name town:    Город
+name free:    Вольные
+name outlaw:  Вне закона
+
 matrix enigma:
 #               court   retinue  garrison  citywatc  vanguard   peasant
 noble:          30/55     35/50     30/55     15/40     20/45    -15/35

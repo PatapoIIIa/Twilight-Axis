@@ -21,6 +21,11 @@ bloc otava:inquisition
 bloc free:sidefolk wanderer
 bloc outlaw:outlaw
 
+name azuria: Великое Герцогство Азурия
+name otava:  Отава
+name free:   Вольные
+name outlaw: Вне закона
+
 matrix azuria:
 #              court   retinue  garrison    church   burgher       atc   peasant
 noble:         45/60     40/55     25/50     -8/55     10/45     15/45    -20/35

@@ -23,6 +23,13 @@ bloc otava:inquisition
 bloc free:sidefolk wanderer
 bloc outlaw:outlaw
 
+name ashur:  Султанат Аль-Ашур
+name slave:  Невольники
+name town:   Город
+name otava:  Отава
+name free:   Вольные
+name outlaw: Вне закона
+
 matrix ashur:
 #              court   retinue  garrison    church   peasant
 noble:         40/60     35/52     35/58     20/50    -15/35

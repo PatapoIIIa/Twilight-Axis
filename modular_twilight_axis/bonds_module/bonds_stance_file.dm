@@ -99,6 +99,7 @@
 	var/realm
 	var/list/fallback
 	var/list/blocs = list()
+	var/list/bloc_names = list()
 	var/list/raw_sections = list()
 	var/list/overrides = list()
 	var/list/current_rows
@@ -138,6 +139,13 @@
 				bondlog("[name]:[line_number] expected 'bloc <id>:'", BONDLOG_WARN)
 				continue
 			blocs[words[2]] = bonds_split_words(payload)
+			continue
+
+		if(words[1] == "name")
+			if(length(words) != 2)
+				bondlog("[name]:[line_number] expected 'name <bloc>:'", BONDLOG_WARN)
+				continue
+			bloc_names[words[2]] = trim(payload)
 			continue
 
 		if(words[1] == "matrix")
@@ -209,7 +217,7 @@
 		else
 			between = parse_stance_triangle(bloc_axis, rows, name, "matrix blocs")
 
-	return list("realm" = realm, "default" = fallback, "blocs" = blocs, "inner" = inner, "bloc_axis" = bloc_axis, "between" = between, "overrides" = overrides)
+	return list("realm" = realm, "default" = fallback, "blocs" = blocs, "bloc_names" = bloc_names, "inner" = inner, "bloc_axis" = bloc_axis, "between" = between, "overrides" = overrides)
 
 /datum/controller/subsystem/bonds/proc/realm_templates()
 	RETURN_TYPE(/list)

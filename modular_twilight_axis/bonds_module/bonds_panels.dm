@@ -220,13 +220,58 @@
 		nodes += list(node + list("own" = (node["id"] == own_id)))
 	return list("nodes" = nodes, "edges" = shape["edges"])
 
+/datum/controller/subsystem/bonds/proc/faction_bloc_layout()
+	RETURN_TYPE(/list)
+	var/list/template = current_realm_template()
+	var/list/present = present_faction_ids()
+	var/list/blocs = list()
+	var/list/bloc_of = list()
+
+	if(template)
+		var/list/declared = template["blocs"]
+		var/list/labels = template["bloc_names"]
+		for(var/bloc_id in declared)
+			var/list/members = list()
+			for(var/faction_id in declared[bloc_id])
+				if(!(faction_id in present))
+					continue
+				members += faction_id
+				bloc_of[faction_id] = bloc_id
+			if(!length(members))
+				continue
+			blocs += list(list(
+				"id" = bloc_id,
+				"name" = labels?[bloc_id] || bloc_id,
+				"members" = members,
+			))
+
+	var/list/loose = list()
+	for(var/faction_id in present)
+		if(!bloc_of[faction_id])
+			loose += faction_id
+			bloc_of[faction_id] = BOND_LOOSE_BLOC
+	if(length(loose))
+		blocs += list(list(
+			"id" = BOND_LOOSE_BLOC,
+			"name" = "Прочие",
+			"members" = loose,
+		))
+
+	return list("blocs" = blocs, "bloc_of" = bloc_of)
+
 /datum/controller/subsystem/bonds/proc/faction_map_shape()
 	RETURN_TYPE(/list)
 	if(faction_map_cache && faction_map_cache_revision == stance_revision)
 		return faction_map_cache
+
+	var/list/layout = faction_bloc_layout()
+	var/list/blocs = layout["blocs"]
+	var/list/bloc_of = layout["bloc_of"]
+	var/list/template = current_realm_template()
+	var/list/overrides = template?["overrides"] || list()
+
 	var/list/nodes = list()
 	var/list/ordered = list()
-
 	for(var/faction_id in present_faction_ids())
 		var/datum/bond_faction/faction = faction_prototypes[faction_id]
 		ordered += faction_id
@@ -235,6 +280,7 @@
 			"name" = faction.name,
 			"accent" = faction.accent,
 			"icon" = faction.icon_glyph,
+			"bloc" = bloc_of[faction_id],
 		))
 
 	var/list/edges = list()
@@ -253,9 +299,39 @@
 				"warmth" = round(warmth),
 				"weight" = round(weight),
 				"declared" = (!isnull(stance) && (warmth || weight >= BOND_MAP_MIN_WEIGHT)),
+				"inner" = (bloc_of[id_a] == bloc_of[id_b]),
+				"exception" = !isnull(overrides[bonds_stance_key(id_a, id_b)]),
 			))
 
-	faction_map_cache = list("nodes" = nodes, "edges" = edges)
+	var/list/bloc_edges = list()
+	var/list/bloc_axis = template?["bloc_axis"]
+	var/list/between = template?["between"]
+	if(length(bloc_axis) > 1 && between)
+		var/list/live = list()
+		for(var/list/entry as anything in blocs)
+			live[entry["id"]] = TRUE
+		var/list/warmth_rows = between[1]
+		var/list/weight_rows = between[2]
+		for(var/i in 1 to length(bloc_axis))
+			var/list/warmth_row = warmth_rows[i]
+			var/list/weight_row = weight_rows[i]
+			for(var/j in (i + 1) to length(bloc_axis))
+				if(!live[bloc_axis[i]] || !live[bloc_axis[j]])
+					continue
+				var/warmth = warmth_row[j - i]
+				var/weight = weight_row[j - i]
+				if(isnull(warmth) || isnull(weight))
+					continue
+				bloc_edges += list(list(
+					"a" = bloc_axis[i],
+					"b" = bloc_axis[j],
+					"label" = bonds_stance_label(warmth),
+					"accent" = bonds_stance_accent(warmth),
+					"warmth" = round(warmth),
+					"weight" = round(weight),
+				))
+
+	faction_map_cache = list("nodes" = nodes, "edges" = edges, "blocs" = blocs, "blocEdges" = bloc_edges)
 	faction_map_cache_revision = stance_revision
 	return faction_map_cache
 
