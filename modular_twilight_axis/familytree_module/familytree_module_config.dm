@@ -161,4 +161,5 @@
 #include "familytree_debug_populate.dm"
 #include "familytree_probe.dm"
 #include "familytree_probe_deep.dm"
+#include "familytree_probe_mutual.dm"
 #include "familytree_unit_tests.dm"

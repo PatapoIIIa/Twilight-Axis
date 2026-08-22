@@ -425,6 +425,46 @@
 	FT_ASSERT_EQUAL(length(faults), 0, "a tier rule names a job or title that does not exist: [faults.Join(" | ")]")
 	FT_ASSERT(checked > 0, "no tier rule was checked")
 
+/datum/unit_test/familytree/mutual_request_refuses_before_it_opens/Run()
+	var/mob/living/carbon/human/first = ft_spawn_player()
+	var/mob/living/carbon/human/second = ft_spawn_player()
+	FT_ASSERT_NOTNULL(first, "spawn failed")
+	FT_ASSERT_NOTNULL(second, "spawn failed")
+
+	var/datum/familytree_probe/probe = new()
+	probe.run_mutual_guard_probe(first, second)
+	var/list/faults = probe.violations.Copy()
+	var/walked = probe.guards_checked
+	qdel(probe)
+	FT_ASSERT_EQUAL(length(faults), 0, "a refused offer must leave nobody stuck: [faults.Join(" | ")]")
+	FT_ASSERT(walked >= 6, "the probe must walk every refusal path, walked only [walked]")
+
+/datum/unit_test/familytree/an_unanswered_offer_holds_the_pair_back/Run()
+	var/mob/living/carbon/human/first = ft_spawn_player()
+	var/mob/living/carbon/human/second = ft_spawn_player()
+	FT_ASSERT_NOTNULL(first, "spawn failed")
+	FT_ASSERT_NOTNULL(second, "spawn failed")
+
+	var/datum/familytree_probe/probe = new()
+	probe.run_timeout_block_probe(first, second)
+	var/list/faults = probe.violations.Copy()
+	qdel(probe)
+	FT_ASSERT_EQUAL(length(faults), 0, "the hold-back after a silent offer does not behave: [faults.Join(" | ")]")
+
+/datum/unit_test/familytree/every_confirmation_type_renders_text/Run()
+	var/mob/living/carbon/human/first = ft_spawn_player()
+	var/mob/living/carbon/human/second = ft_spawn_player()
+	FT_ASSERT_NOTNULL(first, "spawn failed")
+	FT_ASSERT_NOTNULL(second, "spawn failed")
+
+	var/datum/familytree_probe/probe = new()
+	probe.run_confirm_text_probe(first, second)
+	var/list/faults = probe.violations.Copy()
+	var/rendered = probe.types_rendered
+	qdel(probe)
+	FT_ASSERT_EQUAL(length(faults), 0, "a confirmation type opens a blank prompt: [faults.Join(" | ")]")
+	FT_ASSERT(rendered > 0, "no confirmation text was rendered at all")
+
 #undef FT_DEEP_STORM_CAST
 #undef FT_DEEP_STORM_ROUNDS
 #undef FT_DEEP_TREE_CAST
