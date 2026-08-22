@@ -90,7 +90,7 @@ export const BondsFactions = () => {
   const { data } = useBackend<Data>();
   const {
     ownFaction,
-    map = { nodes: [], edges: [] },
+    map = { nodes: [], edges: [], blocs: [], blocEdges: [] },
     ownHouse,
     houses = [],
     ownClan,

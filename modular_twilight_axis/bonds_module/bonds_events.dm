@@ -326,7 +326,7 @@
 	category = BOND_GROUP_KNOWN
 	accent = "#7a7a7a"
 	priority = 0
-	weight_max = 14
+	weight_max = 15
 
 /datum/bond_stage/acquaintance
 	label = "Знакомый"
@@ -335,8 +335,8 @@
 	accent = "#9aa0a6"
 	priority = 10
 	weight_min = 15
-	warmth_min = -14
-	warmth_max = 14
+	warmth_min = -15
+	warmth_max = 15
 
 /datum/bond_stage/warm
 	label = "Приятель"
@@ -355,7 +355,7 @@
 	priority = 30
 	weight_min = 30
 	warmth_min = 40
-	warmth_max = 74
+	warmth_max = 75
 
 /datum/bond_stage/close_friend
 	label = "Близкий друг"

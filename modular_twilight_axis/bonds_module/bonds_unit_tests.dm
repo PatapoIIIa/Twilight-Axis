@@ -807,8 +807,12 @@
 	var/datum/mind/owner = bd_make_mind()
 	var/datum/mind/target = bd_make_mind()
 	var/datum/social_bond/probe = SSbonds.get_or_create_bond(owner, target)
-	for(var/warmth in BOND_WARMTH_MIN to BOND_WARMTH_MAX step 5)
-		for(var/weight in BOND_WEIGHT_MIN to BOND_WEIGHT_MAX step 5)
+	for(var/step in (BOND_WARMTH_MIN * 2) to (BOND_WARMTH_MAX * 2))
+		if(length(holes) >= 8)
+			break
+		var/warmth = step / 2
+		for(var/weight_step in (BOND_WEIGHT_MIN * 2) to (BOND_WEIGHT_MAX * 2))
+			var/weight = weight_step / 2
 			probe.warmth = warmth
 			probe.weight = weight
 			if(SSbonds.resolve_stage(probe))
