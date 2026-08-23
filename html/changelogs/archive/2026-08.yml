@@ -1301,3 +1301,79 @@
       Cooking skills
   kiwedespars:
   - rscadd: gnolls no longer step on glass and get an owie
+2026-08-23:
+  7erracotta:
+  - rscadd: Added new ranesheni triumph skin weapons, (Pata, Urumi, Khanda)
+  FeniaFox:
+  - rscdel: Removed the Ruma Seonjang entirely. Gun-in gets it's stuff.
+  - rscadd: Added two new variant skin-options to the ruma mercenaries. In addition
+      to the current skin with ~250 plate integ, they can now pick from a defiant
+      skin with ~200 blacksteel integ, and an enduring skin with ~300 padded integ.
+      This only changes the full-body overskin.
+  - rscadd: Added large numbers of loadout options to the ruma mercenaries, including
+      the hwando, the two-handable ssangsudo, the kodachi shortsword, naginata polearm,
+      some tossblades, many tanto daggers, and even a longbow option for the gun-in.
+  - rscadd: added the blacksteel tanto (more or less a blacksteel dagger reskin that's
+      compatible with the eastern dagger sheath).
+  - balance: rebalanced the sharpness decay of ruma hwando swords from 200% to 150%.
+  - balance: rebalanced the wdef of the tanto sheath from 4 to 6, in line with the
+      shortsword scabbard at 7, sword scabbards at 8, and parry dagger/buckler at
+      9.
+  FreeStylaLT:
+  - bugfix: Fixed Flawless 'vice' not functioning correctly.
+  KatTheFox:
+  - bugfix: Severed limbs, including heads, are now fireproof and acidproof. They're
+      not lavaproof, but this should prevent campfires or errant mage spells from
+      ashing someone's head and RRing them.
+  - bugfix: Heads can no longer be debrained.
+  - rscadd: Stakes of all kinds can now be driven through the heart of an incapacitated
+      revenant (or deadite, or anyone else with the deathless trait) to properly kill
+      them. This is not an RR, they can be revived, and is an alternative to throwing
+      their head into the fires of mount decap or whatever. Silver stakes are better
+      at this than wooden ones.
+  - rscadd: Arcana crafting recipes now grant xp again like all other recipes. It's
+      no longer a combat skill, in fact it's nigh-useless, so there's no particular
+      reason to gate it.
+  - bugfix: Fixed an exploit allowing a character to have no vices at all, not even
+      the Flawless vice that blocks passive triumph gain.
+  Lamasmaster:
+  - balance: Removes electrocute act from Astratan Bolt.
+  - image: Changes out Astratan tracer (the beam effect) for a correct one.
+  Ollanius:
+  - rscadd: Noccian Spellblade Templars now have the Moonlight Spear as an option;
+      this replaces the original Boar Spear, and is otherwise a one-to-one match in
+      terms of functional mechanics.
+  OrbisAnima:
+  - rscadd: Adds the Alchemist, based on the alchemist associate, to the adventurer
+      mage.
+  - rscadd: Adds the Silk shirt to loadout.
+  Quinalion:
+  - rscadd: Ported Cadwyn Order cloaks and helmets for clerics and Ten Heretics.
+  - rscadd: Ported Cadwyn Order equipment to the relevant clothing selections.
+  - rscadd: Cadwyn Order cloaks sewing recipes.
+  Ryan180602:
+  - bugfix: revert and adjust layer PR.
+  SpartanBobby:
+  - rscadd: Added trimmed fancy coat. It's the same as the regular fancy coat but
+      it lacks the white drape over the legs at the front. Available in loadout
+  WeNeedMorePhoron:
+  - rscdel: Take off, and remove Ferramancy Bow & Crossbow options to protect niche
+      and avoid people complaining mage is taking more tools raaa
+  - balance: Reworked Riposte / Guard / Limbguard reaction with spells. "Ground Effect"
+      (non projectile) spells no longer expose / disarm, but still give you the buffs
+      and such. Walking into it is too punitive. Limb Guard will still lasts forever
+      and block an indefinite amount of spell aimed at the same spot as long as it
+      is up.
+  - balance: Each cast can be punished one by one guard
+  - balance: When an arcyne strike / spell is warded (Guarded), the rider effect such
+      as Scorched will not apply
+  - rscdel: Removed the Greater Cleaning Spell, Added Broom to the Arcyne Forge Spell,
+      Arcyne Forge now replaces them for Telomancy and Kinesis.
+  radarseas:
+  - bugfix: fixed major exploits + inconsistencies w/ tame undead
+  - code_imp: categorised trait code COMPLETELY so it should be far easier for devs
+      to tell where stuff is instead of just a huge block, as well as what exactly
+      goes where.
+  saltprjak:
+  - balance: Templar and Heretic Spellblades now have climbing, swimming, knives and
+      minor medicine skills.

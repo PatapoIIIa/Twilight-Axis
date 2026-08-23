@@ -268,8 +268,7 @@
 		myrod = new /obj/item/twilight_ramrod(src)
 
 /obj/item/gun/ballistic/twilight_firearm/Destroy()
-	if(actual_gunpowder)
-		qdel(actual_gunpowder)
+	actual_gunpowder = null
 	. = ..()
 
 /obj/item/gun/ballistic/twilight_firearm/shoot_live_shot(mob/living/user as mob|obj, pointblank = 0, mob/pbtarget = null, message = 1)
