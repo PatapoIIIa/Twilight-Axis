@@ -146,6 +146,15 @@ GLOBAL_LIST_INIT(familytree_probe_confirm_types, list(
 	expect_gate(first, second, FALSE, TRUE, TRUE, "занят", null, MUTUAL_GATE_PENDING, "pending outranks busy")
 	first.familytree_confirmation_pending = FALSE
 
+	SSfamilytree.round_disabled = TRUE
+	expect_gate(first, second, FALSE, TRUE, TRUE, null, null, MUTUAL_GATE_DISABLED, "the whole system switched off for the round")
+	SSfamilytree.round_disabled = FALSE
+
+	for(var/i in 1 to FAMILYTREE_PAIR_OFFER_LIMIT)
+		SSfamilytree.familytree_record_pair_offer(first, second)
+	expect_gate(first, second, FALSE, TRUE, TRUE, null, null, MUTUAL_GATE_OFFER_LIMIT, "a pair already offered to each other its full allowance")
+	SSfamilytree.familytree_round_ledger.Cut()
+
 	first.familytree_opted_out = TRUE
 	expect_gate(first, second, FALSE, TRUE, TRUE, null, null, MUTUAL_GATE_OPTED_OUT, "someone who opted out")
 	expect_gate(first, second, FALSE, FALSE, FALSE, "занят", "занят", MUTUAL_GATE_OPTED_OUT, "opting out outranks busy and missing clients")

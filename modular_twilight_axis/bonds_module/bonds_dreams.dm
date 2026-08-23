@@ -281,6 +281,9 @@
 	return TRUE
 
 /datum/controller/subsystem/bonds/proc/roll_dream(mob/living/carbon/human/dreamer)
+#ifdef BONDS_EVOLUTION_FROZEN
+	return FALSE
+#endif
 	if(!reacting)
 		return FALSE
 	if(!ishuman(dreamer) || !dreamer.mind)

@@ -49,6 +49,13 @@
 
 //#define BONDS_DEBUG_LOGGING //UNDEFINE IT FOR THE LOCAL TESTING
 
+// TEMPORARY. Stops the graph evolving during a round while the family side is fixed:
+// the four gameplay signals are never bound and no dream ever rolls.
+// Everything else stays: kinship, seeding, panels, and the qdel cleanup signal,
+// which must keep firing or the graph would hoard deleted mobs.
+// Delete this define to thaw.
+#define BONDS_EVOLUTION_FROZEN
+
 #define BOND_WARMTH_MIN -100
 #define BOND_WARMTH_MAX 100
 #define BOND_WEIGHT_MIN 0

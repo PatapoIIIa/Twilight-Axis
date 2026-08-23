@@ -463,10 +463,12 @@
 		return FALSE
 	person.bonds_signals_bound = TRUE
 	wake_seeding()
+#ifndef BONDS_EVOLUTION_FROZEN
 	RegisterSignal(person, COMSIG_MOB_ITEM_ATTACK, PROC_REF(on_item_attack), override = TRUE)
 	RegisterSignal(person, COMSIG_MOB_ATTACKED_BY_HAND, PROC_REF(on_attacked_by_hand), override = TRUE)
 	RegisterSignal(person, COMSIG_MOB_HUGGED, PROC_REF(on_hugged), override = TRUE)
 	RegisterSignal(person, COMSIG_MOB_DEATH, PROC_REF(on_death), override = TRUE)
+#endif
 	RegisterSignal(person, COMSIG_PARENT_QDELETING, PROC_REF(on_human_qdeleting), override = TRUE)
 	return TRUE
 
