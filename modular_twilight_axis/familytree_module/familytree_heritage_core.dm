@@ -926,7 +926,7 @@
 			surname2use = person?.dna?.species?.random_surname()
 		else
 			surname2use = copytext(person?.real_name, index + 1)
-	return surname2use
+	return trim(surname2use)
 
 /datum/heritage/proc/ApplyUI(mob/living/carbon/human/iconer, toggle_true = FALSE)
 	if(!iconer.client)
