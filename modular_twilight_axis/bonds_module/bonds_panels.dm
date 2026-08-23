@@ -800,11 +800,3 @@
 		return
 	bonds_open_panel()
 
-/mob/living/carbon/human/verb/bonds_settings()
-	set name = "Bond Settings"
-	set category = "Bonds"
-
-	if(!client?.prefs)
-		return
-	var/datum/bonds_prefs_panel/panel = new(src)
-	panel.ui_interact(src)

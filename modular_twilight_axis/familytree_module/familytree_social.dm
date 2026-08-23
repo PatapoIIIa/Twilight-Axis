@@ -58,8 +58,15 @@
 
 	if(estate_a == ESTATE_NONE || estate_b == ESTATE_NONE)
 		return TRUE
+	if(estate_a == estate_b)
+		return TRUE
 
-	return estate_a == estate_b
+	if(estate_a == ESTATE_NOBLE && estate_b == ESTATE_COMMONER)
+		return A.allow_low_status_marriage
+	if(estate_b == ESTATE_NOBLE && estate_a == ESTATE_COMMONER)
+		return B.allow_low_status_marriage
+
+	return TRUE
 #define ROLE_TIER_NONE 0
 #define ROLE_TIER_HIGH 1
 #define ROLE_TIER_LOW 2

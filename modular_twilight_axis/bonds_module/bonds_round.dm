@@ -43,6 +43,11 @@ SUBSYSTEM_DEF(bonds)
 	var/list/zone_lens_cache = list()
 	var/map_weight_cache
 	var/reacting = TRUE
+#ifdef BONDS_EVOLUTION_FROZEN
+	var/dreams_enabled = FALSE
+#else
+	var/dreams_enabled = TRUE
+#endif
 	var/instrumented = FALSE
 	var/list/tallies = list()
 	var/seeding_idle = FALSE
