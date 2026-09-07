@@ -9,7 +9,7 @@
 	item_state = "basichood"
 	icon = 'icons/roguetown/clothing/head.dmi'
 	mob_overlay_icon = 'icons/roguetown/clothing/onmob/head.dmi' //Overrides slot icon behavior
-	alternate_worn_layer  = 8.9 //On top of helmet
+	alternate_worn_layer	= 8.9 //On top of helmet
 	body_parts_covered = NECK|HAIR|EARS|HEAD
 	flags_inv = HIDEEARS|HIDEFACE|HIDEHAIR|HIDEFACIALHAIR
 	slot_flags = ITEM_SLOT_HEAD|ITEM_SLOT_MASK
@@ -64,6 +64,17 @@
 /obj/item/clothing/head/roguetown/roguehood/red
 	color = CLOTHING_RED
 
+/obj/item/clothing/head/roguetown/roguehood/bogman
+	name = "bogman's hood"
+	desc = "A head's best friend, worn and proven by aeon's grip, its once-vibrant colors long worn out after its former owner deserted their post."
+	color = "#7a8138"
+
+/obj/item/clothing/head/roguetown/roguehood/bogman/black
+	color = CLOTHING_BLACK
+
+/obj/item/clothing/head/roguetown/roguehood/bogman/brown
+	color = "#997C4F"
+
 /obj/item/clothing/head/roguetown/roguehood/black
 	color = CLOTHING_BLACK
 
@@ -73,11 +84,11 @@
 /obj/item/clothing/head/roguetown/roguehood/darkgreen
 	color = "#264d26"
 
-/obj/item/clothing/head/roguetown/roguehood/random/Initialize()
+/obj/item/clothing/head/roguetown/roguehood/random/Initialize(mapload)
 	color = pick("#544236", "#435436", "#543836", "#79763f")
 	..()
 
-/obj/item/clothing/head/roguetown/roguehood/mage/Initialize()
+/obj/item/clothing/head/roguetown/roguehood/mage/Initialize(mapload)
 	color = pick("#4756d8", "#759259", "#bf6f39", "#c1b144", "#b8252c")
 	..()
 
@@ -92,7 +103,7 @@
 	sleeved = null
 	icon = 'icons/roguetown/clothing/head.dmi'
 	mob_overlay_icon = 'icons/roguetown/clothing/onmob/head.dmi' //Overrides slot icon behavior
-	alternate_worn_layer  = 8.9 //On top of helmet
+	alternate_worn_layer	= 8.9 //On top of helmet
 	body_parts_covered = HEAD|HAIR|EARS|NECK
 	slot_flags = ITEM_SLOT_HEAD|ITEM_SLOT_MASK
 	dynamic_hair_suffix = ""
@@ -458,7 +469,7 @@
 	icon_state = "confessorhood"
 	item_state = "confessorhood"
 	color = null
-	body_parts_covered = NECK | HEAD | HAIR
+	body_parts_covered = NECK | HEAD | HAIR | EARS
 	slot_flags = ITEM_SLOT_HEAD|ITEM_SLOT_MASK
 	flags_inv = HIDEEARS|HIDEFACE|HIDEHAIR|HIDEFACIALHAIR
 	armor = ARMOR_LEATHER
@@ -535,7 +546,7 @@
 			pic.color = get_detail_color()
 		add_overlay(pic)
 
-/obj/item/clothing/head/roguetown/roguehood/studded/retinue/Initialize()
+/obj/item/clothing/head/roguetown/roguehood/studded/retinue/Initialize(mapload)
 	. = ..()
 	if(GLOB.lordprimary)
 		lordcolor(GLOB.lordprimary,GLOB.lordsecondary)

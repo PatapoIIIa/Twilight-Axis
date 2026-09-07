@@ -26,7 +26,7 @@
 	. += span_info("Full logs, small logs, and sticks can be 'slapcrafted' into new items by left-clicking them with certain tools and materials. 'Slapcrafted' items don't require a Crafting skill to make.")
 	. += span_info("'Slapcrafts' for full logs include quarterstaffs, bows, oars, and boats.")
 
-/obj/item/grown/log/tree/Initialize()
+/obj/item/grown/log/tree/Initialize(mapload)
 	. = ..()
 	var/static/list/slapcraft_recipe_list = list(
 		/datum/crafting_recipe/roguetown/survival/woodstaff,
@@ -137,7 +137,7 @@
 	. = ..()
 	. += span_info("'Slapcrafts' for small logs include stone-and-wooden tools, cutlery, prosthetics, buckets, paper, weapons, shields, tarots, and bows. Left-clicking a small log with a handsaw turns it into planks, which is quite useful for carpentry and construction.")
 
-/obj/item/grown/log/tree/small/Initialize()
+/obj/item/grown/log/tree/small/Initialize(mapload)
 	. = ..()
 	var/static/list/slapcraft_recipe_list = list(
 		/datum/crafting_recipe/roguetown/survival/stoneaxe,
@@ -234,9 +234,9 @@
 	..()
 
 /obj/item/grown/log/tree/bowpartial
-	name = "crude bowstave"
+	name = "bowstave"
 	desc = "A partially completed bow, waiting to be strung."
-	icon_state = "bowpartial"
+	icon_state = "bow_stave"
 	max_integrity = 30
 	firefuel = 10 MINUTES
 	twohands_required = FALSE
@@ -245,7 +245,7 @@
 	smeltresult = /obj/item/rogueore/coal
 	lumber_amount = 0
 
-/obj/item/grown/log/tree/bowpartial/Initialize()
+/obj/item/grown/log/tree/bowpartial/Initialize(mapload)
 	. = ..()
 	var/static/list/slapcraft_recipe_list = list(
 		/datum/crafting_recipe/roguetown/survival/bow,
@@ -259,10 +259,9 @@
 /obj/item/grown/log/tree/bowpartial/recurve
 	name = "recurve bowstave"
 	desc = "An incomplete recurve bow, waiting to be strung."
-	icon = 'icons/roguetown/items/64x.dmi'
-	icon_state = "recurve_bowstave"
+	icon_state = "recurve_stave"
 
-/obj/item/grown/log/tree/bowpartial/recurve/Initialize()
+/obj/item/grown/log/tree/bowpartial/recurve/Initialize(mapload)
 	. = ..()
 	var/static/list/slapcraft_recipe_list = list(
 		/datum/crafting_recipe/roguetown/survival/recurvebow,
@@ -271,10 +270,9 @@
 /obj/item/grown/log/tree/bowpartial/longbow
 	name = "long bowstave"
 	desc = "An incomplete longbow, waiting to be strung."
-	icon = 'icons/roguetown/items/64x.dmi'
-	icon_state = "long_bowstave"
+	icon_state = "longbow_stave"
 
-/obj/item/grown/log/tree/bowpartial/longbow/Initialize()
+/obj/item/grown/log/tree/bowpartial/longbow/Initialize(mapload)
 	. = ..()
 	var/static/list/slapcraft_recipe_list = list(
 		/datum/crafting_recipe/roguetown/survival/longbow,
@@ -320,7 +318,7 @@
 				if(!HAS_TRAIT(L, TRAIT_WOODWALKER))
 					L.consider_ambush()
 
-/obj/item/grown/log/tree/stick/Initialize()
+/obj/item/grown/log/tree/stick/Initialize(mapload)
 	icon_state = "stick[rand(1,2)]"
 	..()
 	var/static/list/slapcraft_recipe_list = list(
@@ -436,6 +434,8 @@
 	. = ..()
 	. += span_info("Stakes can be crafted with a stone to make whetstones, which are better at sharpening blades.")
 	. += span_info("Stakes are weak, but can double as improvised weapons with total armor penetration. Crafting a stake with a whetstone can make it into a more refined weapon.")
+	. += span_info("Driving a stake through the heart of an incapacitated revenant is one of the few ways to put them down for the week. Sharper stakes, and ones made of silver, are better at this.")
+	. += span_info("Staking also works to kill many other types of undead - generally, anyone you can't kill with bloodloss can be staked.")
 
 /obj/item/grown/log/tree/stake/getonmobprop(tag)
 	. = ..()
@@ -446,7 +446,7 @@
 			if("onbelt")
 				return list("shrink" = 0.3,"sx" = -2,"sy" = -5,"nx" = 4,"ny" = -5,"wx" = 0,"wy" = -5,"ex" = 2,"ey" = -5,"nturn" = 0,"sturn" = 0,"wturn" = 0,"eturn" = 0,"nflip" = 0,"sflip" = 0,"wflip" = 0,"eflip" = 0,"northabove" = 0,"southabove" = 1,"eastabove" = 1,"westabove" = 0)
 
-/obj/item/grown/log/tree/stake/Initialize()
+/obj/item/grown/log/tree/stake/Initialize(mapload)
 	. = ..()
 	var/static/list/slapcraft_recipe_list = list(
 		/datum/crafting_recipe/roguetown/survival/whetstone,
@@ -457,23 +457,21 @@
 		slapcraft_recipes = slapcraft_recipe_list,\
 		)
 
-/obj/item/grown/log/tree/stake/attack_obj(obj/O, mob/living/user)
+/obj/item/grown/log/tree/stake/ComponentInitialize()
 	. = ..()
+	AddComponent(/datum/component/deaditeslayer, time = 10 SECONDS) // improvised as hell, so it takes a while. sharpen it first you peasant
+
+/obj/item/grown/log/tree/stake/attack_obj(obj/O, mob/living/user) // TA EDIT START
 	if(isitem(O))
 		var/obj/item/I = O
-		if(istype(I, /obj/item/ingot/iron))
+		if(istype(I, /obj/item/ingot/iron) || (I.anvilrepair && I.smeltresult == /obj/item/ingot/iron))
 			if(!do_after(user, 4 SECONDS, target = I))
 				return
 			to_chat(user, span_warning("The [user] breaks an [I] into small parts with the stake!"))
 			new /obj/item/scrap(get_turf(I))
 			qdel(I)
-		if(I.anvilrepair)
-			if(I.smeltresult == /obj/item/ingot/iron)
-				if(!do_after(user, 4 SECONDS, target = I))
-					return
-				to_chat(user, span_warning("The [user] breaks an [I] into small parts with the stake!"))
-				new /obj/item/scrap(get_turf(I))
-				qdel(I)
+			return
+	. = ..() // TA EDIT END
 
 /////////////
 // Planks //

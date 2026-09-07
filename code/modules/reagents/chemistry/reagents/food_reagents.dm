@@ -4,7 +4,7 @@
 
 
 // Part of the food code. Also is where all the food
-// 	condiments, additives, and such go.
+//	condiments, additives, and such go.
 
 
 /datum/reagent/consumable
@@ -24,6 +24,8 @@
 		if(!HAS_TRAIT(H, TRAIT_NOHUNGER))
 			H.adjust_nutrition(nutriment_factor * metabolization_rate)
 			H.adjust_hydration(hydration_factor * metabolization_rate)
+	if(drink_type & DRINKTYPE_CAFFEINE) // TA EDIT START
+		M.drunkenness = max(M.drunkenness - metabolization_rate, 0) // TA EDIT END
 	return ..()
 
 /datum/reagent/consumable/reaction_mob(mob/living/M, method=TOUCH, reac_volume)
@@ -198,10 +200,10 @@
 /datum/reagent/consumable/honey/on_mob_life(mob/living/carbon/M)
 	M.reagents.add_reagent(/datum/reagent/consumable/sugar,3)
 	if(prob(55))
-		M.adjustBruteLoss(-1  * REAGENTS_EFFECT_MULTIPLIER, 0)
-		M.adjustFireLoss(-1  * REAGENTS_EFFECT_MULTIPLIER, 0)
-		M.adjustOxyLoss(-1  * REAGENTS_EFFECT_MULTIPLIER, 0)
-		M.adjustToxLoss(-1  * REAGENTS_EFFECT_MULTIPLIER, 0)
+		M.adjustBruteLoss(-1	* REAGENTS_EFFECT_MULTIPLIER, 0)
+		M.adjustFireLoss(-1	* REAGENTS_EFFECT_MULTIPLIER, 0)
+		M.adjustOxyLoss(-1	* REAGENTS_EFFECT_MULTIPLIER, 0)
+		M.adjustToxLoss(-1	* REAGENTS_EFFECT_MULTIPLIER, 0)
 	..()
 
 /datum/reagent/consumable/oil/tallow

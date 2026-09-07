@@ -327,6 +327,7 @@
 	icon_state = "helmet"
 	item_state = "helmet"
 	worn_y_dimension = 32
+	flags_inv = HIDEEARS|HIDEFACE|HIDEHAIR|HIDESNOUT
 
 /obj/item/clothing/cloak/commandant
 	name = "commandant's cloak"

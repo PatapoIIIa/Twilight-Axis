@@ -33,17 +33,9 @@
 			name = "burnt tree"
 			update_icon()
 
-/obj/structure/flora/newtree/attack_right(mob/user)
-	if(user.mind && isliving(user))
-		if(user.mind.special_items && user.mind.special_items.len)
-			var/item = input(user, "What will I take?", "STASH") as null|anything in user.mind.special_items
-			if(item)
-				if(user.Adjacent(src))
-					if(user.mind.special_items[item])
-						var/path2item = user.mind.special_items[item]
-						user.mind.special_items -= item
-						var/obj/item/I = new path2item(user.loc)
-						user.put_in_hands(I)
+/obj/structure/flora/newtree/attack_right(mob/user) // TA EDIT START
+	handle_special_items_retrieval(user, src)
+	return // TA EDIT END
 
 /obj/structure/flora/newtree/obj_destruction(damage_flag)//this proc is stupidly long for a destruction proc
 	var/turf/NT = get_turf(src)
@@ -74,7 +66,7 @@
 				BRANCH.obj_destruction(damage_flag)
 			for(var/atom/BRA in B)//unload a sack of rocks on a branch and stand under it, it'll be funny bro
 				B.zFall(BRA)
-	
+
 	for(var/turf/DIA in block(get_step(src, SOUTHWEST), get_step(src, NORTHEAST)))
 		for(var/obj/structure/flora/newleaf/LEAF in DIA)
 			LEAF.obj_destruction(damage_flag)
@@ -150,7 +142,7 @@
 	M.dir = dir
 	. += M
 
-/obj/structure/flora/newtree/Initialize()
+/obj/structure/flora/newtree/Initialize(mapload)
 	. = ..()
 	tree_type = rand(1,2)
 	dir = pick(GLOB.cardinals)
@@ -322,7 +314,7 @@
 	M.dir = dir
 	. += M
 
-/obj/structure/flora/newbranch/Initialize()
+/obj/structure/flora/newbranch/Initialize(mapload)
 	. = ..()
 	if(base_state)
 		AddComponent(/datum/component/squeak, list('sound/foley/plantcross1.ogg','sound/foley/plantcross2.ogg','sound/foley/plantcross3.ogg','sound/foley/plantcross4.ogg'), 100)
@@ -366,7 +358,7 @@
 	icon_state = "corner-leaf1"
 
 
-/obj/structure/flora/newleaf/corner/Initialize()
+/obj/structure/flora/newleaf/corner/Initialize(mapload)
 	. = ..()
 	icon_state = "corner-leaf[rand(1,2)]"
 	update_icon()
@@ -379,7 +371,7 @@
 	density = FALSE
 	max_integrity = 10
 
-/obj/structure/flora/newleaf/Initialize()
+/obj/structure/flora/newleaf/Initialize(mapload)
 	. = ..()
 	icon_state = "center-leaf[rand(1,2)]"
 	update_icon()

@@ -351,7 +351,7 @@
 			var/obj/item/clothing/CM = mouth
 			str = "[m3] [CM.generate_tooltip(CM.get_examine_string(user))] in [m2] mouth. "
 		else
-			"[m3] [get_item_examine_label(mouth, user)] in [m2] mouth. "
+			str = "[m3] [get_item_examine_label(mouth, user)] in [m2] mouth. "
 		str += mouth.integrity_check(is_smart, guarded)
 		if(is_stupid)
 			str = "[m3] some kinda thing on [m2] mouth!"
@@ -853,19 +853,9 @@
 				if(HAS_TRAIT(src, TRAIT_DEATHLESS) && !mind?.has_antag_datum(/datum/antagonist/vampire))
 					. += span_warning("<i>[m1] absent of lyfe. [t_He] will linger even without blood.</i>")
 				if(HAS_TRAIT(user, TRAIT_COMBAT_AWARE))
-					var/userheld = user.get_active_held_item()
-					var/srcheld = get_active_held_item()
-					var/datum/skill/user_skill = /datum/skill/combat/unarmed	//default
-					var/datum/skill/src_skill = /datum/skill/combat/unarmed
-					if(userheld)
-						var/obj/item/I = userheld
-						if(I.associated_skill)
-							user_skill = I.associated_skill
-					if(srcheld)
-						var/obj/item/I = srcheld
-						if(I.associated_skill)
-							src_skill = I.associated_skill
-					var/skilldiff = user.get_skill_level(user_skill) - get_skill_level(src_skill)
+					var/obj/item/userheld = user.get_active_held_item()
+					var/obj/item/srcheld = get_active_held_item()
+					var/skilldiff = round(user.get_wskill(userheld, /datum/skill/combat/unarmed) - get_wskill(srcheld, /datum/skill/combat/unarmed), 1)
 					if(!skilldiff)
 						. += "<font size = 3><i>[skilldiff_report(skilldiff)] in our wielded skills.</i></font>"
 					else
@@ -904,11 +894,6 @@
 
 		. += app_str
 
-	// Characters with the targeted flaw will freak out if they can't see someone's face.
-	if(!appears_dead)
-		if(skipface && user.has_flaw(/datum/charflaw/targeted) && user != src)
-			user.add_stress(/datum/stressevent/targeted)
-
 	if(dna?.species?.type == /datum/species/gnoll)
 		if(istype(user, /mob/living/carbon/human)) //Submitting this one upstream because not our shitcode for once
 			var/mob/living/carbon/human/H = user
@@ -923,6 +908,17 @@
 
 	if(pose_text)
 		. += fieldset_block("Pose", pose_text, "pose_block")
+
+	// assassins got ravox eyes but for evil
+	if(HAS_TRAIT(user, TRAIT_ASSASSIN) && src.has_flaw(/datum/charflaw/targeted))
+		if(ishuman(user))
+			var/mob/living/carbon/human/H = user
+			if(locate(/obj/item/rogueweapon/huntingknife/idagger/steel/profane) in H.get_all_gear())
+				if(HAS_TRAIT(src, TRAIT_CLAIMED_BY_DARKSTAR))
+					. += "<span style='color:#3F5C6D'>The profane dagger</span> whispers, " + span_cult("<i>\"That's [src.real_name]! Successfully claimed!\"</i>")
+				else if(src.stat != DEAD)
+					. += "<span style='color:#3F5C6D'>The profane dagger</span> whispers, " + span_cult("<i>\"That's [src.real_name]! SLAY THEM!\"</i>")
+
 
 	SEND_SIGNAL(src, COMSIG_PARENT_EXAMINE, user, .)
 
@@ -948,7 +944,7 @@
 				display_as_wanderer = TRUE
 		else if(job)
 			var/datum/job/J = SSjob.GetJob(job)
-			if(!J || J.wanderer_examine)
+			if(!J || (J.wanderer_examine && !(HAS_TRAIT(src, TRAIT_RESIDENT))))
 				display_as_wanderer = TRUE
 		if(display_as_wanderer)
 			. += (span_info("ø ------------ ø\nThis is <EM>[used_name]</EM>, the wandering [race_name]."))
@@ -966,7 +962,7 @@
 				pronoun = capitalize(p_they(TRUE))
 		else
 			pronoun = capitalize(m2)
-		var/wording = (dna.species.use_skin_tone_wording_for_examine ? "[lowertext(dna.species.skin_tone_wording)]" : "hail[(user == src) ? "" : "s"] from")	//Ancestry / Tribe or hails from
+		var/wording = (dna.species.use_skin_tone_wording_for_examine ? "[LOWER_TEXT(dna.species.skin_tone_wording)]" : "hail[(user == src) ? "" : "s"] from")	//Ancestry / Tribe or hails from
 		var/origin
 		if(dna.species.use_skin_tone_wording_for_examine)
 			if(dna.species.origin == "Unknown")
@@ -1007,7 +1003,7 @@
 		if((HAS_TRAIT(user, TRAIT_ANCIENT_HAG) || HAS_TRAIT(user, TRAIT_FEYTOUCHED) || istype(user, /mob/living/carbon/human/species/familiar/fae)) && HAS_TRAIT(src, TRAIT_FEYTOUCHED))
 			. += span_nicegreen("Someone touched by, or created by fey. Perhaps a vessel of the past, or a deeply affected puppet.")
 
-		if((HAS_TRAIT(user, TRAIT_FEYTOUCHED) ||  istype(user, /mob/living/carbon/human/species/familiar/fae)) && HAS_TRAIT(src, TRAIT_ANCIENT_HAG))
+		if((HAS_TRAIT(user, TRAIT_FEYTOUCHED) ||	istype(user, /mob/living/carbon/human/species/familiar/fae)) && HAS_TRAIT(src, TRAIT_ANCIENT_HAG))
 			. += span_nicegreen("A true force of the fey, the mossmother speaks to this one closely.")
 
 		if(SSticker.rulermob == src)
@@ -1240,16 +1236,28 @@
 				carbs.Jitter(10)
 				carbs.stuttering += 25
 
-		// Shouldn't be able to tell they are unrevivable through a mask as a Necran
 		if(HAS_TRAIT(src, TRAIT_DNR) && src != user)
-			if(HAS_TRAIT(user, TRAIT_DEATHSIGHT) || stat == DEAD)
-				. += span_danger("They extrude a pale aura. Their soul [stat == DEAD ? "was not" : "is not"] clean. This [stat == DEAD ? "was" : "is"] their only chance at lyfe.")
+			// if you have deathsight, you get the deathsight message. always.
+			if(!HAS_TRAIT(user, TRAIT_DEATHSIGHT))
+				// everyone can tell if someone is DNR if they're actually dead.
+				if(src.stat == DEAD)
+					// if you ONLY have DNR from being assasinatd, that is, you can be brought back, display this.
+					if(HAS_TRAIT_FROM_ONLY(src, TRAIT_DNR, GRAGGAR_ASSASSINATED))
+						. += span_cult("A ghastly red-mist spills from their chest. Their soul yearns to be returned to their body...")
+						// else ur permagone so tell ppl that
+					else
+						. += span_danger("Their body holds not even a glimmer of life. No miracle or medicine can bring them back.")
+				// if theyre alive, you dont have deathsight, but youre an expert at medicine, you can tell.
+				else if(user.get_skill_level(/datum/skill/misc/medicine) >= SKILL_LEVEL_EXPERT)
+					. += span_danger("Their fifth-humor is visibly unbalanced. This will be their only chance at lyfe.")
+			// deathsight always works even on the living.
+			else if(HAS_TRAIT(user, TRAIT_DEATHSIGHT))
+				if(HAS_TRAIT_FROM_ONLY(src, TRAIT_DNR, GRAGGAR_ASSASSINATED))
+					. += span_cult("Their soul is screaming! It's been stolen by an Assassin of Graggar! Find and destroy the dagger that contains it to bring them back!")
+				else
+					. += span_danger("They extrude a pale aura. Their soul [stat == DEAD ? "was not" : "is not"] clean. This [stat == DEAD ? "was" : "is"] their only chance at lyfe.")
 
-	// Real medical role can tell at a glance it is a waste of time, but only if the Necra message don't come first.
 
-	if(user.get_skill_level(/datum/skill/misc/medicine) >= SKILL_LEVEL_EXPERT && src.stat == DEAD)
-		if(HAS_TRAIT(src, TRAIT_DNR) && src != user && !HAS_TRAIT(user, TRAIT_DEATHSIGHT)) // A lot of conditional to avoid a redundant message, but we also want unknown DNRs to be covered.
-			. += span_danger("Their body holds not even a glimmer of life. No medicine can bring them back.")
 
 	if (HAS_TRAIT(src, TRAIT_CRITICAL_WEAKNESS) && (!HAS_TRAIT(src, TRAIT_VAMP_DREAMS)) && (!HAS_TRAIT(src, TRAIT_DECEIVING_MEEKNESS)))
 		if(isliving(user))
@@ -1282,12 +1290,12 @@
 		seer = TRUE
 
 	if(HAS_TRAIT(src, TRAIT_DUSTRUNNER))
-		var/mob/living/living_examiner = examiner
+		var/mob/living/living_examiner = isliving(examiner) ? examiner : null // TA EDIT
 		if(HAS_TRAIT(examiner, TRAIT_DUSTRUNNER))
 			heretic_text += "Fellow runner. The dust moves."
 		else if(living_examiner?.patron?.type == /datum/patron/inhumen/matthios)
 			heretic_text += "A Guild runner, by the look of them."
-		else if(examiner.job in GLOB.bathhouse_positions)
+		else if(living_examiner?.job in GLOB.bathhouse_positions) // TA EDIT
 			heretic_text += "One of the Guild's runners. I know the signs."
 
 	if(HAS_TRAIT(src, TRAIT_FREEMAN))

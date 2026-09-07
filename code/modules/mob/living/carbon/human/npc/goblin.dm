@@ -261,7 +261,7 @@ GLOBAL_LIST_INIT(goblin_pyromancer_aggro, list(
 /datum/species/goblin/update_damage_overlays(mob/living/carbon/human/H)
 	return
 
-/mob/living/carbon/human/species/goblin/Initialize()
+/mob/living/carbon/human/species/goblin/Initialize(mapload)
 	. = ..()
 	addtimer(CALLBACK(src, PROC_REF(after_creation)), 1 SECONDS)
 
@@ -288,7 +288,11 @@ GLOBAL_LIST_INIT(goblin_pyromancer_aggro, list(
 		QDEL_NULL(eyes)
 	eyes = new /obj/item/organ/eyes/night_vision/nightmare
 	eyes.Insert(src)
-	src.underwear = "Nude"
+	if(src.underwear) // TA EDIT START
+		var/obj/item/bodypart/underwear_chest = get_bodypart(BODY_ZONE_CHEST)
+		if(underwear_chest && src.underwear.undies_feature)
+			underwear_chest.remove_bodypart_feature(src.underwear.undies_feature)
+		QDEL_NULL(src.underwear) // TA EDIT END
 	for(var/datum/charflaw/cf in charflaws)
 		charflaws.Remove(cf)
 		QDEL_NULL(cf)
@@ -355,7 +359,7 @@ GLOBAL_LIST_INIT(goblin_pyromancer_aggro, list(
 			C.update_body()
 
 
-//////////////////   OUTFITS	//////////////////
+//////////////////	OUTFITS	//////////////////
 /datum/outfit/job/roguetown/npc/goblin/siege/pre_equip(mob/living/carbon/human/H)
 	..() //Regular outfit is also loaded cause subtype, this just ensures they have the minimal requirements of armor + enough stats/skills to do specials
 	H.STAINT = 8 //Minimal req to do specials
@@ -504,7 +508,7 @@ GLOBAL_LIST_INIT(goblin_pyromancer_aggro, list(
 	neck = /obj/item/storage/belt/rogue/pouch/bombs
 	armor = /obj/item/clothing/suit/roguetown/armor/leather/hide/goblin
 
-//////////////////   INVADER ZIM	//////////////////
+//////////////////	INVADER ZIM	//////////////////
 
 /obj/structure/gob_portal
 	name = "goblin portal"
@@ -524,7 +528,7 @@ GLOBAL_LIST_INIT(goblin_pyromancer_aggro, list(
 	var/moon_goblins = 0
 	attacked_sound = 'sound/vo/mobs/ghost/skullpile_hit.ogg'
 
-/obj/structure/gob_portal/Initialize()
+/obj/structure/gob_portal/Initialize(mapload)
 	. = ..()
 	soundloop = new(src, FALSE)
 	soundloop.start()

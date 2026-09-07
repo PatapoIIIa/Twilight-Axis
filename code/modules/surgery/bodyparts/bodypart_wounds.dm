@@ -157,7 +157,7 @@
 			acheck_dflag = "fire"
 	if(!armor)
 		armor = owner.run_armor_check(zone_precise, acheck_dflag, damage = 0)
-	if(ishuman(owner) && bclass != BCLASS_PICK)
+	if(ishuman(owner) && bclass != BCLASS_PICK && acheck_dflag) // TA EDIT
 		var/mob/living/carbon/human/H = owner
 		var/obj/item/clothing/worn_armor = H.get_best_worn_armor(zone_precise, acheck_dflag)
 		if(worn_armor && !worn_armor.obj_broken)
@@ -266,7 +266,7 @@
 				var/datum/wound/newwound = add_wound(woundtype)
 				dynwound = newwound
 				if(newwound && !isnull(newwound))	//don't even ask - Free
-					owner.visible_message(span_red("A new [newwound.name] appears on [owner]'s [lowertext(bodyzone2readablezone(bodypart_to_zone(newwound.bodypart_owner)))]!"))
+					owner.visible_message(span_red("A new [newwound.name] appears on [owner]'s [LOWER_TEXT(bodyzone2readablezone(bodypart_to_zone(newwound.bodypart_owner)))]!"))
 					newwound.upgrade(dam, armor, exposed, pen_info)
 	return dynwound
 

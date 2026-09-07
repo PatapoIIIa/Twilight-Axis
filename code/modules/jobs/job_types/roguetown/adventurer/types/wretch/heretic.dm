@@ -31,8 +31,9 @@
 		/datum/skill/misc/reading = SKILL_LEVEL_JOURNEYMAN,
 	)
 	subclass_stashed_items = list(
-        "Armor Plates" =  /obj/item/repair_kit/metal,
-    )
+		"Armor Plates" =	/obj/item/repair_kit/metal,
+		"Stashed Funds" = /obj/item/roguecoin/silver/pile/wretchpile,
+	)
 
 	extra_context = "This subclass gain the Wound Heal miracle and the Convert Heretic spell."
 
@@ -129,7 +130,7 @@
 		// This list exists here so it can be overwritten later. This is really stupid and should probably
 		// be done in the pre-equip. Too bad!
 	var/helmets = list(
-			"Pigface Bascinet" 	= /obj/item/clothing/head/roguetown/helmet/bascinet/pigface,
+			"Pigface Bascinet"	= /obj/item/clothing/head/roguetown/helmet/bascinet/pigface,
 			"Guard Helmet"		= /obj/item/clothing/head/roguetown/helmet/heavy/guard,
 			"Barred Helmet"		= /obj/item/clothing/head/roguetown/helmet/heavy/sheriff,
 			"Bucket Helmet"		= /obj/item/clothing/head/roguetown/helmet/heavy/bucket,
@@ -147,6 +148,7 @@
 			"Slitted Kettle" = /obj/item/clothing/head/roguetown/helmet/heavy/knight/skettle,
 			"Visored Barbute" = /obj/item/clothing/head/roguetown/helmet/heavy/barbute/visor,
 			"Great Barbute" = /obj/item/clothing/head/roguetown/helmet/heavy/barbute/great,
+			"Snouted Burgonet" = /obj/item/clothing/head/roguetown/helmet/heavy/burgonet,
 			"Volfskulle Bascinet" = /obj/item/clothing/head/roguetown/helmet/heavy/volfplate,
 			"Roundface Bascinet"	= /obj/item/clothing/head/roguetown/helmet/bascinet/pigface/roundface,
 			"Snouted Roundface Bascinet"	= /obj/item/clothing/head/roguetown/helmet/bascinet/pigface/roundface/snouted,
@@ -161,29 +163,54 @@
 			H.change_stat(STATKEY_INT, 1)
 			H.change_stat(STATKEY_PER, 1)
 			H.change_stat(STATKEY_WIL, 1)
+			H.adjust_skillrank(/datum/skill/magic/holy, 1, TRUE) // TA ADDITION - ADDS SKILLRANK BONUSES TO OTHER PATRONS
 		if(/datum/patron/inhumen/matthios)
 			H.cmode_music = 'sound/music/combat_matthios.ogg'
 			helmets += list("Decorated Bucket Helmet" = /obj/item/clothing/head/roguetown/helmet/heavy/bucket/gold/cleric,) // This is so stupid. - Just a little, but it does look cool!
 			H.equip_to_slot_or_del(new /obj/item/clothing/neck/roguetown/psicross/inhumen/matthios, SLOT_RING, TRUE)
 			H.change_stat(STATKEY_WIL, 2)
 			H.change_stat(STATKEY_STR, 1)
+			// TA ADDITION START - ADDS SKILLRANK BONUSES TO OTHER PATRONS
+			H.adjust_skillrank(/datum/skill/misc/stealing, 1, TRUE)
+			H.adjust_skillrank(/datum/skill/misc/sneaking, 1, TRUE)
+			H.adjust_skillrank(/datum/skill/misc/lockpicking, 1, TRUE)
+			// TA ADDITION END
 		if(/datum/patron/inhumen/baotha)
 			H.cmode_music = 'sound/music/combat_baotha.ogg'
 			H.equip_to_slot_or_del(new /obj/item/clothing/neck/roguetown/psicross/inhumen/baotha, SLOT_RING, TRUE)
 			H.change_stat(STATKEY_INT, 1)
 			H.change_stat(STATKEY_PER, 3)
+			// TA ADDITION START - ADDS SKILLRANK BONUSES TO OTHER PATRONS
+			H.adjust_skillrank(/datum/skill/misc/medicine, 1, TRUE)
+			H.adjust_skillrank(/datum/skill/craft/cooking, 2, TRUE)
+			H.adjust_skillrank(/datum/skill/craft/alchemy, 1, TRUE)
+			// TA ADDITION END
 		if(/datum/patron/inhumen/graggar)
 			H.cmode_music = 'sound/music/combat_graggar.ogg'
 			H.equip_to_slot_or_del(new /obj/item/clothing/neck/roguetown/psicross/inhumen/graggar, SLOT_RING, TRUE)
 			H.change_stat(STATKEY_STR, 2)
 			H.change_stat(STATKEY_WIL, 1)
+			// TA ADDITION START - ADDS SKILLRANK BONUSES TO OTHER PATRONS
+			H.adjust_skillrank(/datum/skill/magic/holy, 1, TRUE)
+			H.adjust_skillrank(/datum/skill/misc/athletics, 1, TRUE)
+			// TA ADDITION END
 		if(/datum/patron/divine/astrata)
 			H.equip_to_slot_or_del(new /obj/item/clothing/neck/roguetown/psicross/astrata, SLOT_RING, TRUE)
-			H.equip_to_slot_or_del(new /obj/item/clothing/cloak/templar/astratan, SLOT_CLOAK, TRUE)
 			H.change_stat(STATKEY_INT, 2)
 			H.change_stat(STATKEY_PER, 2)
 			H.adjust_skillrank(/datum/skill/magic/holy, 1, TRUE)
-			helmets += list("Old Astratan Helm" = /obj/item/clothing/head/roguetown/helmet/heavy/astratahelm)
+			helmets += list(
+				"Old Astratan Helm" = /obj/item/clothing/head/roguetown/helmet/heavy/astratahelm,
+				"Astratan Plumed Helm" = /obj/item/clothing/head/roguetown/helmet/heavy/astratahelm/cleric
+				)
+			if(H.mind)
+				var/cloaks = list("Tabard", "Cloak")
+				var/cloakchoice = input(H,"Choose your covering", "TAKE UP FASHION") as anything in cloaks
+				switch(cloakchoice)
+					if("Tabard")
+						H.equip_to_slot_or_del(new /obj/item/clothing/cloak/templar/astratan, SLOT_CLOAK, TRUE)
+					if("Cloak")
+						H.equip_to_slot_or_del(new /obj/item/clothing/cloak/tabard/devotee/astrata, SLOT_CLOAK, TRUE)
 		if(/datum/patron/divine/abyssor)
 			H.change_stat(STATKEY_INT, 2)
 			H.change_stat(STATKEY_PER, 2)
@@ -213,10 +240,17 @@
 			H.change_stat(STATKEY_INT, 2)
 			H.change_stat(STATKEY_PER, 2)
 			H.equip_to_slot_or_del(new /obj/item/clothing/neck/roguetown/psicross/necra, SLOT_RING, TRUE)
-			H.equip_to_slot_or_del(new /obj/item/clothing/cloak/templar/necran, SLOT_CLOAK, TRUE)
 			ADD_TRAIT(H, TRAIT_NOSTINK, TRAIT_GENERIC)
 			ADD_TRAIT(H, TRAIT_SOUL_EXAMINE, TRAIT_GENERIC)
 			helmets += list("Old Necran Helm" = /obj/item/clothing/head/roguetown/helmet/heavy/necrahelm)
+			if(H.mind)
+				var/cloaks = list("Tabard", "Cloak")
+				var/cloakchoice = input(H,"Choose your covering", "TAKE UP FASHION") as anything in cloaks
+				switch(cloakchoice)
+					if("Tabard")
+						H.equip_to_slot_or_del(new /obj/item/clothing/cloak/templar/necran, SLOT_CLOAK, TRUE)
+					if("Cloak")
+						H.equip_to_slot_or_del(new /obj/item/clothing/cloak/tabard/devotee/necra, SLOT_CLOAK, TRUE)
 		if(/datum/patron/divine/pestra)
 			H.change_stat(STATKEY_INT, 2)
 			H.change_stat(STATKEY_PER, 2)
@@ -248,9 +282,17 @@
 			H.change_stat(STATKEY_INT, 2)
 			H.change_stat(STATKEY_PER, 2)
 			H.equip_to_slot_or_del(new /obj/item/clothing/neck/roguetown/psicross/ravox, SLOT_RING, TRUE)
-			H.equip_to_slot_or_del(new /obj/item/clothing/cloak/templar/ravox, SLOT_CLOAK, TRUE)
 			H.adjust_skillrank(/datum/skill/misc/athletics, 1, TRUE)
 			H.adjust_skillrank(/datum/skill/magic/holy, 1, TRUE)
+			helmets += list("Ravox Helmet" = /obj/item/clothing/head/roguetown/helmet/heavy/ravoxhelm/cleric)
+			if(H.mind)
+				var/cloaks = list("Tabard", "Cloak")
+				var/cloakchoice = input(H,"Choose your covering", "TAKE UP FASHION") as anything in cloaks
+				switch(cloakchoice)
+					if("Tabard")
+						H.equip_to_slot_or_del(new /obj/item/clothing/cloak/templar/ravox, SLOT_CLOAK, TRUE)
+					if("Cloak")
+						H.equip_to_slot_or_del(new /obj/item/clothing/cloak/tabard/devotee/ravox, SLOT_CLOAK, TRUE)
 		if(/datum/patron/divine/malum)
 			H.change_stat(STATKEY_INT, 2)
 			H.change_stat(STATKEY_PER, 2)
@@ -330,8 +372,8 @@
 		/datum/skill/craft/traps = SKILL_LEVEL_JOURNEYMAN,
 	)
 	subclass_stashed_items = list(
-        "Sewing Kit" =  /obj/item/repair_kit,
-    )
+		"Sewing Kit" =	/obj/item/repair_kit,
+	)
 	extra_context = "This subclass gain the Wound Heal miracle and the Convert Heretic spell."
 
 
@@ -345,7 +387,7 @@
 	backl = /obj/item/storage/backpack/rogue/satchel
 	belt = /obj/item/storage/belt/rogue/leather
 	neck = /obj/item/clothing/neck/roguetown/gorget
-	mask =  HAS_TRAIT(H, TRAIT_PSYDONIAN_GRIT)?/obj/item/clothing/mask/rogue/facemask/steel/confessor : /obj/item/clothing/mask/rogue/ragmask/black
+	mask =	HAS_TRAIT(H, TRAIT_PSYDONIAN_GRIT)?/obj/item/clothing/mask/rogue/facemask/steel/confessor : /obj/item/clothing/mask/rogue/ragmask/black
 	backpack_contents = list(
 		/obj/item/storage/belt/rogue/pouch/coins/poor = 1,
 		/obj/item/lockpickring/mundane = 1,
@@ -386,7 +428,7 @@
 			if("Bow")
 				H.adjust_skillrank_up_to(/datum/skill/combat/bows, SKILL_LEVEL_JOURNEYMAN, TRUE)
 				beltr = /obj/item/quiver/arrows
-				backr = /obj/item/gun/ballistic/revolver/grenadelauncher/bow/recurve
+				backr = /obj/item/gun/ballistic/revolver/grenadelauncher/bow
 				H.adjust_skillrank_up_to(/datum/skill/combat/knives, SKILL_LEVEL_EXPERT, TRUE)
 				beltl = /obj/item/rogueweapon/scabbard/sheath
 				if(HAS_TRAIT(H, TRAIT_PSYDONIAN_GRIT))
@@ -439,15 +481,29 @@
 			H.cmode_music = 'sound/music/combat_heretic.ogg'
 			H.equip_to_slot_or_del(new /obj/item/clothing/neck/roguetown/psicross/inhumen/iron, SLOT_RING, TRUE)
 			H.equip_to_slot_or_del(new /obj/item/book/rogue/bibble/zizo,SLOT_IN_BACKPACK, TRUE)
+			H.adjust_skillrank(/datum/skill/magic/holy, 1, TRUE) // TA ADDITION - ADDS SKILLRANK BONUSES TO OTHER PATRONS
 		if(/datum/patron/inhumen/matthios)
 			H.cmode_music = 'sound/music/combat_matthios.ogg'
 			H.equip_to_slot_or_del(new /obj/item/clothing/neck/roguetown/psicross/inhumen/matthios, SLOT_RING, TRUE)
+			// TA ADDITION START - ADDS SKILLRANK BONUSES TO OTHER PATRONS
+			H.adjust_skillrank(/datum/skill/misc/stealing, 1, TRUE)
+			H.adjust_skillrank(/datum/skill/misc/sneaking, 1, TRUE)
+			H.adjust_skillrank(/datum/skill/misc/lockpicking, 1, TRUE)
+			// TA ADDITION END
 		if(/datum/patron/inhumen/baotha)
 			H.cmode_music = 'sound/music/combat_baotha.ogg'
 			H.equip_to_slot_or_del(new /obj/item/clothing/neck/roguetown/psicross/inhumen/baotha, SLOT_RING, TRUE)
+			// TA ADDITION START - ADDS SKILLRANK BONUSES TO OTHER PATRONS
+			H.adjust_skillrank(/datum/skill/misc/medicine, 1, TRUE)
+			H.adjust_skillrank(/datum/skill/craft/cooking, 2, TRUE)
+			H.adjust_skillrank(/datum/skill/craft/alchemy, 1, TRUE)
+			// TA ADDITION END
 		if(/datum/patron/inhumen/graggar)
 			H.cmode_music = 'sound/music/combat_graggar.ogg'
 			H.equip_to_slot_or_del(new /obj/item/clothing/neck/roguetown/psicross/inhumen/graggar, SLOT_RING, TRUE)
+			// TA ADDITION START - ADDS SKILLRANK BONUSES TO OTHER PATRONS
+			H.adjust_skillrank(/datum/skill/misc/athletics, 1, TRUE)
+			// TA ADDITION END
 		if(/datum/patron/divine/astrata)
 			H.equip_to_slot_or_del(new /obj/item/clothing/neck/roguetown/psicross/astrata, SLOT_RING, TRUE)
 			H.adjust_skillrank(/datum/skill/magic/holy, 1, TRUE)

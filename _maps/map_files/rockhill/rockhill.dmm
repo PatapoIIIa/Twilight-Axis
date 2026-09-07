@@ -41365,6 +41365,10 @@
 	icon_state = "borderfall";
 	pixel_y = 8
 	},
+/obj/item/hand_files{
+	pixel_x = -10;
+	pixel_y = 10
+	},
 /turf/open/floor/rogue/wood,
 /area/rogue/indoors/town/manor/rockhill)
 "iiQ" = (
@@ -73583,8 +73587,6 @@
 /obj/item/reagent_containers/glass/cup/ceramic,
 /obj/item/reagent_containers/glass/cup/ceramic,
 /obj/item/book/rogue/yeoldecookingmanual,
-/obj/item/contraption/folding_table_stored,
-/obj/item/contraption/folding_table_stored,
 /obj/item/ration,
 /obj/item/ration,
 /obj/item/ration,
@@ -75642,12 +75644,6 @@
 	},
 /area/rogue/indoors)
 "pis" = (
-/obj/item/roguebin{
-	anchored = 1
-	},
-/obj/structure/flora/roguegrass/bush/westleach{
-	pixel_y = 13
-	},
 /obj/effect/decal/cobbleedge{
 	dir = 8;
 	icon_state = "borderfall";
@@ -75657,6 +75653,7 @@
 	icon_state = "borderfall";
 	pixel_y = -10
 	},
+/obj/item/roguemachine/zadcote/hand,
 /turf/open/floor/rogue/wood,
 /area/rogue/indoors/town/manor/rockhill)
 "pit" = (
@@ -110430,12 +110427,6 @@
 /turf/open/transparent/openspace,
 /area/rogue/indoors/town/grovercin)
 "wrt" = (
-/obj/structure/closet/crate/chest{
-	locked = 1;
-	lockid = "hand"
-	},
-/obj/item/paper/scroll,
-/obj/item/paper/scroll,
 /obj/effect/decal/cobbleedge{
 	icon_state = "borderfall";
 	pixel_y = -10
@@ -110445,6 +110436,12 @@
 	icon_state = "borderfall";
 	pixel_x = 8
 	},
+/obj/structure/closet/crate/chest/crafted,
+/obj/item/paper/scroll,
+/obj/item/paper/scroll,
+/obj/item/paper/scroll,
+/obj/item/paper/scroll,
+/obj/item/paper/scroll,
 /turf/open/floor/rogue/tile,
 /area/rogue/indoors/town/manor/rockhill)
 "wrv" = (
@@ -112993,11 +112990,6 @@
 /area/rogue/under/cavewet)
 "wQY" = (
 /obj/structure/table/wood/poor,
-/obj/item/contraption/folding_table_stored,
-/obj/item/contraption/folding_table_stored{
-	pixel_x = 0;
-	pixel_y = 4
-	},
 /obj/structure/fluff/walldeco/church/line{
 	dir = 4;
 	layer = 2

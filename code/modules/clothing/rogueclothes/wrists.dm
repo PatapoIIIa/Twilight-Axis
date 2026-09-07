@@ -23,7 +23,7 @@
 	. = ..()
 	overarmor = !overarmor
 	to_chat(user, span_info("I [overarmor ? "wear \the [src] over my armor" : "wear \the [src] under my armor"]."))
-	alternate_worn_layer = overarmor ? OVER_GLOVES_LAYER : initial(alternate_worn_layer)
+	alternate_worn_layer = overarmor ? OVER_ARMOR_LAYER : initial(alternate_worn_layer)
 	user.update_inv_wrists()
 	user.update_inv_gloves()
 	user.update_inv_armor()
@@ -121,7 +121,7 @@
 
 /obj/item/clothing/wrists/roguetown/bracers/aalloy
 	name = "decrepit bracers"
-	desc = "Frayed bronze cuffings, bound across the wrists. Don't bother counting the tallies left behind by their former legionnaires; none of them ever returned from the battlefields."
+	desc = "Rotted metal cuffings, bound across the wrists. Don't bother counting the tallies left behind by their former legionnaires; none of them ever returned from the battlefields."
 	max_integrity = ARMOR_INT_SIDE_DECREPIT
 	icon_state = "ancientbracers"
 	color = "#bb9696"
@@ -244,6 +244,69 @@
 	desc = "Sheared burlap and cloth, meticulously fashioned around the forearms. Taut fibers turn weeping gashes into mere tears along the cloth. </br>"
 	color = "#BFB8A9"
 
+// TA EDIT START
+// --- Lunacy Embracer ---
+/obj/item/clothing/wrists/roguetown/bracers/lunacy
+	name = "lunacy bracers"
+	desc = "The moon's touch hardened the furthest reaches of me - my hands, my wrists, the places that once trembled with fear.\
+	</br>Now they do not. I meditate, and they remember their strength."
+	icon_state = null
+	body_parts_covered = ARMS
+	armor = ARMOR_PLATE
+	blocksound = SOFTHIT
+	max_integrity = ARMOR_INT_SIDE_STEEL
+	anvilrepair = null
+	sewrepair = TRUE
+	resistance_flags = FIRE_PROOF
+	blocking_behavior = SAMEWEAR
+	pickup_sound = 'sound/foley/equip/equip_armor.ogg'
+	equip_sound = 'sound/foley/equip/equip_armor.ogg'
+	break_sound = 'sound/foley/cloth_rip.ogg'
+	drop_sound = 'sound/foley/dropsound/cloth_drop.ogg'
+	var/repairmsg_end = "The moonlight fades from my bracers as they settle into calm strength."
+	var/repairmsg_continue = "My bracers mend some of their abuse..."
+	var/repairmsg_full = "My lunacy bracers are already whole."
+	var/repair_fraction = 0.35
+	var/repair_percent
+
+/obj/item/clothing/wrists/roguetown/bracers/lunacy/Initialize(mapload)
+	. = ..()
+	if(isnull(repair_percent))
+		repair_percent = repair_fraction * max_integrity
+
+/obj/item/clothing/wrists/roguetown/bracers/lunacy/equipped(mob/user, slot, initial = FALSE)
+	. = ..()
+	if(ishuman(user) && slot == SLOT_WRISTS)
+		RegisterSignal(user, COMSIG_MOB_MEDITATED, PROC_REF(on_wearer_meditated), override = TRUE)
+
+/obj/item/clothing/wrists/roguetown/bracers/lunacy/dropped(mob/living/carbon/human/user)
+	if(ismob(user))
+		UnregisterSignal(user, COMSIG_MOB_MEDITATED)
+	return ..()
+
+/obj/item/clothing/wrists/roguetown/bracers/lunacy/get_mechanics_examine(mob/user)
+	. = ..()
+	. += span_info("Repairable by completing a *meditate emote.")
+
+/obj/item/clothing/wrists/roguetown/bracers/lunacy/proc/on_wearer_meditated(mob/living/carbon/human/user)
+	SIGNAL_HANDLER
+	var/mob/living/carbon/human/H = loc
+	if(!ishuman(H) || H.wear_wrists != src)
+		return
+	if(obj_integrity >= max_integrity)
+		to_chat(user, span_warning(repairmsg_full))
+		return
+	armour_regen()
+
+/obj/item/clothing/wrists/roguetown/bracers/lunacy/proc/armour_regen(repair_amount = repair_percent)
+	if(obj_integrity >= max_integrity)
+		to_chat(loc, span_notice(repairmsg_end))
+	to_chat(loc, span_notice(repairmsg_continue))
+	obj_integrity = min(obj_integrity + repair_amount, max_integrity)
+	if(obj_broken)
+		obj_fix(full_repair = FALSE)
+// TA EDIT END
+
 //Queensleeves
 /obj/item/clothing/wrists/roguetown/royalsleeves
 	name = "royal sleeves"
@@ -272,7 +335,7 @@
 		var/mob/living/carbon/human/H = loc
 		H.update_inv_wrists()
 
-/obj/item/clothing/wrists/roguetown/royalsleeves/Initialize()
+/obj/item/clothing/wrists/roguetown/royalsleeves/Initialize(mapload)
 	. = ..()
 	GLOB.lordcolor += src
 	if(GLOB.lordprimary)
@@ -399,7 +462,7 @@
 
 /obj/item/clothing/wrists/roguetown/bracers/aalloy/chain
 	name = "decrepit chain sleeves"
-	desc = "Coverings of frayed bronze maille, fashioned from hundreds of interlinked rings. An aura of decaying harlotry eminates from these sleeves. \
+	desc = "Coverings of rotted metal maille, fashioned from hundreds of interlinked rings. An aura of decaying harlotry eminates from these sleeves. \
 	</br>I can adjust these sleeves to hang further down, rather than simply hugging my wrists."
 	icon_state = "ancientchainsleevesalt"
 	item_state = "ancientchainsleevesalt"
@@ -583,7 +646,7 @@
 	smeltresult = /obj/item/ingot/component/matthios
 	unenchantable = TRUE
 
-/obj/item/clothing/wrists/roguetown/bracers/matthios/Initialize()
+/obj/item/clothing/wrists/roguetown/bracers/matthios/Initialize(mapload)
 	. = ..()
 	AddComponent(/datum/component/cursed_item, TRAIT_FREEMAN, "ARMOR")
 	/*add_filter(FORCE_FILTER, 2, list("type" = "outline", "color" = "#fff385", "alpha" = 120, "size" = 1)) //IS THIS TRVE?
@@ -606,7 +669,7 @@
 	smeltresult = /obj/item/ingot/component/zizo
 	unenchantable = TRUE
 
-/obj/item/clothing/wrists/roguetown/bracers/zizo/Initialize()
+/obj/item/clothing/wrists/roguetown/bracers/zizo/Initialize(mapload)
 	. = ..()
 	AddComponent(/datum/component/cursed_item, TRAIT_CABAL, "ARMOR")
 	/*add_filter(FORCE_FILTER, 2, list("type" = "outline", "color" = "#5f1515", "alpha" = 120, "size" = 1)) //Cursed look.
@@ -622,7 +685,7 @@
 	smeltresult = /obj/item/ingot/component/graggar
 	unenchantable = TRUE
 
-/obj/item/clothing/wrists/roguetown/bracers/graggar/Initialize()
+/obj/item/clothing/wrists/roguetown/bracers/graggar/Initialize(mapload)
 	. = ..()
 	AddComponent(/datum/component/cursed_item, TRAIT_HORDE, "ARMOR", "RENDERED ASUNDER")
 	/*add_filter(FORCE_FILTER, 2, list("type" = "outline", "color" = "#1a146e", "alpha" = 120, "size" = 1)) //Cursed look.
@@ -642,7 +705,7 @@
 	color = null
 	smeltresult = /obj/item/ingot/component/graggar
 
-/obj/item/clothing/wrists/roguetown/bracers/graggar/heavy/Initialize()
+/obj/item/clothing/wrists/roguetown/bracers/graggar/heavy/Initialize(mapload)
 	. = ..()
 	ADD_TRAIT(src, TRAIT_NODROP, CURSED_ITEM_TRAIT)
 
@@ -662,7 +725,7 @@
 	max_integrity = ARMOR_INT_CHEST_LIGHT_MASTER + 150
 	smeltresult = /obj/item/ingot/component/baotha
 
-/obj/item/clothing/wrists/roguetown/bracers/leather/baotha/Initialize()
+/obj/item/clothing/wrists/roguetown/bracers/leather/baotha/Initialize(mapload)
 	. = ..()
 	AddComponent(/datum/component/cursed_item, TRAIT_DEPRAVED, "BRACERS")
 	ADD_TRAIT(src, TRAIT_NODROP, CURSED_ITEM_TRAIT)
