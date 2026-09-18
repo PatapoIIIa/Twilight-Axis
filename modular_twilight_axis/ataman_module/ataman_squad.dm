@@ -175,18 +175,33 @@
 /datum/ataman_squad/proc/register_member(mob/living/bandit)
 	if(!istype(bandit))
 		return
-	LAZYADD(member_refs, WEAKREF(bandit))
+	var/datum/weakref/bandit_ref = WEAKREF(bandit)
+	if(!bandit_ref || (bandit_ref in member_refs))
+		return
+	LAZYADD(member_refs, bandit_ref)
+	RegisterSignal(bandit, COMSIG_QDELETING, PROC_REF(on_member_gone))
+	RegisterSignal(bandit, COMSIG_LIVING_DEATH, PROC_REF(on_member_gone))
+
+/datum/ataman_squad/proc/on_member_gone(mob/living/source)
+	SIGNAL_HANDLER
+	UnregisterSignal(source, list(COMSIG_QDELETING, COMSIG_LIVING_DEATH))
+	for(var/mob/living/member as anything in get_members())
+		if(member != source)
+			return
+	qdel(src)
 
 /datum/ataman_squad/proc/get_members()
 	var/list/alive = list()
 	var/list/kept = list()
 	for(var/datum/weakref/member_ref as anything in member_refs)
 		var/mob/living/member = member_ref.resolve()
-		if(QDELETED(member) || member.stat == DEAD)
+		if(QDELETED(member))
 			continue
 		kept += member_ref
-		alive += member
-	member_refs = length(kept) ? kept : null
+		if(member.stat != DEAD)
+			alive += member
+	if(length(kept) != length(member_refs))
+		member_refs = length(kept) ? kept : null
 	return alive
 
 /datum/ataman_squad/proc/get_flank_angles(mob/living/pawn, turf/target_turf)
@@ -330,6 +345,16 @@
 
 /datum/ataman_squad/Destroy()
 	stop_watching_target()
+	for(var/datum/weakref/member_ref as anything in member_refs)
+		var/mob/living/member = member_ref.resolve()
+		if(!istype(member))
+			continue
+		UnregisterSignal(member, list(COMSIG_QDELETING, COMSIG_LIVING_DEATH))
+		var/mob/living/carbon/human/npc/ataman_bandit/bandit = member
+		if(istype(bandit))
+			bandit.ataman_squad = null
+		member.ai_controller?.clear_blackboard_key(BB_ATAMAN_SQUAD)
+	member_refs = null
 	return ..()
 
 /datum/ataman_squad/proc/claim_interceptor(mob/living/bandit)

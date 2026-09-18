@@ -62,17 +62,37 @@
 	for(var/ally_angle in allies)
 		AT_ASSERT(ataman_flank_angle_delta(chosen, ally_angle) >= ATAMAN_FLANK_MIN_SEPARATION, "chosen angle [chosen] crowds the ally at [ally_angle]")
 
-/datum/unit_test/ataman/squad_roster_prunes_dead/Run()
+/datum/unit_test/ataman/squad_roster_tracks_living/Run()
 	var/datum/ataman_squad/squad = new
 	var/mob/living/carbon/human/first = allocate(/mob/living/carbon/human, at_turf(0, 0))
 	var/mob/living/carbon/human/second = allocate(/mob/living/carbon/human, at_turf(1, 0))
 	squad.register_member(first)
 	squad.register_member(second)
-	AT_ASSERT_EQUAL(length(squad.get_members()), 2, "both living bandits must be on the roster")
+	AT_ASSERT_EQUAL(length(squad.get_members()), 2, "both living bandits must count as members")
 	second.death()
-	AT_ASSERT_EQUAL(length(squad.get_members()), 1, "a dead bandit must drop off the roster")
-	AT_ASSERT_EQUAL(length(squad.member_refs), 1, "the pruned roster must not keep the stale weakref")
+	AT_ASSERT_EQUAL(length(squad.get_members()), 1, "a dead bandit must stop counting as a member")
+	AT_ASSERT_EQUAL(length(squad.member_refs), 2, "the corpse must stay on the roster so teardown can still reach it")
+	AT_ASSERT(!QDELETED(squad), "the squad must survive while one bandit is still standing")
 	qdel(squad)
+
+/datum/unit_test/ataman/squad_registers_each_member_once/Run()
+	var/datum/ataman_squad/squad = new
+	var/mob/living/carbon/human/bandit = allocate(/mob/living/carbon/human, at_turf(0, 0))
+	squad.register_member(bandit)
+	squad.register_member(bandit)
+	AT_ASSERT_EQUAL(length(squad.member_refs), 1, "registering the same bandit twice must not double up the roster")
+	qdel(squad)
+
+/datum/unit_test/ataman/squad_retires_when_gang_dies/Run()
+	var/datum/ataman_squad/squad = new
+	var/mob/living/carbon/human/first = allocate(/mob/living/carbon/human, at_turf(0, 0))
+	var/mob/living/carbon/human/second = allocate(/mob/living/carbon/human, at_turf(1, 0))
+	squad.register_member(first)
+	squad.register_member(second)
+	first.death()
+	AT_ASSERT(!QDELETED(squad), "one survivor still means a live gang")
+	second.death()
+	AT_ASSERT(QDELETED(squad), "the squad must retire itself once the whole gang is down")
 
 /datum/unit_test/ataman/squad_flank_angles_exclude_self/Run()
 	var/datum/ataman_squad/squad = new

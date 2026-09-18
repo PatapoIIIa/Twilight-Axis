@@ -82,7 +82,7 @@
 
 	var/cached_angle = controller.blackboard[BB_ATAMAN_FLANK_ANGLE]
 	var/turf/flank_turf = controller.blackboard[BB_ATAMAN_FLANK_TURF]
-	if(isnull(cached_angle) || QDELETED(flank_turf) || ataman_flank_angle_delta(cached_angle, chosen_angle) > ATAMAN_FLANK_ANGLE_DRIFT)
+	if(isnull(cached_angle) || !flank_turf || get_dist(flank_turf, target_turf) > ATAMAN_FLANK_RADIUS || ataman_flank_angle_delta(cached_angle, chosen_angle) > ATAMAN_FLANK_ANGLE_DRIFT)
 		flank_turf = ataman_flank_turf_for(target_turf, chosen_angle, pawn)
 		if(!flank_turf)
 			ataman_flank_clear(controller)
@@ -92,34 +92,7 @@
 		ataman_ai_log(pawn, "FLANK: taking the open side on [target] at [chosen_angle] degrees")
 
 	if(get_dist(pawn, flank_turf) <= ATAMAN_FLANK_ENGAGE_DIST)
-		controller.clear_blackboard_key(BB_ATAMAN_FLANK_TURF)
 		return
 
-	controller.queue_behavior(/datum/ai_behavior/ataman_move_to_flank, BB_ATAMAN_FLANK_TURF, BB_ATAMAN_TARGET)
+	controller.queue_behavior(/datum/ai_behavior/travel_towards, BB_ATAMAN_FLANK_TURF)
 	return SUBTREE_RETURN_FINISH_PLANNING
-
-/datum/ai_behavior/ataman_move_to_flank
-	action_cooldown = 0.2 SECONDS
-	behavior_flags = AI_BEHAVIOR_REQUIRE_MOVEMENT | AI_BEHAVIOR_CAN_PLAN_DURING_EXECUTION
-
-/datum/ai_behavior/ataman_move_to_flank/setup(datum/ai_controller/controller, flank_turf_key, target_key)
-	. = ..()
-	var/turf/flank_turf = controller.blackboard[flank_turf_key]
-	if(QDELETED(flank_turf))
-		return FALSE
-	set_movement_target(controller, flank_turf)
-
-/datum/ai_behavior/ataman_move_to_flank/perform(delta_time, datum/ai_controller/controller, flank_turf_key, target_key)
-	var/mob/living/pawn = controller.pawn
-	var/turf/flank_turf = controller.blackboard[flank_turf_key]
-	var/mob/living/target = controller.blackboard[target_key]
-	if(QDELETED(flank_turf) || !isliving(pawn))
-		finish_action(controller, FALSE, flank_turf_key, target_key)
-		return
-	if(istype(target))
-		if(get_dist(get_turf(target), flank_turf) > ATAMAN_FLANK_ABANDON_DIST)
-			ataman_flank_clear(controller)
-			finish_action(controller, FALSE, flank_turf_key, target_key)
-			return
-		pawn.face_atom(target)
-	finish_action(controller, get_dist(pawn, flank_turf) <= ATAMAN_FLANK_ENGAGE_DIST, flank_turf_key, target_key)
