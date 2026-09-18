@@ -187,7 +187,9 @@
 	UnregisterSignal(source, list(COMSIG_QDELETING, COMSIG_LIVING_DEATH))
 	for(var/mob/living/member as anything in get_members())
 		if(member != source)
+			ataman_ai_trace(source, "SQUAD: down, but [member.real_name] is still standing - the gang holds")
 			return
+	ataman_ai_log(source, "SQUAD: last bandit down, the gang is finished - retiring the squad")
 	qdel(src)
 
 /datum/ataman_squad/proc/get_members()
@@ -208,17 +210,27 @@
 	var/list/angles = list()
 	if(!target_turf)
 		return angles
-	for(var/mob/living/member as anything in get_members())
+	var/list/living_members = get_members()
+	ataman_ai_trace(pawn, "FLANK: squad has [length(living_members)] bandit(s) standing, checking who holds a side")
+	for(var/mob/living/member as anything in living_members)
 		if(member == pawn)
 			continue
 		var/turf/member_turf = get_turf(member)
-		if(!member_turf || member_turf.z != target_turf.z)
+		if(!member_turf)
+			ataman_ai_trace(pawn, "FLANK: [member.real_name] has no turf, not counted")
 			continue
-		if(get_dist(member_turf, target_turf) > ATAMAN_FLANK_SCAN_RANGE)
+		if(member_turf.z != target_turf.z)
+			ataman_ai_trace(pawn, "FLANK: [member.real_name] is on z[member_turf.z], target is on z[target_turf.z], not counted")
+			continue
+		var/member_gap = get_dist(member_turf, target_turf)
+		if(member_gap > ATAMAN_FLANK_SCAN_RANGE)
+			ataman_ai_trace(pawn, "FLANK: [member.real_name] is [member_gap] tiles from the target (limit [ATAMAN_FLANK_SCAN_RANGE]), not holding a side")
 			continue
 		var/angle = ataman_flank_angle_of(target_turf, member_turf)
 		if(isnull(angle))
+			ataman_ai_trace(pawn, "FLANK: [member.real_name] stands on the target itself, no angle")
 			continue
+		ataman_ai_trace(pawn, "FLANK: [member.real_name] holds [angle] deg at [member_gap] tiles")
 		angles += angle
 	return angles
 

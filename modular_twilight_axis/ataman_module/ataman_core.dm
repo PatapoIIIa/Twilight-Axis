@@ -48,7 +48,13 @@
 #define ATAMAN_TIER_BASE_BOUNTY 100
 
 GLOBAL_VAR_INIT(ataman_ai_logging, TRUE)
+GLOBAL_VAR_INIT(ataman_ai_verbose, TRUE)
 GLOBAL_VAR_INIT(ataman_ai_log_file, null)
+
+/proc/ataman_ai_trace(mob/living/source, message)
+	if(!GLOB.ataman_ai_verbose)
+		return
+	ataman_ai_log(source, message)
 
 /proc/ataman_ai_log(mob/living/source, message)
 	if(!GLOB.ataman_ai_logging)

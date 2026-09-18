@@ -9,23 +9,31 @@
 /datum/ai_planning_subtree/ataman_intercept/SelectBehaviors(datum/ai_controller/controller, delta_time)
 	. = ..()
 	var/mob/living/carbon/human/npc/ataman_bandit/pawn = controller.pawn
-	if(!istype(pawn) || pawn.ataman_role != ATAMAN_ROLE_ENFORCER)
+	if(!istype(pawn))
+		return
+	if(pawn.ataman_role != ATAMAN_ROLE_ENFORCER)
+		ataman_ai_trace(pawn, "INTERCEPT: skip - I am [pawn.ataman_role], only enforcers cut people off")
 		return
 	var/datum/ataman_squad/squad = controller.blackboard[BB_ATAMAN_SQUAD]
 	if(!squad)
+		ataman_ai_trace(pawn, "INTERCEPT: skip - no squad on my blackboard")
 		return
 	var/mob/living/carbon/target = controller.blackboard[BB_ATAMAN_TARGET]
 	if(!istype(target) || target.stat == DEAD || ataman_target_is_secured(target) || length(target.grabbedby))
+		ataman_ai_trace(pawn, "INTERCEPT: stand down - target [target] is [!istype(target) ? "gone" : target.stat == DEAD ? "dead" : ataman_target_is_secured(target) ? "cuffed" : "already held"]")
 		squad.release_interceptor(pawn)
 		return
 	if(pawn.Adjacent(target))
+		ataman_ai_trace(pawn, "INTERCEPT: stand down - already next to [target], nothing to cut off")
 		squad.release_interceptor(pawn)
 		return
 	var/turf/intercept_point = squad.get_intercept_point()
 	if(!intercept_point)
+		ataman_ai_trace(pawn, "INTERCEPT: skip - [target] has no readable heading to cut off")
 		squad.release_interceptor(pawn)
 		return
 	if(!squad.claim_interceptor(pawn))
+		ataman_ai_trace(pawn, "INTERCEPT: skip - another bandit already owns the intercept, or it is on cooldown")
 		squad.release_interceptor(pawn)
 		return
 	ataman_ai_log(pawn, "INTERCEPT: cutting off [target] toward [intercept_point]")
@@ -36,12 +44,16 @@
 /datum/ai_planning_subtree/ataman_leash/SelectBehaviors(datum/ai_controller/controller, delta_time)
 	. = ..()
 	var/mob/living/carbon/human/npc/ataman_bandit/pawn = controller.pawn
-	if(!istype(pawn) || pawn.ataman_disbanding)
+	if(!istype(pawn))
+		return
+	if(pawn.ataman_disbanding)
+		ataman_ai_trace(pawn, "LEASH: skip - already disbanding")
 		return
 	var/mob/living/hunted = controller.blackboard[BB_ATAMAN_TARGET]
 	if(!istype(hunted) || hunted.stat == DEAD || pawn.ataman_gave_up)
 		if(!pawn.ataman_idle_until)
 			pawn.ataman_idle_until = world.time + rand(ATAMAN_IDLE_DESPAWN_MIN, ATAMAN_IDLE_DESPAWN_MAX)
+			ataman_ai_trace(pawn, "IDLE: nothing to hunt ([!istype(hunted) ? "no target" : hunted.stat == DEAD ? "target dead" : "gave up"]), starting despawn countdown")
 		else if(world.time >= pawn.ataman_idle_until)
 			ataman_ai_log(pawn, "IDLE: nothing left to hunt, breaking off for good")
 			ataman_disband(controller, pawn)
@@ -53,6 +65,7 @@
 	var/target_gap = get_dist(pawn, hunted)
 	var/spawn_gap = spawn_turf ? get_dist(pawn, spawn_turf) : 0
 	if(target_gap <= ATAMAN_GIVEUP_RANGE && spawn_gap <= ATAMAN_LEASH_RANGE)
+		ataman_ai_trace(pawn, "LEASH: on the leash - [target_gap]/[ATAMAN_GIVEUP_RANGE] tiles to [hunted], [spawn_gap]/[ATAMAN_LEASH_RANGE] from spawn")
 		return
 
 	ataman_ai_log(pawn, "LEASH: [hunted] broke away - [target_gap] tiles between us, [spawn_gap] from spawn, melting into the treeline")
@@ -117,6 +130,7 @@
 			return SUBTREE_RETURN_FINISH_PLANNING
 		if(ATAMAN_ROLE_ENFORCER)
 			if(!target_is_armed || target.pulledby || !(target.mobility_flags & MOBILITY_STAND))
+				ataman_ai_trace(pawn, "CAPTURE: enforcer stands off - armed=[target_is_armed ? "yes" : "no"] held=[target.pulledby ? "yes" : "no"] standing=[(target.mobility_flags & MOBILITY_STAND) ? "yes" : "no"]")
 				return
 
 	return
@@ -384,13 +398,16 @@
 		return
 	var/datum/ataman_squad/squad = controller.blackboard[BB_ATAMAN_SQUAD]
 	if(!squad)
+		ataman_ai_trace(pawn, "TACTICS: skip - no squad on my blackboard")
 		return
 	ataman_recover_target(controller, pawn)
 	var/mob/living/carbon/target = controller.blackboard[BB_ATAMAN_TARGET]
 	if(!istype(target) || target.stat == DEAD || ataman_target_is_secured(target))
+		ataman_ai_trace(pawn, "TACTICS: skip - target [target] is [!istype(target) ? "gone" : target.stat == DEAD ? "dead" : "cuffed"]")
 		return
 	squad.refresh_aim_intel(target)
 	if(!pawn.Adjacent(target))
+		ataman_ai_trace(pawn, "TACTICS: skip - [get_dist(pawn, target)] tiles from [target], tactics are melee-range only")
 		return
 
 	var/role = controller.blackboard[BB_ATAMAN_ROLE]
@@ -400,6 +417,7 @@
 			controller.set_blackboard_key(BB_HUMAN_NPC_WEAKPOINT, list(capture_zone, world.time + 3 SECONDS, target))
 
 	if(world.time < (controller.blackboard[BB_ATAMAN_TACTICS_COOLDOWN] || 0))
+		ataman_ai_trace(pawn, "TACTICS: skip - on cooldown for another [controller.blackboard[BB_ATAMAN_TACTICS_COOLDOWN] - world.time] ds")
 		return
 
 	if(squad.target_channeling_escape_spell())
@@ -428,6 +446,7 @@
 		return SUBTREE_RETURN_FINISH_PLANNING
 
 	if(ataman_target_under_debuff(target))
+		ataman_ai_trace(pawn, "TACTICS: skip - [target] is already debuffed, no point spending another bait or feint")
 		return
 
 	if(ataman_try_bait(controller, pawn, target, squad))
@@ -438,4 +457,5 @@
 		controller.set_blackboard_key(BB_ATAMAN_TACTICS_COOLDOWN, world.time + 1 SECONDS)
 		return SUBTREE_RETURN_FINISH_PLANNING
 
+	ataman_ai_trace(pawn, "TACTICS: nothing fired this tick on [target], falling through to plain melee")
 	return

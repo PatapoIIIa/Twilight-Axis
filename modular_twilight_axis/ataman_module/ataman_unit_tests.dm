@@ -31,6 +31,23 @@
 	AT_ASSERT_EQUAL(ataman_flank_angle_delta(90, 90), 0, "identical angles have no delta")
 	AT_ASSERT(ataman_flank_angle_delta(359, 1) <= ATAMAN_FLANK_ANGLE_DRIFT, "a two degree drift across zero must not force a recalculation")
 
+/datum/unit_test/ataman/flank_widest_gap/Run()
+	AT_ASSERT_NULL(ataman_flank_widest_gap(list()), "no allies means no gap to measure")
+
+	var/list/lone = ataman_flank_widest_gap(list(0))
+	AT_ASSERT_EQUAL(lone[1], 0, "a lone ally anchors the gap at its own angle")
+	AT_ASSERT_EQUAL(lone[2], 360, "a lone ally leaves the whole circle open")
+
+	var/list/stacked = ataman_flank_widest_gap(list(90, 90))
+	AT_ASSERT_EQUAL(stacked[2], 360, "allies stacked on one angle also leave the whole circle open")
+
+	var/list/spread = ataman_flank_widest_gap(list(0, 20, 100))
+	AT_ASSERT_EQUAL(spread[1], 100, "the widest gap must start at the last ally before it")
+	AT_ASSERT_EQUAL(spread[2], 260, "the widest gap must wrap from 100 back around to 0")
+
+	var/list/ringed = ataman_flank_widest_gap(list(0, 45, 90, 135, 180, 225, 270, 315))
+	AT_ASSERT_EQUAL(ringed[2], 45, "an evenly ringed target leaves only 45 degree gaps")
+
 /datum/unit_test/ataman/flank_no_allies/Run()
 	AT_ASSERT_NULL(ataman_flank_pick_angle(list()), "with nobody else on the target there is nothing to flank around")
 
