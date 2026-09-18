@@ -9,3 +9,5 @@
 #include "ataman_structures.dm"
 #include "ataman_squad.dm"
 #include "ataman_tactics.dm"
+#include "ataman_flank.dm"
+#include "ataman_unit_tests.dm"

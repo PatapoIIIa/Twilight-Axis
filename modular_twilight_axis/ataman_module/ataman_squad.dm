@@ -167,9 +167,45 @@
 	var/aim_chain_held = FALSE
 	var/aim_claim_until = 0
 	var/datum/weakref/watched_ref
+	var/list/member_refs
 
 /datum/ataman_squad/proc/get_target()
 	return target_ref?.resolve()
+
+/datum/ataman_squad/proc/register_member(mob/living/bandit)
+	if(!istype(bandit))
+		return
+	LAZYADD(member_refs, WEAKREF(bandit))
+
+/datum/ataman_squad/proc/get_members()
+	var/list/alive = list()
+	var/list/kept = list()
+	for(var/datum/weakref/member_ref as anything in member_refs)
+		var/mob/living/member = member_ref.resolve()
+		if(QDELETED(member) || member.stat == DEAD)
+			continue
+		kept += member_ref
+		alive += member
+	member_refs = length(kept) ? kept : null
+	return alive
+
+/datum/ataman_squad/proc/get_flank_angles(mob/living/pawn, turf/target_turf)
+	var/list/angles = list()
+	if(!target_turf)
+		return angles
+	for(var/mob/living/member as anything in get_members())
+		if(member == pawn)
+			continue
+		var/turf/member_turf = get_turf(member)
+		if(!member_turf || member_turf.z != target_turf.z)
+			continue
+		if(get_dist(member_turf, target_turf) > ATAMAN_FLANK_SCAN_RANGE)
+			continue
+		var/angle = ataman_flank_angle_of(target_turf, member_turf)
+		if(isnull(angle))
+			continue
+		angles += angle
+	return angles
 
 /datum/ataman_squad/proc/is_target_caster(mob/living/target)
 	if(!ishuman(target))

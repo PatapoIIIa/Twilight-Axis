@@ -317,6 +317,7 @@
 	ataman_spawn_turf = spawn_turf || get_turf(src)
 	ataman_role = role
 	ataman_squad = squad
+	squad?.register_member(src)
 	if(role == ATAMAN_ROLE_GRABBER)
 		upgrade_ai_controller(/datum/ai_controller/human_npc/ataman_bandit/grabber)
 	if(target)
@@ -363,8 +364,8 @@
 		BB_HUMAN_NPC_LAST_ATTACK_ZONE = null,
 		BB_HUMAN_NPC_WEAKPOINT = null,
 		BB_HUMAN_NPC_JUMP_COOLDOWN = 0,
-		BB_HUMAN_NPC_FLANK_ANGLE = null,
-		BB_HUMAN_NPC_FLANK_TARGET = null,
+		BB_ATAMAN_FLANK_ANGLE = null,
+		BB_ATAMAN_FLANK_TURF = null,
 		BB_HUMAN_NPC_HARASS_MODE = FALSE,
 		BB_HUMAN_NPC_HARASS_RETREATING = FALSE,
 		BB_HUMAN_NPC_HARASS_COOLDOWN = 0,
@@ -385,7 +386,7 @@
 		/datum/ai_planning_subtree/tree_climb,
 		/datum/ai_planning_subtree/ataman_leash,
 		/datum/ai_planning_subtree/ataman_intercept,
-		/datum/ai_planning_subtree/squad_flank,
+		/datum/ai_planning_subtree/ataman_squad_flank,
 		/datum/ai_planning_subtree/ataman_squad_tactics,
 		/datum/ai_planning_subtree/ataman_disarm_restrain,
 		/datum/ai_planning_subtree/attack_obstacle_in_path,

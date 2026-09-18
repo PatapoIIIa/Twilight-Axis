@@ -6,6 +6,8 @@
 #define BB_ATAMAN_SQUAD "bb_ataman_squad"
 #define BB_ATAMAN_TACTICS_COOLDOWN "bb_ataman_tactics_cooldown"
 #define BB_ATAMAN_INTERCEPT_TURF "bb_ataman_intercept_turf"
+#define BB_ATAMAN_FLANK_ANGLE "bb_ataman_flank_angle"
+#define BB_ATAMAN_FLANK_TURF "bb_ataman_flank_turf"
 
 #define ATAMAN_ROLE_GRABBER "grabber"
 #define ATAMAN_ROLE_BINDER "binder"
@@ -19,6 +21,13 @@
 #define ATAMAN_INTERCEPT_WINDOW (4 SECONDS)
 #define ATAMAN_INTERCEPT_COOLDOWN (6 SECONDS)
 #define ATAMAN_INTERCEPT_STALE (3 SECONDS)
+
+#define ATAMAN_FLANK_RADIUS 1
+#define ATAMAN_FLANK_MIN_SEPARATION 60
+#define ATAMAN_FLANK_ENGAGE_DIST 1
+#define ATAMAN_FLANK_ANGLE_DRIFT 30
+#define ATAMAN_FLANK_SCAN_RANGE 7
+#define ATAMAN_FLANK_ABANDON_DIST 4
 
 #define ATAMAN_EXCIDIUM "The Excidium"
 #define ATAMAN_BOUNTY_CATEGORY_MURDER "murder"
