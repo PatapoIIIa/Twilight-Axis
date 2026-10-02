@@ -40,6 +40,7 @@ GLOBAL_LIST_EMPTY(chosen_names)
 	var/tgui_theme = "azure_gilbranze" // TA EDIT
 	var/parchment_skin = "leatherbound"
 	var/statbrowser_theme = "dark"
+	var/vv_dark_mode = TRUE
 	var/windowflashing = TRUE
 	var/verbose_character_creator = TRUE // Output chat messages for every change you make as a psuedo-history
 
@@ -152,8 +153,8 @@ GLOBAL_LIST_EMPTY(chosen_names)
 	var/crt = FALSE
 	var/grain = FALSE
 	var/icon_scaling = FALSE
-	var/dnr_pref = FALSE
 	var/qsr_pref = FALSE
+	var/char_toggles = NONE
 
 	var/list/customizer_entries = list()
 	var/list/list/body_markings = list()

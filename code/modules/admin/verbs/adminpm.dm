@@ -109,7 +109,8 @@
 				return
 			else if(msg) // you want to continue if there's no message instead of returning now
 				if(current_ticket)
-					current_ticket.MessageNoRecipient(msg)
+					if(!current_ticket.SendPlayerMessage(msg)) // TA EDIT
+						return
 				else
 					to_chat(src, span_danger("I can no longer reply to this ticket, please open another one by using the Adminhelp verb if need be."))
 					to_chat(src, span_notice("Message: [msg]"))
@@ -136,7 +137,8 @@
 				if(holder)
 					to_chat(src, span_danger("Error: Admin-PM: Client not found."))
 				else if(current_ticket)
-					current_ticket.MessageNoRecipient(msg)
+					if(!current_ticket.SendPlayerMessage(msg)) // TA EDIT
+						return
 				else
 					to_chat(src, span_danger("I can no longer reply to this ticket, please open another one by using the Adminhelp verb if need be."))
 					to_chat(src, span_notice("Message: [msg]"))
@@ -191,17 +193,15 @@
 
 			else		//recipient is an admin but sender is not
 				if(current_ticket)
-					current_ticket.MessageNoRecipient(keywordparsedmsg)
+					if(!current_ticket.SendPlayerMessage(keywordparsedmsg)) // TA EDIT
+						return
 				else
 					to_chat(src, span_danger("I can no longer reply to this ticket, please open another one by using the Adminhelp verb if need be."))
 					to_chat(src, span_notice("Message: [rawmsg]"))
 					return
 
-			SEND_SOUND(recipient, sound('sound/adminhelp.ogg'))
-
-			//play the receiving admin the adminhelp sound (if they have them enabled)
-			if(recipient.prefs.toggles & SOUND_ADMINHELP)
-				SEND_SOUND(recipient, sound('sound/blank.ogg'))
+			if(holder && (recipient.prefs.toggles & SOUND_ADMINHELP)) // TA EDIT
+				SEND_SOUND(recipient, sound('sound/adminhelp.ogg')) // TA EDIT
 
 		else if(holder)	//sender is an admin but recipient is not. Do BIG RED TEXT
 			var/datum/admin_help/created_ticket
