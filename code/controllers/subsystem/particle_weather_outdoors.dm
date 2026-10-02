@@ -264,9 +264,13 @@ SUBSYSTEM_DEF(outdoor_effects)
 		//TA EDIT END
 
 	OE.sunlight_overlay = MA
-	//Get weather overlay if not weatherproof
-	OE.overlays = OE.weatherproof ? list(OE.sunlight_overlay) : list(OE.sunlight_overlay, get_weather_overlay())
-	OE.luminosity = sun_luminosity //TA EDIT
+	var/list/new_overlays = list() //TA EDIT START
+	if(MA)
+		new_overlays += MA
+	if(!OE.weatherproof)
+		new_overlays += get_weather_overlay()
+	OE.overlays = new_overlays
+	OE.luminosity = sun_luminosity //TA EDIT END
 
 
 #define SUNLIGHT_CACHE_PRECISION 20 // buckets between 0 and 1
@@ -285,6 +289,8 @@ SUBSYSTEM_DEF(outdoor_effects)
 
 /datum/controller/subsystem/outdoor_effects/proc/get_sunlight_tent(value) //TA EDIT START
 	var/index = round(value * SUNLIGHT_CACHE_PRECISION + 0.5)
+	if(index <= 0)
+		return null
 	LAZYINITLIST(sunlight_tents)
 	var/key = "[index]"
 	var/mutable_appearance/MA = sunlight_tents[key]

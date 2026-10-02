@@ -15,7 +15,7 @@
 
 /obj/effect/overlay/water/top
 	icon_state = "top"
-	layer = BELOW_MOB_LAYER
+	layer = BELOW_MOB_LAYER + 0.005 //TA EDIT
 
 
 /turf/open/water
@@ -198,13 +198,23 @@
 /turf/open/water/roguesmooth(adjacencies)
 	var/list/Yeah = ..()
 	if(water_overlay)
-		water_overlay.cut_overlays(TRUE)
+		water_overlay.cut_overlays(TRUE) //TA EDIT START
 		if(Yeah)
-			water_overlay.add_overlay(Yeah)
+			var/list/bottom_edges = list()
+			for(var/edge_state in Yeah)
+				var/mutable_appearance/edge = mutable_appearance(water_overlay.icon, edge_state, BELOW_MOB_LAYER + 0.003)
+				edge.color = water_overlay.color
+				bottom_edges += edge
+			water_overlay.add_overlay(bottom_edges)
 	if(water_top_overlay)
 		water_top_overlay.cut_overlays(TRUE)
 		if(Yeah)
-			water_top_overlay.add_overlay(Yeah)
+			var/list/top_edges = list()
+			for(var/edge_state in Yeah)
+				var/mutable_appearance/edge = mutable_appearance(water_top_overlay.icon, edge_state, BELOW_MOB_LAYER + 0.008)
+				edge.color = water_top_overlay.color
+				top_edges += edge
+			water_top_overlay.add_overlay(top_edges) //TA EDIT END
 
 /turf/open/water/Entered(atom/movable/AM, atom/oldLoc)
 	. = ..()

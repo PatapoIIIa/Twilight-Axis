@@ -94,7 +94,12 @@
 	#endif
 
 	//TA EDIT START
-	color = rgb(ca.cache_r * 255, ca.cache_g * 255, ca.cache_b * 255)
+	if(ca.cache_r + ca.cache_g + ca.cache_b > 0.002)
+		icon = LIGHTING_TENT_ICON
+		color = rgb(ca.cache_r * 255, ca.cache_g * 255, ca.cache_b * 255)
+	else
+		icon = null
+		color = null
 	//TA EDIT END
 	luminosity = set_luminosity
 
