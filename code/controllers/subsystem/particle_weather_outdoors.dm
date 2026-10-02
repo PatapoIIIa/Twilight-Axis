@@ -48,6 +48,7 @@ SUBSYSTEM_DEF(outdoor_effects)
 	var/datum/time_of_day/current_step_datum
 	var/datum/time_of_day/next_step_datum
 	var/list/mutable_appearance/sunlight_overlays
+	var/list/mutable_appearance/sunlight_tents //TA EDIT
 
 	var/last_color = null
 	var/picked_color
@@ -234,8 +235,9 @@ SUBSYSTEM_DEF(outdoor_effects)
 /datum/controller/subsystem/outdoor_effects/proc/update_outdoor_effect_overlays(atom/movable/outdoor_effect/OE)
 
 	var/mutable_appearance/MA
+	var/sun_luminosity = TRUE //TA EDIT
 	if (OE.state != SKY_BLOCKED)
-		MA = get_sunlight_overlay(1,1,1,1) /* fully lit */
+		MA = get_sunlight_tent(1) //TA EDIT
 	else //Indoor - do proper corner checks
 		/* check if we are globally affected or not */
 		var/static/datum/lighting_corner/dummy/dummy_lighting_corner = new
@@ -252,12 +254,19 @@ SUBSYSTEM_DEF(outdoor_effects)
 		var/fb = cb.sunFalloff
 		var/fa = ca.sunFalloff
 
-		MA = get_sunlight_overlay(fr, fg, fb, fa)
+		//TA EDIT START
+		MA = get_sunlight_tent(fa)
+		#if LIGHTING_SOFT_THRESHOLD != 0
+		sun_luminosity = max(fr, fg, fb, fa) > LIGHTING_SOFT_THRESHOLD
+		#else
+		sun_luminosity = max(fr, fg, fb, fa) > 1e-6
+		#endif
+		//TA EDIT END
 
 	OE.sunlight_overlay = MA
 	//Get weather overlay if not weatherproof
 	OE.overlays = OE.weatherproof ? list(OE.sunlight_overlay) : list(OE.sunlight_overlay, get_weather_overlay())
-	OE.luminosity = MA.luminosity
+	OE.luminosity = sun_luminosity //TA EDIT
 
 
 #define SUNLIGHT_CACHE_PRECISION 20 // buckets between 0 and 1
@@ -273,6 +282,24 @@ SUBSYSTEM_DEF(outdoor_effects)
 	if(!sunlight_overlays[index])
 		sunlight_overlays[index] = create_sunlight_overlay(fr, fg, fb, fa)
 	return sunlight_overlays[index]
+
+/datum/controller/subsystem/outdoor_effects/proc/get_sunlight_tent(value) //TA EDIT START
+	var/index = round(value * SUNLIGHT_CACHE_PRECISION + 0.5)
+	LAZYINITLIST(sunlight_tents)
+	var/key = "[index]"
+	var/mutable_appearance/MA = sunlight_tents[key]
+	if(MA)
+		return MA
+	MA = new /mutable_appearance()
+	MA.icon = LIGHTING_TENT_ICON
+	MA.icon_state = "tent"
+	MA.blend_mode = BLEND_ADD
+	MA.plane = SUNLIGHTING_PLANE
+	MA.invisibility = INVISIBILITY_LIGHTING
+	var/shade = clamp(index / SUNLIGHT_CACHE_PRECISION, 0, 1) * 255
+	MA.color = rgb(shade, shade, shade)
+	sunlight_tents[key] = MA
+	return MA //TA EDIT END
 
 //get our weather overlay
 /datum/controller/subsystem/outdoor_effects/proc/get_weather_overlay() //TODO VANDERLIN: Restore this to 32x48 for some extra

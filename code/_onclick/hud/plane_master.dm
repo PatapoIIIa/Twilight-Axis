@@ -139,10 +139,8 @@
 	blend_mode = BLEND_OVERLAY
 
 /atom/movable/screen/plane_master/game_world_above/backdrop(mob/mymob)
-	clear_filters()
-	if(istype(mymob) && mymob.client && mymob.client.prefs && mymob.client.prefs.ambientocclusion)
-		filters += AMBIENT_OCCLUSION
-	if(istype(mymob) && mymob.eye_blurry)
+	clear_filters() //TA EDIT START
+	if(istype(mymob) && mymob.eye_blurry) //TA EDIT END
 		filters += GAUSSIAN_BLUR(CLAMP(mymob.eye_blurry*0.1,0.6,3))
 	if(istype(mymob))
 		if(isliving(mymob))
@@ -157,10 +155,8 @@
 	blend_mode = BLEND_OVERLAY
 
 /atom/movable/screen/plane_master/game_world_below/backdrop(mob/mymob)
-	clear_filters()
-	if(istype(mymob) && mymob.client && mymob.client.prefs && mymob.client.prefs.ambientocclusion)
-		filters += AMBIENT_OCCLUSION
-	if(istype(mymob) && mymob.eye_blurry)
+	clear_filters() //TA EDIT START
+	if(istype(mymob) && mymob.eye_blurry) //TA EDIT END
 		filters += GAUSSIAN_BLUR(CLAMP(mymob.eye_blurry*0.1,0.6,3))
 	if(istype(mymob))
 		if(isliving(mymob))

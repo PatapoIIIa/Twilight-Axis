@@ -29,6 +29,7 @@ Sunlight System
 	anchored = 1
 	appearance_flags = RESET_COLOR | RESET_ALPHA | RESET_TRANSFORM
 	plane = WEATHER_EFFECT_PLANE
+	vis_flags = VIS_HIDE //TA EDIT
 
 	/* misc vars */
 	var/state						= SKY_VISIBLE	// If we can see the see the sky, are blocked, or we have a blocked neighbour (SKY_BLOCKED/VISIBLE/VISIBLE_BORDER)
