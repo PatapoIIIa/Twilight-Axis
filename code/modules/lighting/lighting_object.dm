@@ -17,6 +17,7 @@
 
 	var/needs_update = FALSE
 	var/turf/myturf
+	var/lamp_lit = FALSE //TA EDIT
 
 /atom/movable/lighting_object/Initialize(mapload)
 	. = ..()
@@ -30,6 +31,10 @@
 		qdel(myturf.lighting_object, force = TRUE)
 	myturf.lighting_object = src
 	myturf.luminosity = 0
+	var/datum/outdoor_effect/sky = myturf.outdoor_effect //TA EDIT START
+	if(sky)
+		overlays = sky.applied_overlays ? sky.applied_overlays : list()
+		luminosity = sky.sun_lit //TA EDIT END
 
 	needs_update = TRUE
 	SSlighting.objects_queue += src
@@ -100,8 +105,10 @@
 	else
 		icon = null
 		color = null
+	lamp_lit = set_luminosity
+	var/datum/outdoor_effect/sky = myturf.outdoor_effect
+	luminosity = lamp_lit || (sky && sky.sun_lit)
 	//TA EDIT END
-	luminosity = set_luminosity
 
 // Variety of overrides so the overlays don't get affected by weird things.
 

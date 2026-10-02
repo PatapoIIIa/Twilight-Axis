@@ -60,6 +60,7 @@ const Settings = () => {
     statbrowser_theme,
     tgui_lock,
     ambientocclusion,
+    lowgraphics, // TA EDIT
     windowflashing,
     clientfps,
     auto_fit_viewport,
@@ -120,6 +121,16 @@ const Settings = () => {
             {ambientocclusion ? 'Enabled' : 'Disabled'}
           </Button>
         </LabeledGridList.Item>
+        {/* TA EDIT START */}
+        <LabeledGridList.Item
+          label="Low Graphics"
+          tooltip="Turns off ambient occlusion and the open space blur: fewer render passes for weak graphics cards."
+        >
+          <Button onClick={() => act('lowgraphics')}>
+            {lowgraphics ? 'Enabled' : 'Disabled'}
+          </Button>
+        </LabeledGridList.Item>
+        {/* TA EDIT END */}
         <LabeledGridList.Item
           label="Flash Taskbar"
           tooltip="Flash the windows taskbar when polls or ghost notifications happen."

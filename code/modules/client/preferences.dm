@@ -98,6 +98,7 @@ GLOBAL_LIST_EMPTY(chosen_names)
 	var/clientfps = 100//0 is sync
 
 	var/ambientocclusion = TRUE
+	var/lowgraphics = FALSE //TA EDIT
 	var/auto_fit_viewport = FALSE
 
 	var/musicvol = 50
