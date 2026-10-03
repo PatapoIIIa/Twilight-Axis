@@ -171,7 +171,6 @@ SAVEFILE UPDATING/VERSIONING - 'Simplified', or rather, more coder-friendly ~Car
 	S["admin_chat_toggles"]	>> admin_chat_toggles
 	S["clientfps"]			>> clientfps
 	S["ambientocclusion"]	>> ambientocclusion
-	S["lowgraphics"]	>> lowgraphics //TA EDIT
 	S["auto_fit_viewport"]	>> auto_fit_viewport
 	S["preferred_map"]		>> preferred_map
 	S["menuoptions"]		>> menuoptions
@@ -222,7 +221,6 @@ SAVEFILE UPDATING/VERSIONING - 'Simplified', or rather, more coder-friendly ~Car
 	tgui_lock			= sanitize_bool(tgui_lock, initial(tgui_lock))
 	windowflashing		= sanitize_bool(windowflashing, initial(windowflashing))
 	ambientocclusion	= sanitize_bool(ambientocclusion, initial(ambientocclusion))
-	lowgraphics	= sanitize_bool(lowgraphics, initial(lowgraphics)) //TA EDIT
 	auto_fit_viewport	= sanitize_bool(auto_fit_viewport, initial(auto_fit_viewport))
 	shake				= sanitize_bool(shake, initial(shake))
 	sexable				= sanitize_bool(sexable, initial(sexable))
@@ -389,7 +387,6 @@ SAVEFILE UPDATING/VERSIONING - 'Simplified', or rather, more coder-friendly ~Car
 	WRITE_FILE(S["admin_chat_toggles"], admin_chat_toggles)
 	WRITE_FILE(S["clientfps"], clientfps)
 	WRITE_FILE(S["ambientocclusion"], ambientocclusion)
-	WRITE_FILE(S["lowgraphics"], lowgraphics) //TA EDIT
 	WRITE_FILE(S["auto_fit_viewport"], auto_fit_viewport)
 	WRITE_FILE(S["preferred_map"], preferred_map)
 	WRITE_FILE(S["menuoptions"], menuoptions)

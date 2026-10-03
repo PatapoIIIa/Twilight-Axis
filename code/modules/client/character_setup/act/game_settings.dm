@@ -47,10 +47,6 @@
 				PM = locate(/atom/movable/screen/plane_master/game_world_above) in parent.screen
 				PM.backdrop(parent.mob)
 			return TRUE
-		if("lowgraphics") //TA EDIT START
-			lowgraphics = !lowgraphics
-			parent?.mob?.hud_used?.plane_masters_update()
-			return TRUE //TA EDIT END
 		if("windowflashing")
 			windowflashing = !windowflashing
 			return TRUE

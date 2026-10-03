@@ -8,7 +8,6 @@
 	icon_state		= "tent"
 	color			= null
 	blend_mode		= BLEND_ADD
-	vis_flags		= VIS_HIDE
 	//TA EDIT END
 	plane			= LIGHTING_PLANE
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT

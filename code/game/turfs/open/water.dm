@@ -109,10 +109,10 @@
 	var/bottom_plane = water_lifted ? GAME_PLANE_HIGHEST : GAME_PLANE
 	var/list/parts = list(water_part(water_bottom_state, bottom_layer, bottom_plane))
 	for(var/edge_state in neighborlay_list)
-		parts += water_part(edge_state, bottom_layer + 0.003, bottom_plane, FALSE)
-	parts += water_part(water_top_state, BELOW_MOB_LAYER + 0.005, GAME_PLANE)
+		parts += water_part(edge_state, bottom_layer + WATER_EDGE_LAYER_STEP, bottom_plane, FALSE)
+	parts += water_part(water_top_state, WATER_TOP_LAYER, GAME_PLANE)
 	for(var/edge_state in neighborlay_list)
-		parts += water_part(edge_state, BELOW_MOB_LAYER + 0.008, GAME_PLANE, FALSE)
+		parts += water_part(edge_state, WATER_TOP_LAYER + WATER_EDGE_LAYER_STEP, GAME_PLANE, FALSE)
 	water_overlays_applied = parts
 	add_overlay(parts)
 

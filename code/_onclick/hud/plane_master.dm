@@ -37,8 +37,7 @@
 
 /atom/movable/screen/plane_master/osreal/backdrop(mob/mymob)
 	filters = list()
-	if(!mymob?.client?.prefs?.lowgraphics) //TA EDIT
-		filters += GAUSSIAN_BLUR(1)
+	filters += GAUSSIAN_BLUR(1)
 
 /atom/movable/screen/plane_master/proc/outline(_size, _color)
 	filters += filter(type = "outline", size = _size, color = _color)
@@ -67,7 +66,7 @@
 
 /atom/movable/screen/plane_master/game_world/backdrop(mob/mymob)
 	clear_filters()
-	if(istype(mymob) && mymob.client && mymob.client.prefs && mymob.client.prefs.ambientocclusion && !mymob.client.prefs.lowgraphics) //TA EDIT
+	if(istype(mymob) && mymob.client && mymob.client.prefs && mymob.client.prefs.ambientocclusion)
 		filters += AMBIENT_OCCLUSION
 	if(istype(mymob) && mymob.eye_blurry)
 		filters += GAUSSIAN_BLUR(CLAMP(mymob.eye_blurry*0.1,0.6,3))
@@ -123,7 +122,7 @@
 
 /atom/movable/screen/plane_master/game_world_fov_hidden/backdrop(mob/mymob)
 	clear_filters()
-	if(istype(mymob) && mymob.client && mymob.client.prefs && mymob.client.prefs.ambientocclusion && !mymob.client.prefs.lowgraphics) //TA EDIT
+	if(istype(mymob) && mymob.client && mymob.client.prefs && mymob.client.prefs.ambientocclusion)
 		filters += AMBIENT_OCCLUSION
 	if(istype(mymob) && mymob.eye_blurry)
 		filters += GAUSSIAN_BLUR(CLAMP(mymob.eye_blurry*0.1,0.6,3))
@@ -178,7 +177,7 @@
 
 /atom/movable/screen/plane_master/game_world_walls/backdrop(mob/mymob)
 	clear_filters()
-	if(istype(mymob) && mymob.client && mymob.client.prefs && mymob.client.prefs.ambientocclusion && !mymob.client.prefs.lowgraphics) //TA EDIT
+	if(istype(mymob) && mymob.client && mymob.client.prefs && mymob.client.prefs.ambientocclusion)
 		filters += AMBIENT_OCCLUSION_WALLS
 	if(istype(mymob) && mymob.eye_blurry)
 		filters += GAUSSIAN_BLUR(CLAMP(mymob.eye_blurry*0.1,0.6,3))

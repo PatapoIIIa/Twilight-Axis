@@ -254,14 +254,8 @@ SUBSYSTEM_DEF(outdoor_effects)
 		var/fb = cb.sunFalloff
 		var/fa = ca.sunFalloff
 
-		//TA EDIT START
-		MA = get_sunlight_tent(fa)
-		#if LIGHTING_SOFT_THRESHOLD != 0
-		sun_luminosity = max(fr, fg, fb, fa) > LIGHTING_SOFT_THRESHOLD
-		#else
-		sun_luminosity = max(fr, fg, fb, fa) > 1e-6
-		#endif
-		//TA EDIT END
+		MA = get_sunlight_tent(fa) //TA EDIT START
+		sun_luminosity = max(fr, fg, fb, fa) > max(LIGHTING_SOFT_THRESHOLD, 1e-6) //TA EDIT END
 
 	OE.sunlight_overlay = MA
 	var/list/new_overlays = list() //TA EDIT START

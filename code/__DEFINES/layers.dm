@@ -71,6 +71,10 @@
 #define HIGH_OBJ_LAYER 3.6
 
 #define BELOW_MOB_LAYER 3.7
+//TA EDIT START
+#define WATER_EDGE_LAYER_STEP 0.003
+#define WATER_TOP_LAYER (BELOW_MOB_LAYER + 0.005)
+//TA EDIT END
 #define LYING_MOB_LAYER 3.8
 //#define MOB_LAYER 4 //For easy recordkeeping; this is a byond define
 #define ABOVE_MOB_LAYER 4.1

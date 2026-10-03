@@ -13,7 +13,6 @@ export type GameSettingsData = {
   statbrowser_theme: string;
   tgui_lock: BooleanLike;
   ambientocclusion: BooleanLike;
-  lowgraphics: BooleanLike; // TA EDIT
   windowflashing: BooleanLike;
   clientfps: number;
   auto_fit_viewport: BooleanLike;

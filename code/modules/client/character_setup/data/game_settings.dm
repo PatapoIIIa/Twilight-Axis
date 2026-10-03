@@ -6,7 +6,6 @@
 		"statbrowser_theme" = get_statbrowser_theme_display_name(),
 		"tgui_lock" = tgui_lock,
 		"ambientocclusion" = ambientocclusion,
-		"lowgraphics" = lowgraphics, //TA EDIT
 		"windowflashing" = windowflashing,
 		"clientfps" = clientfps,
 		"auto_fit_viewport" = auto_fit_viewport,
