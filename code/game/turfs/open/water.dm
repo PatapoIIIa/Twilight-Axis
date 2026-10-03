@@ -92,10 +92,10 @@
 	water_top_state = "top[water_level]"
 	rebuild_water_overlays()
 
-/turf/open/water/proc/water_part(state, part_layer, part_plane, use_dir = TRUE)
-	var/mutable_appearance/part = mutable_appearance('icons/turf/newwater.dmi', state, part_layer, part_plane)
+/turf/open/water/proc/water_part(state, part_layer, part_plane, edge = FALSE)
+	var/mutable_appearance/part = mutable_appearance(edge ? icon : 'icons/turf/newwater.dmi', state, part_layer, part_plane)
 	part.color = water_color
-	if(use_dir)
+	if(!edge)
 		part.dir = water_dir
 	return part
 
@@ -105,14 +105,14 @@
 	if(!water_bottom_state)
 		water_overlays_applied = null
 		return
-	var/bottom_layer = water_lifted ? ABOVE_MOB_LAYER : BELOW_MOB_LAYER
+	var/bottom_layer = water_lifted ? ABOVE_MOB_LAYER : WATER_BOTTOM_LAYER
 	var/bottom_plane = water_lifted ? GAME_PLANE_HIGHEST : GAME_PLANE
 	var/list/parts = list(water_part(water_bottom_state, bottom_layer, bottom_plane))
 	for(var/edge_state in neighborlay_list)
-		parts += water_part(edge_state, bottom_layer + WATER_EDGE_LAYER_STEP, bottom_plane, FALSE)
+		parts += water_part(edge_state, bottom_layer + WATER_EDGE_LAYER_STEP, bottom_plane, TRUE)
 	parts += water_part(water_top_state, WATER_TOP_LAYER, GAME_PLANE)
 	for(var/edge_state in neighborlay_list)
-		parts += water_part(edge_state, WATER_TOP_LAYER + WATER_EDGE_LAYER_STEP, GAME_PLANE, FALSE)
+		parts += water_part(edge_state, WATER_TOP_LAYER + WATER_EDGE_LAYER_STEP, GAME_PLANE, TRUE)
 	water_overlays_applied = parts
 	add_overlay(parts)
 
