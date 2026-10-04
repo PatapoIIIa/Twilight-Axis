@@ -37,6 +37,7 @@ GLOBAL_VAR_INIT(GLOBAL_LIGHT_RANGE, 3)
 GLOBAL_LIST_EMPTY(SUNLIGHT_QUEUE_WORK)	/* turfs to be stateChecked */
 GLOBAL_LIST_EMPTY(SUNLIGHT_QUEUE_UPDATE) /* turfs to have their colors updated via corners (filter out the unroofed dudes) */
 GLOBAL_LIST_EMPTY(SUNLIGHT_QUEUE_CORNER) /* turfs to have their color/lights/etc updated */
+GLOBAL_LIST_EMPTY(SUNLIGHT_QUEUE_CARRIER) //TA EDIT
 
 SUBSYSTEM_DEF(outdoor_effects)
 	name = "Outdoor Weather Calc"
@@ -47,7 +48,6 @@ SUBSYSTEM_DEF(outdoor_effects)
 	var/list/atom/movable/screen/fullscreen/lighting_backdrop/sunlight/sunlighting_planes = list()
 	var/datum/time_of_day/current_step_datum
 	var/datum/time_of_day/next_step_datum
-	var/list/mutable_appearance/sunlight_overlays
 
 	var/last_color = null
 	var/picked_color
@@ -142,7 +142,7 @@ SUBSYSTEM_DEF(outdoor_effects)
 
 /* set sunlight color + add weather effect to clients */
 /datum/controller/subsystem/outdoor_effects/fire(resumed, init_tick_checks)
-	MC_SPLIT_TICK_INIT(3)
+	MC_SPLIT_TICK_INIT(4) //TA EDIT
 	if(!init_tick_checks)
 		MC_SPLIT_TICK
 	var/i = 0
@@ -168,7 +168,7 @@ SUBSYSTEM_DEF(outdoor_effects)
 		MC_SPLIT_TICK
 
 	for (i in 1 to GLOB.SUNLIGHT_QUEUE_UPDATE.len)
-		var/atom/movable/outdoor_effect/U = GLOB.SUNLIGHT_QUEUE_UPDATE[i]
+		var/datum/outdoor_effect/U = GLOB.SUNLIGHT_QUEUE_UPDATE[i] //TA EDIT
 		if(U)
 			U.process_state()
 			update_outdoor_effect_overlays(U)
@@ -188,11 +188,11 @@ SUBSYSTEM_DEF(outdoor_effects)
 	for (i in 1 to GLOB.SUNLIGHT_QUEUE_CORNER.len)
 		var/turf/T = GLOB.SUNLIGHT_QUEUE_CORNER[i]
 		T.turf_flags &= ~TURF_SUNLIGHT_QUEUED
-		var/atom/movable/outdoor_effect/U = T.outdoor_effect
+		var/datum/outdoor_effect/U = T.outdoor_effect //TA EDIT
 
 		/* if we haven't initialized but we are affected, create new and check state */
 		if(!U)
-			T.outdoor_effect = new /atom/movable/outdoor_effect(T)
+			T.outdoor_effect = new /datum/outdoor_effect(T) //TA EDIT
 			T.update_sky_and_weather_states()
 			U = T.outdoor_effect
 
@@ -216,6 +216,21 @@ SUBSYSTEM_DEF(outdoor_effects)
 		GLOB.SUNLIGHT_QUEUE_CORNER.Cut(1, i+1)
 		i = 0
 
+	if(!init_tick_checks) //TA EDIT START
+		MC_SPLIT_TICK
+
+	for (i in 1 to GLOB.SUNLIGHT_QUEUE_CARRIER.len)
+		var/atom/movable/lighting_object/carrier = GLOB.SUNLIGHT_QUEUE_CARRIER[i]
+		if(!QDELETED(carrier))
+			carrier.refresh_sun()
+		if(init_tick_checks)
+			CHECK_TICK
+		else if (MC_TICK_CHECK)
+			break
+	if (i)
+		GLOB.SUNLIGHT_QUEUE_CARRIER.Cut(1, i+1)
+		i = 0 //TA EDIT END
+
 	if(check_cycle())
 		for (var/atom/movable/screen/fullscreen/lighting_backdrop/sunlight/SP in sunlighting_planes)
 			transition_sunlight_color(SP)
@@ -231,41 +246,6 @@ SUBSYSTEM_DEF(outdoor_effects)
 	animate(SP,color=picked_color, time = timeDiff)
 
 // Updates overlays and vis_contents for outdoor effects
-/datum/controller/subsystem/outdoor_effects/proc/update_outdoor_effect_overlays(atom/movable/outdoor_effect/OE)
-
-	// One packed mask per tile: R = sun, G = weather gate (outdoor_masks.dmi states: yellow =
-	// sun+rain, red = sun only, green = rain only). The sun fullscreen's color matrix
-	// extracts R (tinted by the tod color), the WEATHER_OVERLAY plane master converts G
-	// into the alpha mask for weather particles. The blur on the sunlight plane master
-	// softens both. Corner falloff math still exists in
-	// /datum/lighting_corner/sunFalloff, but only gameplay (get_lumcount) reads it.
-	var/sky = OE.state != SKY_BLOCKED
-	var/mutable_appearance/MA = get_sunlight_overlay(sky, !OE.weatherproof)
-
-	OE.sunlight_overlay = MA
-	OE.overlays = list(OE.sunlight_overlay)
-	OE.luminosity = MA.luminosity
-
-
-//Retrieve an overlay from the list - create if necessary
-/datum/controller/subsystem/outdoor_effects/proc/get_sunlight_overlay(sky = TRUE, weather = TRUE)
-	LAZYINITLIST(sunlight_overlays)
-	var/index = "[sky]|[weather]"
-	if(!sunlight_overlays[index])
-		sunlight_overlays[index] = create_sunlight_overlay(sky, weather)
-	return sunlight_overlays[index]
-
-//Create a flat packed mask overlay: R = sun, G = weather gate
-/datum/controller/subsystem/outdoor_effects/proc/create_sunlight_overlay(sky, weather)
-
-	var/mutable_appearance/MA = new /mutable_appearance()
-
-	MA.blend_mode	= BLEND_OVERLAY
-	MA.icon			= 'icons/effects/outdoor_masks.dmi'
-	MA.icon_state	= weather ? (sky ? "yellow" : "green") : "red"
-	MA.plane		= SUNLIGHTING_PLANE /* we put this on a lower level than lighting so we dont multiply anything */
-	MA.invisibility = INVISIBILITY_LIGHTING
-
-	//MA gets applied as an overlay, but we pull luminosity out to set our outdoor_effect object's lum
-	MA.luminosity = sky
-	return MA
+/datum/controller/subsystem/outdoor_effects/proc/update_outdoor_effect_overlays(datum/outdoor_effect/OE) //TA EDIT START
+	OE.sun_lit = OE.receives_sun()
+	OE.source_turf.queue_sun_carriers() //TA EDIT END

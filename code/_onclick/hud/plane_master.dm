@@ -272,7 +272,6 @@
 /atom/movable/screen/fullscreen/lighting_backdrop/sunlight/Initialize(mapload)
 	. = ..()
 	filters += filter(type="layer", render_source=SUNLIGHT_WHITENED_RENDER_TARGET)
-	filters += GAUSSIAN_BLUR(SUNLIGHT_MASK_BLUR_SIZE)
 	SSoutdoor_effects.sunlighting_planes |= src
 	color = SSoutdoor_effects.last_color
 	SSoutdoor_effects.transition_sunlight_color(src)
