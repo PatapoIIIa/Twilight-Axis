@@ -38,7 +38,7 @@
 		summer_icon_state = icon_state
 		if(SSseason.should_show_snow_icons() && T.is_seasonally_exposed())
 			baked_state = winter_icon_state
-	T.AddElement(/datum/element/decal, icon, baked_state, dir, plane, layer, alpha, color, pixel_x, pixel_y, pixel_w, pixel_z)
+	T.AddElement(/datum/element/decal, icon, baked_state, dir, FLOAT_PLANE, layer, alpha, color, pixel_x, pixel_y, pixel_w, pixel_z)
 	if(winter_icon_state)
 		GLOB.seasonal_baked_decals += list(list(
 			"turf" = T,
@@ -47,7 +47,7 @@
 			"winter" = winter_icon_state,
 			"state" = baked_state,
 			"dir" = dir,
-			"plane" = plane,
+			"plane" = FLOAT_PLANE,
 			"layer" = layer,
 			"alpha" = alpha,
 			"color" = color,

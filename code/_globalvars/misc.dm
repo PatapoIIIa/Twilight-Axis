@@ -1,5 +1,8 @@
 GLOBAL_VAR_INIT(admin_notice, "") // Admin notice that all clients see when joining the server
 
+/// The world.time we last ran maptick; written by /world/Tick, read by NEXT_VISUAL_TICK
+GLOBAL_VAR_INIT(last_maptick_time, 0)
+
 GLOBAL_VAR_INIT(timezoneOffset, 0) // The difference betwen midnight (of the host computer) and 0 world.ticks.
 
 	// For FTP requests. (i.e. downloading runtime logs.)
