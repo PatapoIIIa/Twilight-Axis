@@ -88,9 +88,13 @@
 	return F
 
 /turf/open/water/update_icon() //TA EDIT START
+	update_water_states()
+	rebuild_water_overlays()
+	return ..()
+
+/turf/open/water/proc/update_water_states()
 	water_bottom_state = "bottom[water_level]"
 	water_top_state = "top[water_level]"
-	rebuild_water_overlays()
 
 /turf/open/water/proc/water_part(state, part_layer, part_plane, edge = FALSE)
 	var/mutable_appearance/part = mutable_appearance(edge ? icon : 'icons/turf/newwater.dmi', state, part_layer, part_plane)
@@ -106,13 +110,13 @@
 		water_overlays_applied = null
 		return
 	var/bottom_layer = water_lifted ? ABOVE_MOB_LAYER : WATER_BOTTOM_LAYER
-	var/bottom_plane = water_lifted ? GAME_PLANE_HIGHEST : GAME_PLANE
+	var/bottom_plane = water_lifted ? GAME_PLANE_HIGHEST : FLOAT_PLANE
 	var/list/parts = list(water_part(water_bottom_state, bottom_layer, bottom_plane))
 	for(var/edge_state in neighborlay_list)
 		parts += water_part(edge_state, bottom_layer + WATER_EDGE_LAYER_STEP, bottom_plane, TRUE)
-	parts += water_part(water_top_state, WATER_TOP_LAYER, GAME_PLANE)
+	parts += water_part(water_top_state, WATER_TOP_LAYER, FLOAT_PLANE)
 	for(var/edge_state in neighborlay_list)
-		parts += water_part(edge_state, WATER_TOP_LAYER + WATER_EDGE_LAYER_STEP, GAME_PLANE, TRUE)
+		parts += water_part(edge_state, WATER_TOP_LAYER + WATER_EDGE_LAYER_STEP, FLOAT_PLANE, TRUE)
 	water_overlays_applied = parts
 	add_overlay(parts)
 
@@ -720,11 +724,10 @@
 /turf/open/water/river/flow/north
 	dir = 1
 
-/turf/open/water/river/update_icon() //TA EDIT START
+/turf/open/water/river/update_water_states() //TA EDIT START
 	water_bottom_state = "riverbot"
 	water_top_state = "rivertop"
-	water_dir = dir
-	rebuild_water_overlays() //TA EDIT END
+	water_dir = dir //TA EDIT END
 
 /turf/open/water/river/Initialize(mapload)
 	icon_state = "rock"

@@ -28,6 +28,11 @@
 
 #define SPACE_LAYER 1.8
 //#define TURF_LAYER 2 //For easy recordkeeping; this is a byond define
+//TA EDIT START
+#define WATER_BOTTOM_LAYER (TURF_LAYER + 0.008)
+#define WATER_EDGE_LAYER_STEP 0.002
+#define WATER_TOP_LAYER (TURF_LAYER + 0.012)
+//TA EDIT END
 #define MID_TURF_LAYER 2.02
 #define HIGH_TURF_LAYER 2.03
 #define TURF_PLATING_DECAL_LAYER 2.031
@@ -71,11 +76,6 @@
 #define HIGH_OBJ_LAYER 3.6
 
 #define BELOW_MOB_LAYER 3.7
-//TA EDIT START
-#define WATER_BOTTOM_LAYER (BELOW_MOB_LAYER - 0.008)
-#define WATER_EDGE_LAYER_STEP 0.002
-#define WATER_TOP_LAYER (BELOW_MOB_LAYER - 0.004)
-//TA EDIT END
 #define LYING_MOB_LAYER 3.8
 //#define MOB_LAYER 4 //For easy recordkeeping; this is a byond define
 #define ABOVE_MOB_LAYER 4.1
