@@ -65,7 +65,7 @@ Sunlight System
 	sun_lit = lit
 	var/atom/movable/lighting_object/carrier = source_turf?.lighting_object
 	if(carrier)
-		carrier.overlays = new_overlays ? new_overlays : list()
+		carrier.refresh_overlays()
 		carrier.luminosity = carrier.lamp_lit || sun_lit //TA EDIT END
 
 
