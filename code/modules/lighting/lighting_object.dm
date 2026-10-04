@@ -5,7 +5,7 @@
 
 	//TA EDIT START
 	icon				= LIGHTING_TENT_ICON
-	icon_state		= "tent"
+	icon_state		= "tent15"
 	color			= null
 	blend_mode		= BLEND_ADD
 	//TA EDIT END
@@ -94,28 +94,30 @@
 	#endif
 
 	//TA EDIT START
-	var/tent_lit = ca.cache_r + ca.cache_g + ca.cache_b > 0.002
 	var/mask = tent_mask()
+	var/tent_color
+	if(mask && ca.cache_r + ca.cache_g + ca.cache_b > LIGHTING_TENT_THRESHOLD)
+		tent_color = rgb(ca.cache_r * 255, ca.cache_g * 255, ca.cache_b * 255)
 	var/mutable_appearance/new_lamp_overlay
 	if(myturf.opaque_atom_count > 0)
 		var/flat_r = (cr.cache_r + cg.cache_r + cb.cache_r + ca.cache_r) / 4
 		var/flat_g = (cr.cache_g + cg.cache_g + cb.cache_g + ca.cache_g) / 4
 		var/flat_b = (cr.cache_b + cg.cache_b + cb.cache_b + ca.cache_b) / 4
-		if(flat_r + flat_g + flat_b > 0.002)
+		if(flat_r + flat_g + flat_b > LIGHTING_TENT_THRESHOLD)
 			icon = LIGHTING_TENT_ICON
 			icon_state = "flat"
 			color = rgb(flat_r * 255, flat_g * 255, flat_b * 255)
 		else
 			icon = null
 			color = null
-		if(tent_lit && mask)
+		if(tent_color)
 			new_lamp_overlay = mutable_appearance(LIGHTING_TENT_ICON, "tent[mask]")
-			new_lamp_overlay.color = rgb(ca.cache_r * 255, ca.cache_g * 255, ca.cache_b * 255)
+			new_lamp_overlay.color = tent_color
 			new_lamp_overlay.appearance_flags = RESET_COLOR
-	else if(tent_lit && mask)
+	else if(tent_color)
 		icon = LIGHTING_TENT_ICON
-		icon_state = mask == 15 ? "tent" : "tent[mask]"
-		color = rgb(ca.cache_r * 255, ca.cache_g * 255, ca.cache_b * 255)
+		icon_state = "tent[mask]"
+		color = tent_color
 	else
 		icon = null
 		color = null
@@ -128,16 +130,16 @@
 /atom/movable/lighting_object/proc/tent_mask() //TA EDIT START
 	. = 0
 	if(myturf.opaque_atom_count <= 0)
-		. |= 1
-	var/turf/neighbour = get_step(myturf, EAST)
-	if(neighbour && neighbour.opaque_atom_count <= 0)
-		. |= 2
-	neighbour = get_step(myturf, NORTH)
-	if(neighbour && neighbour.opaque_atom_count <= 0)
-		. |= 4
-	neighbour = get_step(myturf, NORTHEAST)
-	if(neighbour && neighbour.opaque_atom_count <= 0)
-		. |= 8 //TA EDIT END
+		. |= TENT_COVERS_SELF
+	var/turf/neighbor = get_step(myturf, EAST)
+	if(neighbor && neighbor.opaque_atom_count <= 0)
+		. |= TENT_COVERS_EAST
+	neighbor = get_step(myturf, NORTH)
+	if(neighbor && neighbor.opaque_atom_count <= 0)
+		. |= TENT_COVERS_NORTH
+	neighbor = get_step(myturf, NORTHEAST)
+	if(neighbor && neighbor.opaque_atom_count <= 0)
+		. |= TENT_COVERS_NORTHEAST //TA EDIT END
 
 // Variety of overrides so the overlays don't get affected by weird things.
 
