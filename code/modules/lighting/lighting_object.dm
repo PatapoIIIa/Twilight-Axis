@@ -16,8 +16,7 @@
 
 	var/needs_update = FALSE
 	var/turf/myturf
-	var/lamp_lit = FALSE //TA EDIT START
-	var/mutable_appearance/lamp_overlay //TA EDIT END
+	var/mutable_appearance/lamp_overlay //TA EDIT
 
 /atom/movable/lighting_object/Initialize(mapload)
 	. = ..()
@@ -31,10 +30,6 @@
 		qdel(myturf.lighting_object, force = TRUE)
 	myturf.lighting_object = src
 	myturf.luminosity = 0
-	var/datum/outdoor_effect/sky = myturf.outdoor_effect //TA EDIT START
-	if(sky)
-		refresh_overlays()
-		luminosity = sky.sun_lit //TA EDIT END
 
 	needs_update = TRUE
 	SSlighting.objects_queue += src
@@ -126,10 +121,8 @@
 		color = null
 	if(lamp_overlay || new_lamp_overlay)
 		lamp_overlay = new_lamp_overlay
-		refresh_overlays()
-	lamp_lit = set_luminosity
-	var/datum/outdoor_effect/sky = myturf.outdoor_effect
-	luminosity = lamp_lit || (sky && sky.sun_lit)
+		overlays = lamp_overlay ? list(lamp_overlay) : list()
+	luminosity = set_luminosity
 	//TA EDIT END
 
 /atom/movable/lighting_object/proc/tent_mask() //TA EDIT START
@@ -144,14 +137,7 @@
 		. |= 4
 	neighbour = get_step(myturf, NORTHEAST)
 	if(neighbour && neighbour.opaque_atom_count <= 0)
-		. |= 8
-
-/atom/movable/lighting_object/proc/refresh_overlays()
-	var/datum/outdoor_effect/sky = myturf.outdoor_effect
-	var/list/new_overlays = sky?.applied_overlays ? sky.applied_overlays.Copy() : list()
-	if(lamp_overlay)
-		new_overlays += lamp_overlay
-	overlays = new_overlays //TA EDIT END
+		. |= 8 //TA EDIT END
 
 // Variety of overrides so the overlays don't get affected by weird things.
 
