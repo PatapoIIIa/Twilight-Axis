@@ -18,6 +18,7 @@
 //TA EDIT START
 #define LIGHTING_TENT_ICON 'icons/effects/lighting_tent.dmi'
 #define LIGHTING_TENT_THRESHOLD 0.002
+#define LIGHTING_VISUAL_PRUNE_EVERY 4096
 #define TENT_COVERS_SELF (1<<0)
 #define TENT_COVERS_EAST (1<<1)
 #define TENT_COVERS_NORTH (1<<2)

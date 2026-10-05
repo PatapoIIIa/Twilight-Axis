@@ -24,6 +24,7 @@
 
 	if(!T)
 		vis_contents.len = 0
+		lighting_object?.reapply() //TA EDIT
 		if(!show_bottom_level() && prune_on_fail)
 			ChangeTurf(/turf/open/floor/rogue/naturalstone, flags = CHANGETURF_INHERIT_AIR)
 		return FALSE
