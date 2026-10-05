@@ -211,6 +211,9 @@
 				underlay_appearance.icon = DEFAULT_UNDERLAY_ICON
 				underlay_appearance.icon_state = DEFAULT_UNDERLAY_ICON_STATE
 		underlays = U
+		if(isturf(src)) //TA EDIT START
+			var/turf/smoothed_turf = src
+			smoothed_turf.lighting_object?.reapply() //TA EDIT END
 
 /atom/proc/cardinal_smooth(adjacencies)
 	//NW CORNER

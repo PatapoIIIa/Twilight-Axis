@@ -5,7 +5,7 @@ GLOBAL_LIST_INIT(blacklisted_automated_baseturfs, typecacheof(list(
 
 /turf/proc/empty(turf_type=/turf/open/floor/rogue/naturalstone, baseturf_type, list/ignore_typecache, flags)
 	// Remove all atoms except observers, landmarks, docking ports
-	var/static/list/ignored_atoms = typecacheof(list(/mob/dead, /obj/effect/landmark, /atom/movable/lighting_object))
+	var/static/list/ignored_atoms = typecacheof(list(/mob/dead, /obj/effect/landmark)) //TA EDIT
 	var/list/raw_contents = GetAllContentsIgnoring(ignore_typecache)
 
 	for(var/atom/A as anything in raw_contents)
@@ -25,12 +25,14 @@ GLOBAL_LIST_INIT(blacklisted_automated_baseturfs, typecacheof(list(
 /turf/proc/copyTurf(turf/T)
 	if(T.type != type)
 		var/obj/O
-		if(underlays.len)	//we have underlays, which implies some sort of transparency, so we want to a snapshot of the previous turf as an underlay
+		var/real_underlays = length(underlays) - (lighting_object ? lighting_object.underlay_count() : 0) //TA EDIT
+		if(real_underlays)	//we have underlays, which implies some sort of transparency, so we want to a snapshot of the previous turf as an underlay //TA EDIT
 			O = new()
 			O.underlays.Add(T)
 		T.ChangeTurf(type)
-		if(underlays.len)
+		if(real_underlays) //TA EDIT START
 			T.underlays = O.underlays
+			T.lighting_object?.reapply() //TA EDIT END
 	if(T.icon_state != icon_state)
 		T.icon_state = icon_state
 	if(T.icon != icon)
@@ -159,6 +161,7 @@ GLOBAL_LIST_INIT(blacklisted_automated_baseturfs, typecacheof(list(
 
 		recalc_atom_opacity()
 		lighting_object = old_lighting_object
+		lighting_object?.reapply() //TA EDIT
 		corners = old_corners
 		if (old_opacity != opacity || dynamic_lighting != old_dynamic_lighting)
 			reconsider_lights()
