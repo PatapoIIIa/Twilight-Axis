@@ -106,6 +106,11 @@ SUBSYSTEM_DEF(droning)
 	combat_music.frequency = frenq
 	if(!HAS_TRAIT(dreamer.mob, TRAIT_DRUQK))
 		combat_music.pitch = 1 / combat_music.frequency
+	// TA EDIT START - streamed: unstreamed, the client decodes the whole track on its main thread when it starts (a freeze).
+	// A stream cannot play backwards, so the reversed druqk music stays unstreamed.
+	if(frenq > 0)
+		combat_music.status = SOUND_STREAM
+	// TA EDIT END
 	SEND_SOUND(dreamer, combat_music)
 	dreamer.droning_sound = combat_music
 	dreamer.last_droning_sound = combat_music.file
@@ -141,6 +146,7 @@ SUBSYSTEM_DEF(droning)
 			droning.file = 'sound/music/asunderedmind.ogg'
 		else if(HAS_TRAIT(listener.mob, TRAIT_DRUQK))
 			droning.file = 'sound/music/spice.ogg'
+		droning.status = SOUND_STREAM // TA EDIT - streamed: unstreamed, the client decodes the whole track on its main thread when it starts (a freeze on area change)
 
 		listener.droning_sound = droning
 		listener.last_droning_sound = area_player.droning_sound
@@ -164,6 +170,7 @@ SUBSYSTEM_DEF(droning)
 			droning.file = 'sound/music/asunderedmind.ogg'
 		else if(HAS_TRAIT(listener.mob, TRAIT_DRUQK))
 			droning.file = 'sound/music/spice.ogg'
+		droning.status = SOUND_STREAM // TA EDIT - streamed: unstreamed, the client decodes the whole track on its main thread when it starts (a freeze on area change)
 
 		listener.droning_sound = droning
 		listener.last_droning_sound = area_player.droning_sound_current
